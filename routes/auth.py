@@ -74,8 +74,10 @@ def login():
         username = data['username'].strip()
         password = data['password']
 
-        # 查找用户
-        user = User.query.filter_by(username=username).first()
+        # 查找用户（支持用户名或邮箱）
+        user = User.query.filter(
+            (User.username == username) | (User.email == username.lower())
+        ).first()
 
         if not user or not check_password_hash(user.password_hash, password):
             return jsonify({'error': 'Invalid username or password'}), 401
