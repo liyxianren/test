@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 from sqlalchemy import inspect, text
+from urllib.parse import quote_plus
 
 # 导入扩展和模型
 from extensions import db, init_extensions
@@ -20,16 +21,32 @@ app = Flask(__name__)
 # 基础配置
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
-# 数据库配置 - MySQL
-db_url = os.getenv('DATABASE_URL')
-if not db_url:
-    # 默认本地开发数据库
-    db_url = 'sqlite:///diary.db'
-elif 'mysql' not in db_url:
-    # 如果提供了数据库URL但不是MySQL格式，使用Zeabur MySQL
-    db_url = 'mysql+pymysql://root:q37sTw1xgc2h46589NbdZFzMAnPrpEm0@hkg1.clusters.zeabur.com:32570/zeabur?charset=utf8mb4'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+def resolve_database_url():
+    """根据环境动态解析数据库配置，Zeabur 默认走 MySQL。"""
+    db_url = os.getenv('DATABASE_URL')
+    if db_url:
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        return db_url
+
+    # Zeabur 绑定的 MySQL 服务会注入这些变量
+    mysql_host = os.getenv('MYSQL_HOST') or os.getenv('DB_HOST')
+    mysql_port = os.getenv('MYSQL_PORT') or os.getenv('DB_PORT') or '3306'
+    mysql_user = os.getenv('MYSQL_USER') or os.getenv('DB_USER')
+    mysql_password = os.getenv('MYSQL_PASSWORD') or os.getenv('DB_PASSWORD')
+    mysql_database = os.getenv('MYSQL_DATABASE') or os.getenv('DB_NAME')
+
+    if all([mysql_host, mysql_user, mysql_password, mysql_database]):
+        encoded_password = quote_plus(mysql_password)
+        return f'mysql+pymysql://{mysql_user}:{encoded_password}@{mysql_host}:{mysql_port}/{mysql_database}?charset=utf8mb4'
+
+    # 回退到本地 sqlite（开发/测试场景）
+    sqlite_path = os.getenv('SQLITE_PATH', 'diary.db')
+    return f'sqlite:///{sqlite_path}'
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = resolve_database_url()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-string')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
@@ -48,8 +65,13 @@ init_extensions(app)
 def ensure_schema_updates():
     """Ensure critical schema patches are applied when migrations haven't run."""
     schema_updates = {
+        'users': {
+            'reset_token': 'VARCHAR(255)',
+            'reset_token_expires': 'DATETIME'
+        },
         'emotion_diaries': {
-            'trigger_event': 'TEXT'
+            'trigger_event': 'TEXT',
+            'images': 'JSON'
         },
         'emotion_analysis': {
             'analysis_payload': 'JSON'
@@ -60,6 +82,8 @@ def ensure_schema_updates():
         with app.app_context():
             inspector = inspect(db.engine)
             existing_tables = set(inspector.get_table_names())
+
+            engine_name = db.engine.url.get_backend_name()
 
             for table_name, columns in schema_updates.items():
                 if table_name not in existing_tables:
@@ -77,8 +101,12 @@ def ensure_schema_updates():
 
                 with db.engine.begin() as connection:
                     for column_name, column_type in missing.items():
+                        column_type_sql = column_type
+                        if column_type.upper() == 'JSON' and engine_name == 'sqlite':
+                            column_type_sql = 'TEXT'
+
                         connection.execute(
-                            text(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}')
+                            text(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type_sql}')
                         )
     except Exception as schema_error:
         app.logger.warning(f"Schema check failed: {schema_error}")
