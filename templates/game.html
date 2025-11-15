@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>情绪管理游戏 - CBT日记</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .game-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+
+        .game-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .game-dashboard {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--card-color-1, #667eea), var(--card-color-2, #764ba2));
+        }
+
+        .stat-card.health::before {
+            --card-color-1: #10b981;
+            --card-color-2: #34d399;
+        }
+
+        .stat-card.stress::before {
+            --card-color-1: #ef4444;
+            --card-color-2: #f87171;
+        }
+
+        .stat-card.energy::before {
+            --card-color-1: #f59e0b;
+            --card-color-2: #fbbf24;
+        }
+
+        .stat-card.income::before {
+            --card-color-1: #fbbf24;
+            --card-color-2: #fde047;
+        }
+
+        .stat-card.mood::before {
+            --card-color-1: #8b5cf6;
+            --card-color-2: #a78bfa;
+        }
+
+        .stat-card.growth::before {
+            --card-color-1: #06b6d4;
+            --card-color-2: #22d3ee;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-progress {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .stat-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--card-color-1, #667eea), var(--card-color-2, #764ba2));
+            transition: width 0.5s ease;
+            border-radius: 4px;
+        }
+
+        .stat-description {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-top: 0.5rem;
+        }
+
+        .income-detail {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        .income-base {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .income-multiplier {
+            font-size: 1.2rem;
+            color: #6b7280;
+        }
+
+        .game-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .game-btn {
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .game-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .game-btn.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .game-btn.outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .no-data-message i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .no-data-message h3 {
+            margin-bottom: 1rem;
+            color: #374151;
+        }
+
+        .emotion-summary {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .emotion-summary h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #92400e;
+        }
+
+        .emotion-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .emotion-tag {
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #92400e;
+            font-weight: 500;
+        }
+
+        .emotion-tag.positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .emotion-tag.negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 1rem;
+            }
+
+            .game-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-actions {
+                flex-direction: column;
+            }
+
+            .game-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1><i class="fas fa-gamepad me-2"></i>情绪管理游戏</h1>
+            <p>通过CBT情绪日记，培养更健康的心理状态</p>
+        </div>
+
+        <div class="game-dashboard" id="gameDashboard">
+            <!-- 数据将由JavaScript动态加载 -->
+            <div class="no-data-message">
+                <i class="fas fa-spinner fa-spin"></i>
+                <h3>正在加载游戏数据...</h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 从sessionStorage获取游戏数值
+        function loadGameData() {
+            const gameValuesStr = sessionStorage.getItem('latest_game_values');
+            const emotionAnalysisStr = sessionStorage.getItem('latest_emotion_analysis');
+            const diaryId = sessionStorage.getItem('latest_diary_id');
+
+            if (!gameValuesStr) {
+                showNoDataMessage();
+                return;
+            }
+
+            const gameValues = JSON.parse(gameValuesStr);
+            const emotionAnalysis = emotionAnalysisStr ? JSON.parse(emotionAnalysisStr) : null;
+
+            displayGameDashboard(gameValues, emotionAnalysis, diaryId);
+        }
+
+        function displayGameDashboard(gameValues, emotionAnalysis, diaryId) {
+            const dashboard = document.getElementById('gameDashboard');
+
+            // 计算总收入
+            const totalIncome = Math.round(gameValues.daily_income_base * gameValues.income_multiplier);
+
+            let html = '';
+
+            // 情绪总结（如果有）
+            if (emotionAnalysis) {
+                html += `
+                <div class="emotion-summary">
+                    <h3><i class="fas fa-heart me-2"></i>情绪分析</h3>
+                    <div class="emotion-tags">
+                        <span class="emotion-tag">
+                            <i class="fas fa-face-smile me-1"></i>
+                            主要情绪: ${emotionAnalysis.primary_emotion || '未知'}
+                        </span>
+                        ${emotionAnalysis.positive_emotions && emotionAnalysis.positive_emotions.length > 0 ?
+                            emotionAnalysis.positive_emotions.map(e =>
+                                `<span class="emotion-tag positive">${e}</span>`
+                            ).join('') : ''}
+                        ${emotionAnalysis.negative_emotions && emotionAnalysis.negative_emotions.length > 0 ?
+                            emotionAnalysis.negative_emotions.map(e =>
+                                `<span class="emotion-tag negative">${e}</span>`
+                            ).join('') : ''}
+                    </div>
+                </div>
+                `;
+            }
+
+            // 数值卡片
+            html += `
+            <div class="stats-grid">
+                <!-- 心理健康 -->
+                <div class="stat-card health">
+                    <div class="stat-icon">💚</div>
+                    <div class="stat-label">心理健康指数</div>
+                    <div class="stat-value">${gameValues.mental_health_score}</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: ${gameValues.mental_health_score}%; --card-color-1: #10b981; --card-color-2: #34d399;"></div>
+                    </div>
+                    <div class="stat-description">
+                        ${gameValues.mental_health_score >= 80 ? '状态良好，继续保持！' :
+                          gameValues.mental_health_score >= 60 ? '状态一般，加油！' : '需要关注，建议多写日记'}
+                    </div>
+                </div>
+
+                <!-- 压力值 -->
+                <div class="stat-card stress">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-label">压力值</div>
+                    <div class="stat-value">${gameValues.stress_level}</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: ${gameValues.stress_level}%; --card-color-1: #ef4444; --card-color-2: #f87171;"></div>
+                    </div>
+                    <div class="stat-description">
+                        ${gameValues.stress_level <= 30 ? '压力很小，状态轻松' :
+                          gameValues.stress_level <= 60 ? '压力中等，注意放松' : '压力较大，建议减压'}
+                    </div>
+                </div>
+
+                <!-- 精力值 -->
+                <div class="stat-card energy">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-label">精力值</div>
+                    <div class="stat-value">${gameValues.energy_level}</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: ${gameValues.energy_level}%; --card-color-1: #f59e0b; --card-color-2: #fbbf24;"></div>
+                    </div>
+                    <div class="stat-description">
+                        ${gameValues.energy_level >= 70 ? '精力充沛！' :
+                          gameValues.energy_level >= 40 ? '精力一般' : '精力不足，需要休息'}
+                    </div>
+                </div>
+
+                <!-- 今日收入 -->
+                <div class="stat-card income">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-label">今日收入</div>
+                    <div class="income-detail">
+                        <div class="stat-value">${totalIncome}</div>
+                        <div class="income-multiplier">金币</div>
+                    </div>
+                    <div class="stat-description">
+                        基础: ${gameValues.daily_income_base} × 倍率: ${gameValues.income_multiplier.toFixed(1)}
+                    </div>
+                </div>
+
+                <!-- 心情加成 -->
+                <div class="stat-card mood">
+                    <div class="stat-icon">${gameValues.mood_bonus >= 0 ? '😊' : '😔'}</div>
+                    <div class="stat-label">心情加成</div>
+                    <div class="stat-value">${gameValues.mood_bonus > 0 ? '+' : ''}${gameValues.mood_bonus}</div>
+                    <div class="stat-description">
+                        ${gameValues.mood_bonus > 0 ? '正面情绪带来加成' :
+                          gameValues.mood_bonus < 0 ? '负面情绪产生减成' : '情绪平衡'}
+                    </div>
+                </div>
+
+                <!-- 成长潜力 -->
+                <div class="stat-card growth">
+                    <div class="stat-icon">🌱</div>
+                    <div class="stat-label">成长潜力</div>
+                    <div class="stat-value">${gameValues.growth_potential}</div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-bar" style="width: ${gameValues.growth_potential}%; --card-color-1: #06b6d4; --card-color-2: #22d3ee;"></div>
+                    </div>
+                    <div class="stat-description">
+                        ${gameValues.growth_potential >= 70 ? '成长空间大！' :
+                          gameValues.growth_potential >= 40 ? '有成长空间' : '稳定状态'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="game-actions">
+                <a href="/diary/new" class="game-btn primary">
+                    <i class="fas fa-pen"></i>
+                    写新日记
+                </a>
+                <a href="/diary" class="game-btn secondary">
+                    <i class="fas fa-book"></i>
+                    查看日记
+                </a>
+                ${diaryId ? `
+                <a href="/diary/${diaryId}" class="game-btn outline">
+                    <i class="fas fa-eye"></i>
+                    查看刚才的日记
+                </a>
+                ` : ''}
+            </div>
+            `;
+
+            dashboard.innerHTML = html;
+
+            // 添加动画效果
+            setTimeout(() => {
+                document.querySelectorAll('.stat-card').forEach((card, index) => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        card.style.transition = 'all 0.5s ease';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 100);
+                });
+            }, 100);
+        }
+
+        function showNoDataMessage() {
+            const dashboard = document.getElementById('gameDashboard');
+            dashboard.innerHTML = `
+                <div class="no-data-message">
+                    <i class="fas fa-inbox"></i>
+                    <h3>还没有游戏数据</h3>
+                    <p>写一篇情绪日记，开始你的情绪管理之旅吧！</p>
+                    <div class="game-actions">
+                        <a href="/diary/new" class="game-btn primary">
+                            <i class="fas fa-pen"></i>
+                            开始写日记
+                        </a>
+                        <a href="/diary" class="game-btn outline">
+                            <i class="fas fa-book"></i>
+                            查看历史日记
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGameData();
+
+            // 同时尝试从sessionStorage读取emotion_analysis
+            const emotionAnalysisStr = sessionStorage.getItem('latest_emotion_analysis');
+            if (emotionAnalysisStr) {
+                console.log('Loaded emotion analysis:', JSON.parse(emotionAnalysisStr));
+            }
+        });
+    </script>
+</body>
+</html>

@@ -271,7 +271,7 @@
             try {
                 const response = await window.apiClient.get('/auth/profile');
                 if (response && response.ok) {
-                    const data = await response.json();
+                    const data = response.data;
                     const user = data.user;
 
                     // 更新页面显示
@@ -292,7 +292,7 @@
             try {
                 const response = await window.apiClient.get('/diary/stats');
                 if (response && response.ok) {
-                    const stats = await response.json();
+                    const stats = response.data;
 
                     // 更新统计数据
                     document.getElementById('totalDiaries').textContent = stats.total_diaries;
@@ -325,7 +325,7 @@
             try {
                 const response = await window.apiClient.get('/diary?limit=5');
                 if (response && response.ok) {
-                    const data = await response.json();
+                    const data = response.data;
                     const diaries = data.diaries;
 
                     const activitiesEl = document.getElementById('recentActivities');

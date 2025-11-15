@@ -18,137 +18,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        .diary-detail {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        .diary-header {
-            border-bottom: 2px solid #f3f4f6;
-            padding-bottom: 1rem;
-            margin-bottom: 2rem;
-        }
-        .diary-content {
-            font-size: 1.1rem;
-            line-height: 1.8;
-            color: #374151;
-            white-space: pre-wrap;
-            margin-bottom: 2rem;
-        }
-        .emotion-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .emotion-tag {
-            display: inline-block;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            color: #92400e;
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .analysis-section {
-            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        .emotion-dimension {
-            background: white;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #3b82f6;
-        }
-        .dimension-label {
-            font-weight: 600;
-            color: #1e40af;
-            margin-bottom: 0.5rem;
-        }
-        .dimension-score {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #3b82f6;
-        }
-        .dimension-bar {
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-            overflow: hidden;
-        }
-        .dimension-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #1e40af);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-        .cbt-insights {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .insight-item {
-            border-left: 4px solid #667eea;
-            padding-left: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .insight-title {
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-        .confidence-meter {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-        .confidence-bar {
-            flex: 1;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .confidence-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981, #059669);
-            border-radius: 4px;
-        }
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-        .pending-analysis {
-            background: #fef3c7;
-            border: 2px solid #f59e0b;
-            border-radius: 1rem;
-            padding: 2rem;
-            text-align: center;
-        }
-        .loading-spinner {
-            display: inline-block;
-            width: 2rem;
-            height: 2rem;
-            border: 3px solid #f3f4f6;
-            border-top: 3px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
 </head>
 <body>
     <!-- 导航栏 -->
@@ -202,6 +71,9 @@
 
     <!-- 主要内容 -->
     <main class="container my-5">
+        <!-- Alert容器 -->
+        <div id="alertContainer" class="mb-3"></div>
+
         <!-- 日记详情 -->
         <div class="diary-detail">
             <div class="diary-header">
@@ -350,7 +222,26 @@
         let diaryId = null;
         let refreshTimer = null;
 
+        // 等待authManager初始化完成
+        function waitForAuthManager() {
+            return new Promise((resolve) => {
+                if (window.authManager && window.apiClient) {
+                    resolve();
+                } else {
+                    const interval = setInterval(() => {
+                        if (window.authManager && window.apiClient) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async function() {
+            // 等待authManager初始化
+            await waitForAuthManager();
+
             // 确保用户已登录
             if (!window.authManager.isAuthenticated()) {
                 window.location.href = '/login';
@@ -372,7 +263,7 @@
             try {
                 const response = await window.apiClient.get(`/diary/${diaryId}`);
                 if (response && response.ok) {
-                    const data = await response.json();
+                    const data = response.data;
                     displayDiary(data.diary);
 
                     // 检查是否有分析结果
@@ -411,6 +302,18 @@
 
             // 显示日记内容
             document.getElementById('diaryContent').textContent = diary.content;
+
+            // 显示图片
+            if (diary.images && diary.images.length > 0) {
+                const imagesHtml = `
+                    <div class="diary-images-gallery mt-3">
+                        ${diary.images.map(img =>
+                            `<img src="${img}" alt="日记图片" class="diary-image-full">`
+                        ).join('')}
+                    </div>
+                `;
+                document.getElementById('diaryContent').insertAdjacentHTML('afterend', imagesHtml);
+            }
         }
 
         function displayAnalysis(analysis) {
@@ -537,7 +440,7 @@
                 try {
                     const response = await window.apiClient.get(`/diary/${diaryId}`);
                     if (response && response.ok) {
-                        const data = await response.json();
+                        const data = response.data;
                         if (data.diary.analysis_status === 'completed' && data.diary.analysis) {
                             displayAnalysis(data.diary.analysis);
                         }

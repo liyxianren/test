@@ -18,95 +18,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        .diary-editor {
-            background: white;
-            border-radius: 1rem;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .emotion-selector {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .emotion-button {
-            background: white;
-            border: 2px solid #f59e0b;
-            border-radius: 2rem;
-            padding: 0.5rem 1rem;
-            margin: 0.25rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .emotion-button:hover {
-            background: #fef3c7;
-            transform: translateY(-2px);
-        }
-        .emotion-button.selected {
-            background: #f59e0b;
-            color: white;
-            border-color: #d97706;
-        }
-        .diary-content {
-            min-height: 300px;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            font-size: 1rem;
-            line-height: 1.6;
-            resize: vertical;
-            transition: border-color 0.3s ease;
-        }
-        .diary-content:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .cbt-prompts {
-            background: #f8fafc;
-            border-left: 4px solid #667eea;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-radius: 0.5rem;
-        }
-        .word-count {
-            text-align: right;
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
-        .auto-save {
-            background: #10b981;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.8rem;
-        }
-        .emotion-intensity {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin: 1rem 0;
-        }
-        .intensity-slider {
-            flex: 1;
-        }
-        .intensity-value {
-            min-width: 60px;
-            text-align: center;
-            font-weight: 600;
-            color: #667eea;
-        }
-    </style>
 </head>
 <body>
     <!-- 导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-heart me-2"></i>心灵守护者
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -153,6 +72,9 @@
 
     <!-- 主要内容 -->
     <main class="container my-5">
+        <!-- Alert容器 -->
+        <div id="alertContainer" class="mb-3"></div>
+
         <div class="diary-editor">
             <!-- 页面标题 -->
             <div class="text-center mb-4">
@@ -218,6 +140,23 @@
                     </div>
                 </div>
 
+                <!-- 图片上传 -->
+                <div class="mb-3">
+                    <label class="form-label">添加图片</label>
+                    <div class="image-upload-section">
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;" multiple>
+                        <button type="button" class="btn btn-outline-primary" id="uploadImageBtn">
+                            <i class="fas fa-image me-2"></i>选择图片
+                        </button>
+                        <span class="text-muted ms-2">支持 JPG, PNG, GIF, WEBP (最大5MB)</span>
+                    </div>
+
+                    <!-- 图片预览区域 -->
+                    <div id="imagePreviewArea" class="image-preview-area mt-3">
+                        <!-- 预览图片将动态加载到这里 -->
+                    </div>
+                </div>
+
                 <!-- 操作按钮 -->
                 <div class="d-flex justify-content-between">
                     <div>
@@ -255,8 +194,28 @@
         let diaryId = null;
         let autoSaveTimer = null;
         let selectedEmotions = new Set();
+        let uploadedImages = [];
+
+        // 等待authManager初始化完成
+        function waitForAuthManager() {
+            return new Promise((resolve) => {
+                if (window.authManager && window.apiClient) {
+                    resolve();
+                } else {
+                    const interval = setInterval(() => {
+                        if (window.authManager && window.apiClient) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', async function() {
+            // 等待authManager初始化
+            await waitForAuthManager();
+
             // 确保用户已登录
             if (!window.authManager.isAuthenticated()) {
                 window.location.href = '/login';
@@ -315,13 +274,21 @@
             document.getElementById('saveDraftBtn').addEventListener('click', function() {
                 saveDiary(false);
             });
+
+            // 图片上传按钮
+            document.getElementById('uploadImageBtn').addEventListener('click', function() {
+                document.getElementById('imageInput').click();
+            });
+
+            // 文件选择
+            document.getElementById('imageInput').addEventListener('change', handleImageSelection);
         }
 
         async function loadDiary(id) {
             try {
                 const response = await window.apiClient.get(`/diary/${id}`);
                 if (response && response.ok) {
-                    const data = await response.json();
+                    const data = response.data;
                     const diary = data.diary;
 
                     // 填充表单
@@ -335,6 +302,19 @@
                             button.classList.add('selected');
                         }
                     });
+
+                    // 加载情绪强度
+                    if (diary.emotion_score && diary.emotion_score.intensity) {
+                        const intensitySlider = document.getElementById('emotionIntensity');
+                        const intensityValue = document.getElementById('intensityValue');
+                        intensitySlider.value = diary.emotion_score.intensity;
+                        intensityValue.textContent = diary.emotion_score.intensity;
+                    }
+
+                    // 加载图片
+                    if (diary.images && diary.images.length > 0) {
+                        loadImages(diary.images);
+                    }
 
                     updateWordCount();
                 } else {
@@ -367,7 +347,8 @@
                     emotion_tags: Array.from(selectedEmotions),
                     emotion_score: {
                         intensity: parseInt(document.getElementById('emotionIntensity').value)
-                    }
+                    },
+                    images: uploadedImages
                 };
 
                 let response;
@@ -423,7 +404,8 @@
                     emotion_tags: Array.from(selectedEmotions),
                     emotion_score: {
                         intensity: parseInt(document.getElementById('emotionIntensity').value)
-                    }
+                    },
+                    images: uploadedImages
                 };
 
                 let response;
@@ -434,7 +416,7 @@
                 }
 
                 if (response && response.ok) {
-                    const data = await response.json();
+                    const data = response.data;
                     if (!diaryId) {
                         diaryId = data.diary.id;
                     }
@@ -458,6 +440,131 @@
             const content = document.getElementById('diaryContent').value;
             const wordCount = content.length;
             document.getElementById('wordCount').textContent = wordCount;
+        }
+
+        // 图片上传相关函数
+        async function handleImageSelection(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            for (let file of files) {
+                await uploadImage(file);
+            }
+
+            // 清空input以便可以重复选择同一文件
+            event.target.value = '';
+        }
+
+        async function uploadImage(file) {
+            // 验证文件大小 (5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                window.showAlert('图片过大，最大支持5MB', 'warning');
+                return;
+            }
+
+            // 验证文件类型
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                window.showAlert('不支持的文件类型', 'warning');
+                return;
+            }
+
+            try {
+                // 显示上传中状态
+                const uploadBtn = document.getElementById('uploadImageBtn');
+                const loadingSpinner = document.createElement('span');
+                loadingSpinner.className = 'image-upload-loading';
+                uploadBtn.appendChild(loadingSpinner);
+                uploadBtn.disabled = true;
+
+                // 准备FormData
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // 上传到服务器
+                const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                const response = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('上传失败');
+                }
+
+                const data = response.data;
+
+                // 添加到上传列表
+                uploadedImages.push(data.image_url);
+
+                // 显示预览
+                addImagePreview(data.image_url);
+
+                window.showAlert('图片上传成功', 'success');
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                window.showAlert('图片上传失败，请重试', 'danger');
+            } finally {
+                // 移除加载状态
+                const uploadBtn = document.getElementById('uploadImageBtn');
+                const loadingSpinner = uploadBtn.querySelector('.image-upload-loading');
+                if (loadingSpinner) {
+                    uploadBtn.removeChild(loadingSpinner);
+                }
+                uploadBtn.disabled = false;
+            }
+        }
+
+        function addImagePreview(imageUrl) {
+            const previewArea = document.getElementById('imagePreviewArea');
+
+            const previewItem = document.createElement('div');
+            previewItem.className = 'image-preview-item';
+            previewItem.dataset.url = imageUrl;
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = '预览图片';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'image-remove-btn';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.onclick = () => removeImage(imageUrl);
+
+            previewItem.appendChild(img);
+            previewItem.appendChild(removeBtn);
+            previewArea.appendChild(previewItem);
+        }
+
+        function removeImage(imageUrl) {
+            // 从列表中移除
+            const index = uploadedImages.indexOf(imageUrl);
+            if (index > -1) {
+                uploadedImages.splice(index, 1);
+            }
+
+            // 移除预览
+            const previewItem = document.querySelector(`.image-preview-item[data-url="${imageUrl}"]`);
+            if (previewItem) {
+                previewItem.remove();
+            }
+        }
+
+        function loadImages(images) {
+            if (!images || images.length === 0) return;
+
+            uploadedImages = [...images];
+            const previewArea = document.getElementById('imagePreviewArea');
+            previewArea.innerHTML = '';
+
+            images.forEach(imageUrl => {
+                addImagePreview(imageUrl);
+            });
         }
     </script>
 </body>

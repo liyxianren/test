@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>写日记 - CBT情绪日记游戏</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/game">CBT游戏</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/stats">数据统计</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <div id="authUser" class="d-flex gap-2 align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="container py-5">
+        <div class="row">
+            <!-- 左侧：步骤式卡片区域 -->
+            <div class="col-lg-6" id="mainContent">
+                <!-- 进度指示器 -->
+                <div class="stepper-progress mb-4">
+                    <div class="step-item active" data-step="1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">识别情绪</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step-item" data-step="2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">触发事件</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step-item" data-step="3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">情绪强度</div>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step-item" data-step="4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">写日记</div>
+                    </div>
+                </div>
+
+                <!-- 步骤1：情绪选择 -->
+                <div class="step-card active" id="step1Card">
+                    <div class="step-card-header">
+                        <div class="character-avatar-small">💭</div>
+                        <h2 class="step-title">你现在的情绪是什么？</h2>
+                        <p class="step-subtitle">可以选择多个情绪哦 ✨</p>
+                    </div>
+                    <div class="step-card-body">
+                        <div class="emotion-grid">
+                            <button class="emotion-btn-game" data-emotion="开心" data-emoji="😊">
+                                <span class="emotion-emoji">😊</span>
+                                <span class="emotion-label">开心</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="平静" data-emoji="😌">
+                                <span class="emotion-emoji">😌</span>
+                                <span class="emotion-label">平静</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="悲伤" data-emoji="😢">
+                                <span class="emotion-emoji">😢</span>
+                                <span class="emotion-label">悲伤</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="愤怒" data-emoji="😡">
+                                <span class="emotion-emoji">😡</span>
+                                <span class="emotion-label">愤怒</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="焦虑" data-emoji="😰">
+                                <span class="emotion-emoji">😰</span>
+                                <span class="emotion-label">焦虑</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="害怕" data-emoji="😨">
+                                <span class="emotion-emoji">😨</span>
+                                <span class="emotion-label">害怕</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="厌恶" data-emoji="😖">
+                                <span class="emotion-emoji">😖</span>
+                                <span class="emotion-label">厌恶</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="惊讶" data-emoji="😲">
+                                <span class="emotion-emoji">😲</span>
+                                <span class="emotion-label">惊讶</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="兴奋" data-emoji="🤩">
+                                <span class="emotion-emoji">🤩</span>
+                                <span class="emotion-label">兴奋</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="沮丧" data-emoji="😔">
+                                <span class="emotion-emoji">😔</span>
+                                <span class="emotion-label">沮丧</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="孤独" data-emoji="😞">
+                                <span class="emotion-emoji">😞</span>
+                                <span class="emotion-label">孤独</span>
+                            </button>
+                            <button class="emotion-btn-game" data-emotion="温暖" data-emoji="🤗">
+                                <span class="emotion-emoji">🤗</span>
+                                <span class="emotion-label">温暖</span>
+                            </button>
+                        </div>
+                        <div class="selected-emotions-preview mt-4" id="selectedEmotionsPreview" style="display: none;">
+                            <div class="preview-label">已选择的情绪：</div>
+                            <div class="preview-tags" id="selectedEmotionTags"></div>
+                        </div>
+                    </div>
+                    <div class="step-card-footer">
+                        <button class="btn btn-primary btn-lg" id="nextStep1" disabled>
+                            下一步
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤2：触发事件 -->
+                <div class="step-card" id="step2Card">
+                    <div class="step-card-header">
+                        <div class="character-avatar-small">🌟</div>
+                        <h2 class="step-title">是什么引发了这种情绪？</h2>
+                        <p class="step-subtitle">描述触发你情绪的事件或想法</p>
+                    </div>
+                    <div class="step-card-body">
+                        <textarea
+                            class="form-control step-textarea"
+                            id="triggerEvent"
+                            rows="6"
+                            placeholder="例如：今天数学考试没考好，我觉得自己很失败..."
+                        ></textarea>
+                        <div class="char-counter mt-2">
+                            <span id="charCount">0</span> 字
+                        </div>
+                        <div class="quick-templates mt-4">
+                            <div class="template-label">💡 快捷选择：</div>
+                            <div class="template-buttons">
+                                <button class="btn btn-sm btn-template" data-template="学业压力：今天的作业太多了，我感觉完成不了...">📚 学业压力</button>
+                                <button class="btn btn-sm btn-template" data-template="人际关系：和朋友发生了一些矛盾...">👥 人际关系</button>
+                                <button class="btn btn-sm btn-template" data-template="家庭问题：父母对我的期望很高，我担心让他们失望...">🏠 家庭问题</button>
+                                <button class="btn btn-sm btn-template" data-template="自我怀疑：我觉得自己不够好...">🤔 自我怀疑</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-card-footer">
+                        <button class="btn btn-outline btn-lg" id="prevStep2">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            上一步
+                        </button>
+                        <button class="btn btn-primary btn-lg" id="nextStep2">
+                            下一步
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤3：情绪强度 -->
+                <div class="step-card" id="step3Card">
+                    <div class="step-card-header">
+                        <div class="character-avatar-small">💫</div>
+                        <h2 class="step-title">你的感受有多强烈？</h2>
+                        <p class="step-subtitle">选择最符合你感受的强度</p>
+                    </div>
+                    <div class="step-card-body">
+                        <div class="emoji-intensity-slider">
+                            <div class="intensity-labels mb-3">
+                                <span class="intensity-min">轻微</span>
+                                <span class="intensity-current" id="intensityLabel">中等</span>
+                                <span class="intensity-max">强烈</span>
+                            </div>
+                            <div class="emoji-track" id="emojiTrack">
+                                <div class="emoji-progress" id="emojiProgress"></div>
+                                <button class="emoji-selector" data-intensity="1" data-label="非常轻微">😊</button>
+                                <button class="emoji-selector" data-intensity="2" data-label="轻微">🙂</button>
+                                <button class="emoji-selector" data-intensity="3" data-label="有一点">😐</button>
+                                <button class="emoji-selector" data-intensity="4" data-label="中等偏弱">😕</button>
+                                <button class="emoji-selector" data-intensity="5" data-label="中等">😟</button>
+                                <button class="emoji-selector" data-intensity="6" data-label="中等偏强">😔</button>
+                                <button class="emoji-selector" data-intensity="7" data-label="比较强烈">😢</button>
+                                <button class="emoji-selector" data-intensity="8" data-label="强烈">😭</button>
+                                <button class="emoji-selector" data-intensity="9" data-label="非常强烈">😰</button>
+                                <button class="emoji-selector" data-intensity="10" data-label="极度强烈">😱</button>
+                            </div>
+                            <div class="intensity-value-display mt-4">
+                                <span class="value-number" id="intensityValue">5</span>
+                                <span class="value-label">/ 10</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-card-footer">
+                        <button class="btn btn-outline btn-lg" id="prevStep3">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            上一步
+                        </button>
+                        <button class="btn btn-primary btn-lg" id="nextStep3">
+                            下一步
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 步骤4：日记编写 -->
+                <div class="step-card" id="step4Card">
+                    <div class="step-card-header compact">
+                        <h2 class="step-title">记录你的故事 📖</h2>
+                        <!-- 已选数据摘要 -->
+                        <div class="diary-summary" id="diarySummary">
+                            <div class="summary-item">
+                                <span class="summary-label">情绪：</span>
+                                <span class="summary-value" id="summaryEmotions"></span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">强度：</span>
+                                <span class="summary-value" id="summaryIntensity"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-card-body">
+                        <textarea
+                            class="form-control diary-textarea"
+                            id="diaryContent"
+                            rows="15"
+                            placeholder="在这里写下你的想法、感受和经历...&#10;&#10;可以试着回答这些问题：&#10;- 发生了什么？&#10;- 你当时在想什么？&#10;- 你的身体有什么感觉？&#10;- 你做了什么？&#10;&#10;放心，这里只有你自己能看到 💖"
+                        ></textarea>
+                        <div class="diary-meta mt-3">
+                            <div class="word-counter">
+                                <i class="fas fa-pen me-2"></i>
+                                <span id="wordCount">0</span> 字
+                            </div>
+                            <div class="image-upload-btn">
+                                <button class="btn btn-sm btn-outline" id="uploadImageBtn">
+                                    <i class="fas fa-image me-2"></i>
+                                    添加图片
+                                </button>
+                                <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+                            </div>
+                        </div>
+                        <div class="image-preview-grid mt-3" id="imagePreviewGrid" style="display: none;"></div>
+                    </div>
+                    <div class="step-card-footer">
+                        <button class="btn btn-outline btn-lg" id="prevStep4">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            上一步
+                        </button>
+                        <button class="btn btn-primary btn-lg pulse-animation" id="saveDiary">
+                            <i class="fas fa-save me-2"></i>
+                            保存日记
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：AI助手侧边栏（桌面端） -->
+            <div class="col-lg-6 d-none d-lg-block" id="aiSidebarDesktop">
+                <div class="ai-assistant-panel" id="aiPanel" style="display: none;">
+                    <div class="ai-panel-header">
+                        <div class="ai-avatar">🤖</div>
+                        <div class="ai-title">
+                            <h4>AI情绪分析助手</h4>
+                            <p class="ai-subtitle">基于CBT认知行为疗法</p>
+                        </div>
+                    </div>
+                    <div class="ai-panel-body" id="aiPanelContent">
+                        <div class="ai-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">分析中...</span>
+                            </div>
+                            <p class="mt-3">AI正在分析你的日记...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 移动端：底部抽屉 -->
+    <div class="ai-drawer-mobile d-lg-none" id="aiDrawerMobile" style="display: none;">
+        <div class="drawer-handle" id="drawerHandle">
+            <div class="handle-bar"></div>
+        </div>
+        <div class="drawer-header">
+            <div class="ai-avatar-small">🤖</div>
+            <h5>AI分析助手</h5>
+            <button class="btn-close-drawer" id="closeDrawer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="drawer-body" id="drawerContent">
+            <div class="ai-loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">分析中...</span>
+                </div>
+                <p class="mt-3">AI正在分析你的日记...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/diary_new.js') }}"></script>
+</body>
+</html>

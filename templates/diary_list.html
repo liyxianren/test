@@ -14,233 +14,222 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <style>
-        .diary-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-        }
-        .diary-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            border-left: 4px solid #667eea;
-        }
-        .diary-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        }
-        .diary-content {
-            line-height: 1.6;
-            color: #374151;
-            margin-bottom: 1rem;
-        }
-        .diary-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-        .emotion-tag {
-            display: inline-block;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            color: #92400e;
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.8rem;
-            margin: 0 0.25rem 0.5rem 0;
-        }
-        .search-filters {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .btn-action {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6b7280;
-        }
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #d1d5db;
-        }
-        .loading-skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 0.5rem;
-            height: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-    </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <!-- 导航栏 - 游戏风格 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-heart me-2"></i>心灵守护者
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
             </a>
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>首页</a>
+                        <a class="nav-link" href="/">首页</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/diary"><i class="fas fa-book me-1"></i>日记</a>
+                        <a class="nav-link active" href="/diary">情绪日记</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/game"><i class="fas fa-gamepad me-1"></i>游戏</a>
+                        <a class="nav-link" href="/game">CBT游戏</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/stats">数据统计</a>
                     </li>
                 </ul>
-
-                <div class="navbar-nav">
+                <div class="d-flex gap-2 align-items-center">
                     <!-- 未登录状态 -->
-                    <div id="auth-guest" class="d-flex">
-                        <a class="nav-link login-link" href="/login">登录</a>
-                        <a class="nav-link register-link" href="/register">注册</a>
+                    <div id="authGuest" class="d-flex gap-2" style="display: none;">
+                        <a href="/login" class="btn btn-outline">登录</a>
+                        <a href="/register" class="btn btn-primary">注册</a>
                     </div>
 
                     <!-- 已登录状态 -->
-                    <div id="auth-user" class="dropdown d-none">
-                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <span id="username">用户</span>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/profile" style="cursor: pointer;"><i class="fas fa-user me-2"></i>个人资料</a></li>
-                            <li><a class="dropdown-item" href="/settings" style="cursor: pointer;"><i class="fas fa-cog me-2"></i>设置</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
-                        </ul>
+                    <div id="authUser" class="d-flex gap-2 align-items-center" style="display: flex;">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- 页面头部 -->
-    <header class="diary-header">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="mb-3">我的情绪日记</h1>
-                    <p class="lead mb-0">记录每一刻的情绪，见证内心的成长</p>
-                </div>
-                <div class="col-md-4 text-md-end">
-                    <a href="/diary/new" class="btn btn-light btn-lg">
-                        <i class="fas fa-plus me-2"></i>写日记
-                    </a>
-                </div>
-            </div>
-        </div>
-    </header>
-
     <!-- 主要内容 -->
-    <main class="container">
-        <!-- 搜索和筛选 -->
-        <section class="search-filters">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label for="searchKeyword" class="form-label">搜索关键词</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="searchKeyword" placeholder="搜索日记内容...">
-                        <button class="btn btn-outline-primary" type="button" id="searchBtn">
-                            <i class="fas fa-search"></i>
-                        </button>
+    <main>
+        <!-- Hero 区域 - 日记主题 -->
+        <section class="diary-hero-section">
+            <!-- 漂浮的装饰元素 -->
+            <div class="floating-emoji" style="top: 15%; left: 8%; animation-delay: 0s;">📖</div>
+            <div class="floating-emoji" style="top: 25%; right: 12%; animation-delay: 0.8s;">✨</div>
+            <div class="floating-emoji" style="top: 60%; left: 10%; animation-delay: 1.5s;">💭</div>
+            <div class="floating-emoji" style="bottom: 25%; right: 15%; animation-delay: 2s;">🌟</div>
+
+            <!-- 彩色泡泡 -->
+            <div class="bubble" style="left: 5%; top: 30%; animation-delay: 0s;"></div>
+            <div class="bubble" style="left: 85%; top: 15%; animation-delay: 3s;"></div>
+            <div class="bubble" style="left: 70%; top: 70%; animation-delay: 6s;"></div>
+
+            <div class="container">
+                <div class="row align-items-center py-5">
+                    <div class="col-lg-8">
+                        <div class="badge-tag mb-3">
+                            <i class="fas fa-book-open me-2"></i>
+                            我的情绪日记本
+                        </div>
+                        <h1 class="diary-hero-title mb-3">
+                            记录每一刻的<br>
+                            <span class="gradient-text">情绪旅程</span>
+                        </h1>
+                        <p class="diary-hero-subtitle mb-4">
+                            📝 每一篇日记，都是成长的足迹<br>
+                            💖 每一次记录，都让你更了解自己
+                        </p>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <a href="/diary/new" class="btn btn-primary btn-lg pulse-animation">
+                                <i class="fas fa-pen-fancy me-2"></i>
+                                写新日记
+                            </a>
+                            <button class="btn btn-secondary btn-lg" id="quickStatsBtn">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                查看统计
+                            </button>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-3 mb-3">
-                    <label for="emotionFilter" class="form-label">情绪标签</label>
-                    <select class="form-select" id="emotionFilter">
-                        <option value="">全部情绪</option>
-                        <!-- 选项将动态加载 -->
-                    </select>
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label for="dateFrom" class="form-label">开始日期</label>
-                    <input type="date" class="form-control" id="dateFrom">
-                </div>
-                <div class="col-md-2 mb-3">
-                    <label for="dateTo" class="form-label">结束日期</label>
-                    <input type="date" class="form-control" id="dateTo">
-                </div>
-                <div class="col-md-1 mb-3">
-                    <label class="form-label">&nbsp;</label>
-                    <button class="btn btn-secondary d-block w-100" type="button" id="clearFiltersBtn">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <div class="col-lg-4">
+                        <!-- 情绪小精灵 -->
+                        <div class="diary-character">
+                            <div class="character-card main-character">
+                                <div class="character-avatar">
+                                    <div class="avatar-circle diary-avatar">
+                                        📖
+                                    </div>
+                                    <div class="character-sparkle sparkle-1">✨</div>
+                                    <div class="character-sparkle sparkle-2">⭐</div>
+                                    <div class="character-sparkle sparkle-3">💫</div>
+                                </div>
+                                <h3 class="character-name">日记小助手</h3>
+                                <p class="character-desc" id="diaryCount">加载中...</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- 日记列表 -->
-        <section id="diaryList">
+        <!-- Alert容器 -->
+        <div class="container">
+            <div id="alertContainer" class="my-3"></div>
+        </div>
+
+        <!-- 搜索筛选区域 -->
+        <section class="container my-4">
+            <div class="search-panel">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="searchKeyword" class="form-label">
+                            <i class="fas fa-search me-2"></i>搜索关键词
+                        </label>
+                        <input type="text" class="form-control" id="searchKeyword" placeholder="搜索日记内容...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="emotionFilter" class="form-label">
+                            <i class="fas fa-heart me-2"></i>情绪标签
+                        </label>
+                        <select class="form-select" id="emotionFilter">
+                            <option value="">全部情绪</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="dateFrom" class="form-label">开始日期</label>
+                        <input type="date" class="form-control" id="dateFrom">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="dateTo" class="form-label">结束日期</label>
+                        <input type="date" class="form-control" id="dateTo">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary w-100" type="button" id="clearFiltersBtn" title="清除筛选">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 日记列表区域 -->
+        <section class="container my-4">
             <!-- 加载状态 -->
-            <div id="loadingState">
-                <div class="diary-card">
+            <div id="loadingState" style="display: block;">
+                <div class="diary-card-game loading-card">
                     <div class="loading-skeleton"></div>
                     <div class="loading-skeleton" style="width: 80%;"></div>
                     <div class="loading-skeleton" style="width: 60%;"></div>
                 </div>
-                <div class="diary-card">
+                <div class="diary-card-game loading-card">
                     <div class="loading-skeleton"></div>
                     <div class="loading-skeleton" style="width: 85%;"></div>
                     <div class="loading-skeleton" style="width: 70%;"></div>
                 </div>
             </div>
 
-            <!-- 日记内容将动态加载 -->
+            <!-- 日记内容 -->
             <div id="diaryContent"></div>
 
             <!-- 空状态 -->
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <i class="fas fa-book-open"></i>
-                <h3>还没有日记</h3>
-                <p>开始写下您的第一篇情绪日记吧！</p>
-                <a href="/diary/new" class="btn btn-primary mt-3">
-                    <i class="fas fa-plus me-2"></i>写第一篇日记
+            <div id="emptyState" class="empty-state-game" style="display: none;">
+                <div class="empty-character">
+                    📝
+                    <div class="character-sparkle sparkle-1">✨</div>
+                    <div class="character-sparkle sparkle-2">⭐</div>
+                    <div class="character-sparkle sparkle-3">💫</div>
+                </div>
+                <h3>还没有日记哦</h3>
+                <p>快来写下你的第一篇情绪日记吧！</p>
+                <a href="/diary/new" class="btn btn-primary btn-lg mt-3 pulse-animation">
+                    <i class="fas fa-pen-fancy me-2"></i>开始写日记
                 </a>
             </div>
-        </section>
 
-        <!-- 分页 -->
-        <nav id="pagination" class="d-flex justify-content-center mt-4" style="display: none;">
-            <ul class="pagination">
-                <!-- 分页按钮将动态生成 -->
-            </ul>
-        </nav>
+            <!-- 分页 -->
+            <nav id="pagination" class="d-flex justify-content-center mt-4" style="display: none !important;">
+                <ul class="pagination pagination-game">
+                    <!-- 分页按钮将动态生成 -->
+                </ul>
+            </nav>
+        </section>
     </main>
 
     <!-- 页脚 -->
-    <footer class="bg-light mt-5 py-4">
+    <footer class="game-footer mt-5 py-4">
         <div class="container text-center">
-            <p class="text-muted mb-0">© 2024 心灵守护者 - 用爱与科学疗愈心灵</p>
+            <h5 class="mb-3">
+                <i class="fas fa-heart-pulse me-2"></i>
+                CBT情绪日记游戏
+            </h5>
+            <p class="text-white-50 mb-2">
+                © 2025 CBT情绪日记游戏. 保留所有权利.
+            </p>
+            <div class="footer-links">
+                <a href="/about">关于我们</a>
+                <a href="/privacy">隐私政策</a>
+                <a href="/terms">使用条款</a>
+            </div>
         </div>
     </footer>
 
@@ -254,7 +243,26 @@
         let currentPage = 1;
         let isLoading = false;
 
+        // 等待authManager初始化完成
+        function waitForAuthManager() {
+            return new Promise((resolve) => {
+                if (window.authManager && window.apiClient) {
+                    resolve();
+                } else {
+                    const interval = setInterval(() => {
+                        if (window.authManager && window.apiClient) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', async function() {
+            // 等待authManager初始化
+            await waitForAuthManager();
+
             // 确保用户已登录
             if (!window.authManager.isAuthenticated()) {
                 window.location.href = '/login';
@@ -269,26 +277,32 @@
         async function initializePage() {
             await loadDiaries();
             await loadEmotionFilters();
+            updateDiaryCount();
         }
 
         function bindEvents() {
             // 搜索按钮
-            document.getElementById('searchBtn').addEventListener('click', performSearch);
-
-            // 清除筛选
-            document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
-
-            // 回车搜索
             document.getElementById('searchKeyword').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     performSearch();
                 }
             });
 
+            // 清除筛选
+            document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+
             // 筛选变化
             document.getElementById('emotionFilter').addEventListener('change', performSearch);
             document.getElementById('dateFrom').addEventListener('change', performSearch);
             document.getElementById('dateTo').addEventListener('change', performSearch);
+
+            // 快速统计按钮
+            const quickStatsBtn = document.getElementById('quickStatsBtn');
+            if (quickStatsBtn) {
+                quickStatsBtn.addEventListener('click', () => {
+                    window.location.href = '/stats';
+                });
+            }
         }
 
         async function loadDiaries(page = 1, searchParams = {}) {
@@ -298,26 +312,37 @@
             showLoadingState();
 
             try {
-                let url = `/diary?page=${page}&limit=10`;
+                // 判断是否有搜索参数
+                const hasSearch = searchParams.keyword || searchParams.emotion_tag ||
+                                 searchParams.date_from || searchParams.date_to;
 
-                // 添加搜索参数
-                if (searchParams.keyword) {
-                    url += `&keyword=${encodeURIComponent(searchParams.keyword)}`;
-                }
-                if (searchParams.emotion_tag) {
-                    url += `&emotion_tag=${encodeURIComponent(searchParams.emotion_tag)}`;
-                }
-                if (searchParams.date_from) {
-                    url += `&date_from=${searchParams.date_from}`;
-                }
-                if (searchParams.date_to) {
-                    url += `&date_to=${searchParams.date_to}`;
+                let url;
+                if (hasSearch) {
+                    // 使用搜索API
+                    url = '/diary/search?';
+                    const params = [];
+                    if (searchParams.keyword) {
+                        params.push(`keyword=${encodeURIComponent(searchParams.keyword)}`);
+                    }
+                    if (searchParams.emotion_tag) {
+                        params.push(`emotion_tag=${encodeURIComponent(searchParams.emotion_tag)}`);
+                    }
+                    if (searchParams.date_from) {
+                        params.push(`date_from=${searchParams.date_from}`);
+                    }
+                    if (searchParams.date_to) {
+                        params.push(`date_to=${searchParams.date_to}`);
+                    }
+                    url += params.join('&');
+                } else {
+                    // 使用普通列表API（支持分页）
+                    url = `/diary?page=${page}&limit=10`;
                 }
 
                 const response = await window.apiClient.get(url);
 
                 if (response && response.ok) {
-                    const data = await response.json();
+                    const data = response.data;
                     displayDiaries(data.diaries);
                     displayPagination(data.pagination);
                     currentPage = page;
@@ -352,29 +377,41 @@
                 const formattedDate = date.toLocaleDateString('zh-CN');
                 const formattedTime = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
 
+                const imagesHtml = (diary.images && diary.images.length > 0)
+                    ? `<div class="diary-images mb-2">
+                        ${diary.images.slice(0, 3).map(img =>
+                            `<img src="${img}" alt="日记图片" class="diary-thumbnail">`
+                        ).join('')}
+                        ${diary.images.length > 3 ? `<span class="more-images">+${diary.images.length - 3}</span>` : ''}
+                    </div>`
+                    : '';
+
                 html += `
-                    <div class="diary-card" data-diary-id="${diary.id}">
-                        <div class="diary-content">
-                            ${diary.content}
-                        </div>
-                        <div class="mb-2">
-                            ${diary.emotion_tags.map(tag => `<span class="emotion-tag">${tag}</span>`).join('')}
-                        </div>
-                        <div class="diary-meta">
-                            <div>
-                                <i class="fas fa-calendar me-1"></i>${formattedDate} ${formattedTime}
+                    <div class="diary-card-game" data-diary-id="${diary.id}">
+                        <div class="diary-card-header">
+                            <div class="diary-date">
+                                <i class="fas fa-calendar me-2"></i>${formattedDate} ${formattedTime}
                             </div>
-                            <div class="btn-group btn-group-sm">
-                                <a href="/diary/${diary.id}" class="btn btn-outline-primary btn-action">
-                                    <i class="fas fa-eye"></i> 查看
+                            <div class="diary-actions">
+                                <a href="/diary/${diary.id}" class="btn-icon" title="查看">
+                                    <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="/diary/${diary.id}/edit" class="btn btn-outline-secondary btn-action">
-                                    <i class="fas fa-edit"></i> 编辑
+                                <a href="/diary/new?id=${diary.id}" class="btn-icon" title="编辑">
+                                    <i class="fas fa-edit"></i>
                                 </a>
-                                <button class="btn btn-outline-danger btn-action" onclick="deleteDiary(${diary.id})">
-                                    <i class="fas fa-trash"></i> 删除
+                                <button class="btn-icon btn-danger" onclick="deleteDiary(${diary.id})" title="删除">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
+                        </div>
+                        <div class="diary-content-preview">
+                            ${diary.content.length > 200 ? diary.content.substring(0, 200) + '...' : diary.content}
+                        </div>
+                        ${imagesHtml}
+                        <div class="diary-tags">
+                            ${diary.emotion_tags.map(tag =>
+                                `<span class="emotion-tag-game">${tag}</span>`
+                            ).join('')}
                         </div>
                     </div>
                 `;
@@ -386,7 +423,7 @@
         function displayPagination(pagination) {
             const paginationEl = document.getElementById('pagination');
 
-            if (pagination.pages <= 1) {
+            if (!pagination || pagination.pages <= 1) {
                 paginationEl.style.display = 'none';
                 return;
             }
@@ -397,7 +434,9 @@
 
             // 上一页
             if (pagination.has_prev) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDiaries(${pagination.page - 1}); return false;">上一页</a></li>`;
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDiaries(${pagination.page - 1}); return false;">
+                    <i class="fas fa-chevron-left"></i>
+                </a></li>`;
             }
 
             // 页码
@@ -411,7 +450,9 @@
 
             // 下一页
             if (pagination.has_next) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDiaries(${pagination.page + 1}); return false;">下一页</a></li>`;
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDiaries(${pagination.page + 1}); return false;">
+                    <i class="fas fa-chevron-right"></i>
+                </a></li>`;
             }
 
             paginationEl.querySelector('.pagination').innerHTML = html;
@@ -421,7 +462,7 @@
             try {
                 const response = await window.apiClient.get('/diary/stats');
                 if (response && response.ok) {
-                    const stats = await response.json();
+                    const stats = response.data;
                     const emotionFilterEl = document.getElementById('emotionFilter');
 
                     let html = '<option value="">全部情绪</option>';
@@ -433,6 +474,21 @@
                 }
             } catch (error) {
                 console.error('Failed to load emotion filters:', error);
+            }
+        }
+
+        async function updateDiaryCount() {
+            try {
+                const response = await window.apiClient.get('/diary/stats');
+                if (response && response.ok) {
+                    const stats = response.data;
+                    const countEl = document.getElementById('diaryCount');
+                    if (countEl) {
+                        countEl.textContent = `已记录 ${stats.total_diaries} 篇日记`;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load diary count:', error);
             }
         }
 
@@ -471,6 +527,7 @@
                 if (response && response.ok) {
                     window.showAlert('日记已删除', 'success');
                     await loadDiaries(currentPage);
+                    updateDiaryCount();
                 } else {
                     throw new Error('Failed to delete diary');
                 }
@@ -493,11 +550,13 @@
         function showErrorState() {
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('diaryContent').innerHTML = `
-                <div class="text-center py-5">
-                    <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                <div class="error-state-game">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">😕</div>
                     <h4>加载失败</h4>
-                    <p class="text-muted">请检查网络连接后重试</p>
-                    <button class="btn btn-primary" onclick="loadDiaries()">重新加载</button>
+                    <p>请检查网络连接后重试</p>
+                    <button class="btn btn-primary" onclick="loadDiaries()">
+                        <i class="fas fa-sync me-2"></i>重新加载
+                    </button>
                 </div>
             `;
         }

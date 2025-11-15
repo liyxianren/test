@@ -14,6 +14,10 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     profile_data = db.Column(db.JSON, default={})
 
+    # 密码重置字段
+    reset_token = db.Column(db.String(255), nullable=True)
+    reset_token_expires = db.Column(db.DateTime, nullable=True)
+
     # 关联
     diaries = db.relationship('EmotionDiary', backref='user', lazy=True, cascade='all, delete-orphan')
     game_state = db.relationship('GameState', backref='user', lazy=True, uselist=False, cascade='all, delete-orphan')
@@ -38,6 +42,8 @@ class EmotionDiary(db.Model):
     content = db.Column(db.Text, nullable=False)
     emotion_tags = db.Column(db.JSON, default=list)
     emotion_score = db.Column(db.JSON, default={})
+    trigger_event = db.Column(db.Text, nullable=True)  # 触发情绪的事件或想法
+    images = db.Column(db.JSON, default=list)  # 图片URL列表
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     analysis_status = db.Column(db.String(20), default='pending')
@@ -53,6 +59,8 @@ class EmotionDiary(db.Model):
             'content': self.content,
             'emotion_tags': self.emotion_tags,
             'emotion_score': self.emotion_score,
+            'trigger_event': self.trigger_event,
+            'images': self.images if self.images else [],
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat(),
             'analysis_status': self.analysis_status
@@ -71,6 +79,7 @@ class EmotionAnalysis(db.Model):
     confidence_score = db.Column(db.Float)
     analyzed_at = db.Column(db.DateTime, default=datetime.utcnow)
     ai_model_version = db.Column(db.String(50))
+    analysis_payload = db.Column(db.JSON, default={})
 
     def to_dict(self):
         return {
@@ -82,7 +91,8 @@ class EmotionAnalysis(db.Model):
             'key_words': self.key_words,
             'confidence_score': self.confidence_score,
             'analyzed_at': self.analyzed_at.isoformat(),
-            'ai_model_version': self.ai_model_version
+            'ai_model_version': self.ai_model_version,
+            'analysis_payload': self.analysis_payload or {}
         }
 
 class GameState(db.Model):

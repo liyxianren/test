@@ -24,7 +24,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-heart-pulse"></i>
+                <span class="navbar-logo-emoji">💖</span>
                 CBT情绪日记游戏
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -47,13 +47,13 @@
                 </ul>
                 <div class="d-flex gap-2 align-items-center">
                     <!-- 未登录状态 -->
-                    <div id="authGuest">
+                    <div id="authGuest" class="d-flex gap-2" style="display: flex;">
                         <a href="/login" class="btn btn-outline">登录</a>
                         <a href="/register" class="btn btn-primary">注册</a>
                     </div>
 
                     <!-- 已登录状态 -->
-                    <div id="authUser" class="d-flex gap-2 align-items-center" style="display: none;">
+                    <div id="authUser" class="d-flex gap-2 align-items-center" style="display: none !important;">
                         <div class="dropdown">
                             <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle me-1"></i>
@@ -74,37 +74,105 @@
 
     <!-- 主要内容 -->
     <main>
-        <!-- Hero 区域 -->
+        <!-- Hero 区域 - 情绪日记游戏风格 -->
         <section class="hero-section">
-            <div class="emotion-decoration" style="top: 10%; left: 5%;"></div>
-            <div class="emotion-decoration" style="top: 70%; right: 10%;"></div>
-            <div class="emotion-decoration" style="bottom: 20%; left: 15%;"></div>
+            <!-- 漂浮的装饰元素 -->
+            <div class="floating-emoji" style="top: 10%; left: 5%; animation-delay: 0s;">😊</div>
+            <div class="floating-emoji" style="top: 20%; right: 10%; animation-delay: 0.5s;">💖</div>
+            <div class="floating-emoji" style="top: 60%; left: 15%; animation-delay: 1s;">✨</div>
+            <div class="floating-emoji" style="bottom: 30%; right: 20%; animation-delay: 1.5s;">🎮</div>
+            <div class="floating-emoji" style="bottom: 15%; left: 25%; animation-delay: 2s;">🌈</div>
+            <div class="floating-emoji" style="top: 40%; right: 8%; animation-delay: 2.5s;">🎨</div>
+
+            <!-- 彩色泡泡背景 -->
+            <div class="bubble" style="left: 10%; top: 20%; animation-delay: 0s;"></div>
+            <div class="bubble" style="left: 80%; top: 10%; animation-delay: 2s;"></div>
+            <div class="bubble" style="left: 50%; top: 50%; animation-delay: 4s;"></div>
+            <div class="bubble" style="left: 20%; top: 70%; animation-delay: 6s;"></div>
+            <div class="bubble" style="left: 70%; top: 60%; animation-delay: 8s;"></div>
 
             <div class="container">
-                <div class="row align-items-center min-vh-100">
+                <div class="row align-items-center" style="min-height: 90vh; padding: 4rem 0;">
                     <div class="col-lg-6 hero-content animate-fade-in-up">
-                        <h1 class="hero-title">
-                            用爱与科学<br>
-                            <span style="color: #fbbf24;">疗愈心灵</span>
+                        <div class="badge-tag mb-3">
+                            <i class="fas fa-gamepad me-2"></i>
+                            情绪管理 × 游戏冒险
+                        </div>
+                        <h1 class="hero-title mb-4">
+                            开启你的<br>
+                            <span class="gradient-text">情绪冒险之旅</span>
                         </h1>
-                        <p class="hero-subtitle">
-                            基于认知行为疗法(CBT)的情绪日记游戏，帮助您理解情绪模式，
-                            培养积极思维，重建内心平衡
+                        <p class="hero-subtitle mb-4">
+                            🎮 在游戏中记录情绪，在冒险中学习CBT<br>
+                            💖 遇见情绪小精灵，培养积极思维习惯<br>
+                            ✨ 每一次记录，都是一次成长
                         </p>
+                        <div class="hero-stats mb-4">
+                            <div class="stat-item">
+                                <div class="stat-number">1000+</div>
+                                <div class="stat-label">用户加入</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">5000+</div>
+                                <div class="stat-label">情绪记录</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">98%</div>
+                                <div class="stat-label">好评率</div>
+                            </div>
+                        </div>
                         <div class="d-flex gap-3 flex-wrap">
-                            <a href="/register" class="btn btn-light btn-lg">
-                                <i class="fas fa-rocket"></i>
-                                开始疗愈之旅
+                            <a href="javascript:void(0);" id="startAdventureBtn" class="btn btn-primary btn-lg pulse-animation">
+                                <i class="fas fa-rocket me-2"></i>
+                                开始冒险
                             </a>
-                            <a href="#features" class="btn btn-outline-light btn-lg">
-                                <i class="fas fa-play-circle"></i>
+                            <a href="#features" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-play-circle me-2"></i>
                                 了解更多
                             </a>
                         </div>
                     </div>
                     <div class="col-lg-6">
-                        <div class="text-center animate-float">
-                            <i class="fas fa-brain" style="font-size: 12rem; color: rgba(255,255,255,0.3);"></i>
+                        <!-- 情绪角色展示 -->
+                        <div class="character-showcase">
+                            <div class="character-card main-character">
+                                <div class="character-avatar">
+                                    <div class="avatar-circle">
+                                        <i class="fas fa-heart" style="font-size: 4rem; color: #FF6B9D;"></i>
+                                    </div>
+                                    <div class="character-sparkle sparkle-1">✨</div>
+                                    <div class="character-sparkle sparkle-2">⭐</div>
+                                    <div class="character-sparkle sparkle-3">💫</div>
+                                </div>
+                                <h3 class="character-name">情绪小精灵</h3>
+                                <p class="character-desc">你的情绪管理伙伴</p>
+                            </div>
+
+                            <!-- 周围的小角色 -->
+                            <div class="mini-character" style="top: 10%; left: 5%;">
+                                😊
+                                <div class="character-tooltip">开心</div>
+                            </div>
+                            <div class="mini-character" style="top: 15%; right: 10%;">
+                                😢
+                                <div class="character-tooltip">难过</div>
+                            </div>
+                            <div class="mini-character" style="bottom: 20%; left: 10%;">
+                                😡
+                                <div class="character-tooltip">愤怒</div>
+                            </div>
+                            <div class="mini-character" style="bottom: 25%; right: 15%;">
+                                😰
+                                <div class="character-tooltip">焦虑</div>
+                            </div>
+                            <div class="mini-character" style="top: 50%; left: 0;">
+                                🤗
+                                <div class="character-tooltip">平静</div>
+                            </div>
+                            <div class="mini-character" style="top: 50%; right: 0;">
+                                😌
+                                <div class="character-tooltip">放松</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -127,7 +195,7 @@
                     <div class="col-md-4">
                         <div class="feature-card animate-fade-in-up">
                             <div class="feature-icon">
-                                <i class="fas fa-book-heart"></i>
+                                📖
                             </div>
                             <h3 class="feature-title">情绪记录</h3>
                             <p class="feature-description">
@@ -145,7 +213,7 @@
                     <div class="col-md-4">
                         <div class="feature-card animate-fade-in-up" style="animation-delay: 0.2s;">
                             <div class="feature-icon">
-                                <i class="fas fa-gamepad"></i>
+                                🎮
                             </div>
                             <h3 class="feature-title">CBT游戏</h3>
                             <p class="feature-description">
@@ -163,7 +231,7 @@
                     <div class="col-md-4">
                         <div class="feature-card animate-fade-in-up" style="animation-delay: 0.4s;">
                             <div class="feature-icon">
-                                <i class="fas fa-chart-line"></i>
+                                📊
                             </div>
                             <h3 class="feature-title">数据洞察</h3>
                             <p class="feature-description">
@@ -336,22 +404,22 @@
             if (token && userData) {
                 try {
                     const user = JSON.parse(userData);
-                    // 已登录状态
-                    authGuest.style.display = 'none';
-                    authUser.style.display = 'flex';
+                    // 已登录状态 - 隐藏未登录按钮，显示用户菜单
+                    authGuest.style.setProperty('display', 'none', 'important');
+                    authUser.style.setProperty('display', 'flex', 'important');
                     if (usernameElement) {
                         usernameElement.textContent = user.username;
                     }
                 } catch (error) {
                     console.error('Failed to parse user data:', error);
                     // 数据解析失败，显示未登录状态
-                    authGuest.style.display = 'flex';
-                    authUser.style.display = 'none';
+                    authGuest.style.setProperty('display', 'flex', 'important');
+                    authUser.style.setProperty('display', 'none', 'important');
                 }
             } else {
-                // 未登录状态
-                authGuest.style.display = 'flex';
-                authUser.style.display = 'none';
+                // 未登录状态 - 显示登录注册按钮，隐藏用户菜单
+                authGuest.style.setProperty('display', 'flex', 'important');
+                authUser.style.setProperty('display', 'none', 'important');
             }
         }
 
@@ -392,6 +460,21 @@
             const logoutBtn = document.getElementById('logoutBtn');
             if (logoutBtn) {
                 logoutBtn.addEventListener('click', logout);
+            }
+
+            // 绑定"开始冒险"按钮 - 根据登录状态跳转
+            const startAdventureBtn = document.getElementById('startAdventureBtn');
+            if (startAdventureBtn) {
+                startAdventureBtn.addEventListener('click', function() {
+                    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                    if (token) {
+                        // 已登录，跳转到日记页面
+                        window.location.href = '/diary';
+                    } else {
+                        // 未登录，跳转到注册页面
+                        window.location.href = '/register';
+                    }
+                });
             }
         });
 

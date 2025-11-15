@@ -2,7 +2,8 @@ from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from models import User, db
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
 
 bp = Blueprint('auth', __name__)
 
@@ -13,10 +14,12 @@ def register():
         data = request.get_json()
 
         # 验证必填字段
-        required_fields = ['username', 'email', 'password']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({'error': f'{field} is required'}), 400
+        if not data.get('username'):
+            return jsonify({'error': '用户名不能为空'}), 400
+        if not data.get('email'):
+            return jsonify({'error': '邮箱不能为空'}), 400
+        if not data.get('password'):
+            return jsonify({'error': '密码不能为空'}), 400
 
         username = data['username'].strip()
         email = data['email'].strip().lower()
@@ -24,17 +27,17 @@ def register():
 
         # 验证输入格式
         if len(username) < 3 or len(username) > 50:
-            return jsonify({'error': 'Username must be between 3 and 50 characters'}), 400
+            return jsonify({'error': '用户名长度必须在3-50个字符之间'}), 400
 
         if len(password) < 6:
-            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+            return jsonify({'error': '密码长度至少6个字符'}), 400
 
         # 检查用户名和邮箱是否已存在
         if User.query.filter_by(username=username).first():
-            return jsonify({'error': 'Username already exists'}), 409
+            return jsonify({'error': '用户名已存在'}), 409
 
         if User.query.filter_by(email=email).first():
-            return jsonify({'error': 'Email already exists'}), 409
+            return jsonify({'error': '邮箱已被注册'}), 409
 
         # 创建新用户
         password_hash = generate_password_hash(password)
@@ -52,14 +55,14 @@ def register():
         access_token = create_access_token(identity=str(new_user.id))
 
         return jsonify({
-            'message': 'User registered successfully',
+            'message': '注册成功',
             'access_token': access_token,
             'user': new_user.to_dict()
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Registration failed: {str(e)}'}), 500
+        return jsonify({'error': f'注册失败: {str(e)}'}), 500
 
 @bp.route('/login', methods=['POST'])
 def login():
@@ -69,7 +72,7 @@ def login():
 
         # 验证必填字段
         if not data.get('username') or not data.get('password'):
-            return jsonify({'error': 'Username and password are required'}), 400
+            return jsonify({'error': '用户名和密码不能为空'}), 400
 
         username = data['username'].strip()
         password = data['password']
@@ -80,10 +83,10 @@ def login():
         ).first()
 
         if not user or not check_password_hash(user.password_hash, password):
-            return jsonify({'error': 'Invalid username or password'}), 401
+            return jsonify({'error': '用户名或密码错误'}), 401
 
         if not user.is_active:
-            return jsonify({'error': 'Account is deactivated'}), 403
+            return jsonify({'error': '账户已被停用'}), 403
 
         # 更新最后活跃时间
         user.updated_at = datetime.utcnow()
@@ -93,13 +96,13 @@ def login():
         access_token = create_access_token(identity=str(user.id))
 
         return jsonify({
-            'message': 'Login successful',
+            'message': '登录成功',
             'access_token': access_token,
             'user': user.to_dict()
         }), 200
 
     except Exception as e:
-        return jsonify({'error': f'Login failed: {str(e)}'}), 500
+        return jsonify({'error': f'登录失败: {str(e)}'}), 500
 
 @bp.route('/profile', methods=['GET'])
 @jwt_required()
@@ -190,3 +193,73 @@ def change_password():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to change password: {str(e)}'}), 500
+
+@bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    """忘记密码 - 生成重置令牌"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+
+        if not email:
+            return jsonify({'error': '邮箱不能为空'}), 400
+
+        user = User.query.filter_by(email=email.strip().lower()).first()
+
+        if not user:
+            return jsonify({'error': '该邮箱未注册'}), 404
+
+        # 生成重置令牌
+        reset_token = secrets.token_urlsafe(32)
+        user.reset_token = reset_token
+        user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)  # 1小时有效期
+        db.session.commit()
+
+        # 在实际生产环境中，这里应该发送邮件
+        # 现在直接返回令牌用于测试
+        return jsonify({
+            'message': '密码重置令牌已生成',
+            'reset_token': reset_token,  # 生产环境应该通过邮件发送
+            'expires_in': '1小时'
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'生成重置令牌失败: {str(e)}'}), 500
+
+@bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    """重置密码"""
+    try:
+        data = request.get_json()
+        reset_token = data.get('reset_token')
+        new_password = data.get('new_password')
+
+        if not reset_token or not new_password:
+            return jsonify({'error': '重置令牌和新密码不能为空'}), 400
+
+        if len(new_password) < 6:
+            return jsonify({'error': '密码长度至少6个字符'}), 400
+
+        # 查找用户
+        user = User.query.filter_by(reset_token=reset_token).first()
+
+        if not user:
+            return jsonify({'error': '无效的重置令牌'}), 400
+
+        # 检查令牌是否过期
+        if user.reset_token_expires < datetime.utcnow():
+            return jsonify({'error': '重置令牌已过期'}), 400
+
+        # 重置密码
+        user.password_hash = generate_password_hash(new_password)
+        user.reset_token = None
+        user.reset_token_expires = None
+        user.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({'message': '密码重置成功'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'密码重置失败: {str(e)}'}), 500

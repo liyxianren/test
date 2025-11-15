@@ -20,8 +20,13 @@ def get_diaries():
         # 查询用户的日记
         query = EmotionDiary.query.filter_by(user_id=user_id).order_by(EmotionDiary.created_at.desc())
 
-        # 分页
-        diaries = query.paginate(page=page, per_page=limit, error_out=False)
+        # Flask-SQLAlchemy 3.x 需要通过 db.paginate 获取分页结果
+        diaries = db.paginate(
+            query,
+            page=page,
+            per_page=limit,
+            error_out=False
+        )
 
         return jsonify({
             'diaries': [diary.to_dict() for diary in diaries.items],
@@ -75,13 +80,18 @@ def create_diary():
 
         content = data['content'].strip()
         emotion_tags = data.get('emotion_tags', [])
+        emotion_score = data.get('emotion_score', {})
+        trigger_event = data.get('trigger_event', '').strip() if data.get('trigger_event') else None
+        images = data.get('images', [])
 
         # 创建新日记
         new_diary = EmotionDiary(
             user_id=user_id,
             content=content,
             emotion_tags=emotion_tags,
-            emotion_score={}
+            emotion_score=emotion_score,
+            trigger_event=trigger_event,
+            images=images
         )
 
         db.session.add(new_diary)
@@ -145,6 +155,19 @@ def update_diary(diary_id):
         # 更新情绪标签
         if 'emotion_tags' in data:
             diary.emotion_tags = data['emotion_tags']
+
+        # 更新情绪强度
+        if 'emotion_score' in data:
+            diary.emotion_score = data['emotion_score']
+
+        # 更新触发事件
+        if 'trigger_event' in data:
+            trigger_event = data['trigger_event'].strip() if data['trigger_event'] else None
+            diary.trigger_event = trigger_event
+
+        # 更新图片
+        if 'images' in data:
+            diary.images = data['images']
 
         # 重置分析状态
         diary.analysis_status = 'pending'
@@ -213,11 +236,17 @@ def get_diary_stats():
                     emotion_stats[tag] = 0
                 emotion_stats[tag] += 1
 
+        user = db.session.get(User, user_id)
+        weeks_since_signup = 1
+        if user and user.created_at:
+            days_since_signup = max(1, (datetime.utcnow() - user.created_at).days)
+            weeks_since_signup = max(1, days_since_signup / 7)
+
         return jsonify({
             'total_diaries': total_diaries,
             'recent_diaries': recent_diaries,
             'emotion_stats': emotion_stats,
-            'avg_diaries_per_week': round(total_diaries / max(1, (datetime.utcnow() - User.query.get(user_id).created_at).days / 7), 2)
+            'avg_diaries_per_week': round(total_diaries / weeks_since_signup, 2)
         }), 200
 
     except Exception as e:
@@ -272,3 +301,71 @@ def search_diaries():
 
     except Exception as e:
         return jsonify({'error': f'Failed to search diaries: {str(e)}'}), 500
+
+@bp.route('/<int:diary_id>/ai-analyze', methods=['POST'])
+@jwt_required()
+def analyze_diary_with_ai(diary_id):
+    """使用AI分析日记的CBT内容"""
+    try:
+        user_id = get_jwt_identity()
+        data = request.get_json() or {}
+
+        # 查询日记
+        diary = EmotionDiary.query.filter_by(id=diary_id, user_id=user_id).first()
+
+        if not diary:
+            return jsonify({'error': 'Diary not found'}), 404
+
+        # 导入分析服务
+        try:
+            from routes.analysis import EmotionAnalysisService
+            analysis_service = EmotionAnalysisService()
+        except ImportError:
+            return jsonify({'error': 'Analysis service not available'}), 500
+
+        # 准备分析数据
+        analysis_data = {
+            'content': diary.content,
+            'emotion_tags': data.get('emotions', diary.emotion_tags),
+            'trigger_event': data.get('trigger_event', diary.trigger_event),
+            'intensity': data.get('intensity', diary.emotion_score.get('intensity') if diary.emotion_score else 5)
+        }
+
+        # 调用AI分析（CBT专用prompt）
+        try:
+            analysis_result = analysis_service.analyze_cbt_content(
+                diary_id=diary.id,
+                content=analysis_data['content'],
+                emotions=analysis_data['emotion_tags'],
+                trigger_event=analysis_data['trigger_event'],
+                intensity=analysis_data['intensity']
+            )
+
+            # 更新日记状态
+            diary.analysis_status = 'completed'
+            db.session.commit()
+
+            return jsonify({
+                'message': 'Analysis completed successfully',
+                'analysis': analysis_result
+            }), 200
+
+        except Exception as analysis_error:
+            # AI分析失败，返回友好错误
+            return jsonify({
+                'error': 'AI analysis failed',
+                'message': str(analysis_error),
+                'fallback': {
+                    'overall_emotion': analysis_data['emotion_tags'][0] if analysis_data['emotion_tags'] else '未知',
+                    'emotion_intensity': analysis_data['intensity'] / 10.0,
+                    'suggestions': [
+                        '尝试识别引发这种情绪的具体想法',
+                        '思考这些想法是否有事实依据',
+                        '寻找更平衡的视角看待问题'
+                    ]
+                }
+            }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to analyze diary: {str(e)}'}), 500
