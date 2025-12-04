@@ -63,6 +63,15 @@
 
     // 初始化
     function init() {
+        // 检查登录状态 - 使用与main.js一致的key名称
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        if (!token) {
+            // 未登录，重定向到登录页
+            alert('请先登录后再写日记');
+            window.location.href = '/login?redirect=/diary/new';
+            return;
+        }
+
         bindEventListeners();
         updateAuthUI();
         setDefaultIntensity();
@@ -309,10 +318,12 @@
 
             if (saveResponse.data && saveResponse.data.diary) {
                 state.diaryId = saveResponse.data.diary.id;
-                showMessage('日记保存成功！', 'success');
+                showMessage('日记保存成功！正在跳转到分析结果...', 'success');
 
-                // 2. 调用AI分析
-                await analyzeWithAI(state.diaryId);
+                // 跳转到结果页面
+                setTimeout(() => {
+                    window.location.href = `/diary/${state.diaryId}/result`;
+                }, 1000);
             }
         } catch (error) {
             console.error('保存日记失败:', error);
@@ -329,20 +340,158 @@
         showAIPanel();
 
         try {
-            const response = await apiClient.post(`/diary/${diaryId}/ai-analyze`, {
-                emotions: state.selectedEmotions.map(e => e.name),
-                trigger_event: state.triggerEvent,
-                intensity: state.intensity,
-                content: state.diaryContent
-            });
-
-            if (response.data && response.data.analysis) {
-                displayAIAnalysis(response.data.analysis);
-            }
+            // 使用流式分析
+            await analyzeWithAIStream(diaryId);
         } catch (error) {
             console.error('AI分析失败:', error);
             displayAIError();
         }
+    }
+
+    async function analyzeWithAIStream(diaryId) {
+        // 准备请求数据
+        const requestData = {
+            emotions: state.selectedEmotions.map(e => e.name),
+            trigger_event: state.triggerEvent,
+            intensity: state.intensity,
+            content: state.diaryContent
+        };
+
+        // 显示加载状态
+        displayStreamingStart();
+
+        // 获取token - 使用与main.js一致的key名称
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        if (!token) {
+            console.error('未找到token，请重新登录');
+            throw new Error('未找到认证token，请重新登录');
+        }
+
+        console.log('[流式分析] 发送请求，token长度:', token.length);
+
+        // 使用fetch API进行SSE连接
+        const response = await fetch(`/api/diary/${diaryId}/ai-analyze-stream`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let userMessageBuffer = '';
+        let fullAnalysisData = null;
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const jsonStr = line.substring(6);
+                    try {
+                        const event = JSON.parse(jsonStr);
+
+                        if (event.type === 'user_message_chunk') {
+                            // 流式更新用户消息
+                            userMessageBuffer += event.data;
+                            displayStreamingUserMessage(userMessageBuffer);
+                        } else if (event.type === 'game_data') {
+                            // 接收完整游戏数据
+                            fullAnalysisData = event.data;
+                            displayFullAnalysis(fullAnalysisData);
+                        } else if (event.type === 'error') {
+                            console.error('流式分析错误:', event.data);
+                            displayAIError(event.data.message);
+                        } else if (event.type === 'done') {
+                            console.log('流式分析完成');
+                        }
+                    } catch (e) {
+                        console.error('解析SSE数据失败:', e, jsonStr);
+                    }
+                }
+            }
+        }
+    }
+
+    function displayStreamingStart() {
+        // 显示流式分析的加载状态
+        const container = elements.aiPanel || elements.aiDrawerMobile;
+        if (!container) return;
+
+        const contentArea = container.querySelector('.ai-content');
+        if (contentArea) {
+            contentArea.innerHTML = `
+                <div class="streaming-container">
+                    <div class="analysis-section">
+                        <h5><i class="fas fa-comment-dots me-2"></i>AI情绪分析师的话</h5>
+                        <div class="user-message-box">
+                            <div class="streaming-cursor">
+                                <i class="fas fa-spinner fa-spin me-2"></i>正在生成分析...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function displayStreamingUserMessage(message) {
+        // 流式更新用户消息
+        const container = elements.aiPanel || elements.aiDrawerMobile;
+        if (!container) return;
+
+        const messageBox = container.querySelector('.user-message-box');
+        if (messageBox) {
+            // 转义HTML
+            const escapeHtml = (text) => {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+
+            messageBox.innerHTML = `
+                <p style="white-space: pre-wrap; line-height: 1.8;">${escapeHtml(message)}</p>
+                <span class="streaming-cursor">▊</span>
+            `;
+
+            // 自动滚动到底部
+            messageBox.scrollTop = messageBox.scrollHeight;
+        }
+    }
+
+    function displayFullAnalysis(analysisData) {
+        // 移除流式光标，显示完整分析
+        const container = elements.aiPanel || elements.aiDrawerMobile;
+        if (!container) return;
+
+        const cursor = container.querySelector('.streaming-cursor');
+        if (cursor) {
+            cursor.remove();
+        }
+
+        // 保存游戏数值到sessionStorage
+        if (analysisData.game_values) {
+            sessionStorage.setItem('latest_game_values', JSON.stringify(analysisData.game_values));
+            sessionStorage.setItem('latest_diary_id', state.diaryId);
+        }
+
+        if (analysisData.emotion_analysis) {
+            sessionStorage.setItem('latest_emotion_analysis', JSON.stringify(analysisData.emotion_analysis));
+        }
+
+        // 显示完整分析（使用原有的displayAIAnalysis函数）
+        displayAIAnalysis(analysisData);
     }
 
     function showAIPanel() {
@@ -362,6 +511,10 @@
     }
 
     function displayAIAnalysis(analysis) {
+        // 调试：打印完整的user_message
+        console.log('[调试] user_message完整内容:', analysis.user_message);
+        console.log('[调试] user_message长度:', analysis.user_message ? analysis.user_message.length : 0);
+
         // 保存游戏数值到sessionStorage，供游戏页面使用
         if (analysis.game_values) {
             sessionStorage.setItem('latest_game_values', JSON.stringify(analysis.game_values));
@@ -373,13 +526,20 @@
             sessionStorage.setItem('latest_emotion_analysis', JSON.stringify(analysis.emotion_analysis));
         }
 
+        // 安全地转义HTML，避免模板字符串问题
+        const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
         const html = `
             <div class="ai-analysis-result">
                 ${analysis.user_message ? `
                 <div class="analysis-section">
                     <h5><i class="fas fa-comment-dots me-2"></i>AI情绪分析师的话</h5>
                     <div class="user-message-box">
-                        <p style="white-space: pre-wrap; line-height: 1.8;">${analysis.user_message}</p>
+                        <p style="white-space: pre-wrap; line-height: 1.8;">${escapeHtml(analysis.user_message)}</p>
                     </div>
                     ${analysis.game_values ? `
                     <div class="game-tip mt-3" style="padding: 1rem; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 10px; border-left: 4px solid #667eea;">

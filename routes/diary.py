@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import EmotionDiary, db, User
+from models import EmotionDiary, db, User, GameState
 from datetime import datetime, timedelta
+import sys
 
 bp = Blueprint('diary', __name__)
 
@@ -84,14 +85,30 @@ def create_diary():
         trigger_event = data.get('trigger_event', '').strip() if data.get('trigger_event') else None
         images = data.get('images', [])
 
-        # 创建新日记
+        # 确保用户有GameState（增量模式初始化）
+        game_state = GameState.query.filter_by(user_id=user_id).first()
+        if not game_state:
+            game_state = GameState(
+                user_id=user_id,
+                mental_health_score=50,
+                stress_level=50,
+                growth_potential=50,
+                coins=0,
+                level=1,
+                total_diaries=0
+            )
+            db.session.add(game_state)
+            db.session.flush()
+
+        # 创建新日记（标记未计分）
         new_diary = EmotionDiary(
             user_id=user_id,
             content=content,
             emotion_tags=emotion_tags,
             emotion_score=emotion_score,
             trigger_event=trigger_event,
-            images=images
+            images=images,
+            score_applied=False
         )
 
         db.session.add(new_diary)
@@ -272,21 +289,28 @@ def search_diaries():
         if keyword:
             query = query.filter(EmotionDiary.content.contains(keyword))
 
-        # 情绪标签筛选
+        # 情绪标签筛选（兼容MySQL和SQLite的JSON查询）
         if emotion_tag:
-            query = query.filter(EmotionDiary.emotion_tags.contains([emotion_tag]))
+            # 使用LIKE模式匹配JSON数组中的标签
+            query = query.filter(EmotionDiary.emotion_tags.like(f'%"{emotion_tag}"%'))
 
         # 日期范围筛选
         if date_from:
             try:
-                from_date = datetime.fromisoformat(date_from)
+                # 支持 YYYY-MM-DD 或 YYYY-MM-DDTHH:MM:SS 格式
+                from_date = datetime.fromisoformat(date_from.replace('T', ' ').split('.')[0])
                 query = query.filter(EmotionDiary.created_at >= from_date)
             except ValueError:
                 pass
 
         if date_to:
             try:
-                to_date = datetime.fromisoformat(date_to)
+                # 支持 YYYY-MM-DD 或 YYYY-MM-DDTHH:MM:SS 格式
+                to_date_str = date_to.replace('T', ' ').split('.')[0]
+                to_date = datetime.fromisoformat(to_date_str)
+                # 如果只有日期没有时间，则包含整天
+                if len(date_to) <= 10:
+                    to_date = to_date + timedelta(days=1) - timedelta(seconds=1)
                 query = query.filter(EmotionDiary.created_at <= to_date)
             except ValueError:
                 pass
@@ -369,3 +393,130 @@ def analyze_diary_with_ai(diary_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Failed to analyze diary: {str(e)}'}), 500
+
+
+@bp.route('/<int:diary_id>/ai-analyze-stream', methods=['GET', 'POST', 'OPTIONS'])
+def analyze_diary_stream(diary_id):
+    """流式AI分析日记（SSE）"""
+    from flask import Response, stream_with_context
+    from flask_jwt_extended import verify_jwt_in_request
+    import json
+    import traceback
+
+    # 处理OPTIONS请求（CORS预检）
+    if request.method == 'OPTIONS':
+        return '', 200
+
+    try:
+        # 手动验证JWT token（支持URL参数）
+        try:
+            # EventSource不支持header，从URL参数获取token
+            token_from_url = request.args.get('token')
+            if token_from_url:
+                from flask_jwt_extended import decode_token
+                decoded = decode_token(token_from_url)
+                user_id = decoded['sub']
+                print(f"[流式分析] URL token验证成功，用户ID: {user_id}, 日记ID: {diary_id}", file=sys.stderr)
+            else:
+                verify_jwt_in_request()
+                user_id = get_jwt_identity()
+                print(f"[流式分析] JWT验证成功，用户ID: {user_id}, 日记ID: {diary_id}", file=sys.stderr)
+        except Exception as jwt_error:
+            print(f"[流式分析错误] JWT验证失败: {jwt_error}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            return jsonify({'error': 'Unauthorized', 'detail': str(jwt_error)}), 401
+
+        # 尝试获取JSON数据，如果失败则使用空字典
+        try:
+            request_data = request.get_json(force=True, silent=True) or {}
+            print(f"[流式分析] 请求数据: {request_data}", file=sys.stderr)
+        except Exception as e:
+            print(f"[流式分析错误] 解析请求数据失败: {e}", file=sys.stderr)
+            request_data = {}
+    except Exception as e:
+        print(f"[流式分析错误] 初始化失败: {e}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        return jsonify({'error': str(e)}), 500
+
+    def generate():
+        try:
+            # 查询日记
+            diary = EmotionDiary.query.filter_by(id=diary_id, user_id=user_id).first()
+
+            if not diary:
+                yield f"data: {json.dumps({'type': 'error', 'data': {'message': 'Diary not found'}})}\n\n"
+                return
+
+            # 导入分析服务
+            try:
+                from routes.analysis import EmotionAnalysisService
+                analysis_service = EmotionAnalysisService()
+            except ImportError:
+                yield f"data: {json.dumps({'type': 'error', 'data': {'message': 'Analysis service not available'}})}\n\n"
+                return
+
+            # 准备分析数据
+            analysis_data = {
+                'content': diary.content,
+                'emotion_tags': request_data.get('emotions', diary.emotion_tags),
+                'trigger_event': request_data.get('trigger_event', diary.trigger_event),
+                'intensity': request_data.get('intensity', diary.emotion_score.get('intensity') if diary.emotion_score else 5)
+            }
+
+            # 流式调用AI分析
+            full_analysis_data = None
+            for event in analysis_service.analyze_cbt_content_stream(
+                content=analysis_data['content'],
+                emotions=analysis_data['emotion_tags'],
+                trigger_event=analysis_data['trigger_event'],
+                intensity=analysis_data['intensity']
+            ):
+                # 发送SSE事件
+                yield f"data: {json.dumps(event)}\n\n"
+
+                # 如果是游戏数据，保存到变量中用于后续存储
+                if event['type'] == 'game_data':
+                    full_analysis_data = event['data']
+
+            # 保存分析结果到数据库
+            if full_analysis_data:
+                from datetime import datetime
+                analysis_result = {
+                    'user_message': full_analysis_data.get('user_message', ''),
+                    'overall_emotion': full_analysis_data['overall_emotion'],
+                    'emotion_intensity': full_analysis_data['emotion_intensity'],
+                    'cognitive_distortions': full_analysis_data['cognitive_distortions'],
+                    'suggestions': full_analysis_data['suggestions'],
+                    'recommended_game': full_analysis_data['recommended_game'],
+                    'game_values': full_analysis_data['game_values'],
+                    'emotion_analysis': full_analysis_data['emotion_analysis'],
+                    'challenges': full_analysis_data['challenges'],
+                    'recommendations': full_analysis_data['recommendations'],
+                    'ai_model_version': full_analysis_data['ai_model_version'],
+                    'analysis_timestamp': datetime.utcnow().isoformat()
+                }
+
+                # 调用保存方法
+                analysis_service._save_analysis_result(diary_id, analysis_result)
+
+                # 更新日记状态
+                diary.analysis_status = 'completed'
+                db.session.commit()
+
+            # 发送完成事件
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            yield f"data: {json.dumps({'type': 'error', 'data': {'message': str(e)}})}\n\n"
+
+    return Response(
+        stream_with_context(generate()),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',  # 禁用Nginx缓冲
+            'Connection': 'keep-alive'
+        }
+    )

@@ -296,68 +296,70 @@
     </div>
 
     <script>
-        // 从sessionStorage获取游戏数值
-        function loadGameData() {
-            const gameValuesStr = sessionStorage.getItem('latest_game_values');
-            const emotionAnalysisStr = sessionStorage.getItem('latest_emotion_analysis');
-            const diaryId = sessionStorage.getItem('latest_diary_id');
+        // 从API获取游戏数值（不再使用sessionStorage）
+        async function loadGameData() {
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
-            if (!gameValuesStr) {
-                showNoDataMessage();
+            if (!token) {
+                showLoginMessage();
                 return;
             }
 
-            const gameValues = JSON.parse(gameValuesStr);
-            const emotionAnalysis = emotionAnalysisStr ? JSON.parse(emotionAnalysisStr) : null;
+            try {
+                const response = await fetch('/api/game/state', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-            displayGameDashboard(gameValues, emotionAnalysis, diaryId);
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showLoginMessage();
+                        return;
+                    }
+                    throw new Error('加载失败');
+                }
+
+                const data = await response.json();
+                console.log('[游戏页面] 加载游戏数据:', data);
+
+                if (data.success && data.game_state) {
+                    displayGameDashboard(data.game_state);
+                } else {
+                    showNoDataMessage();
+                }
+            } catch (error) {
+                console.error('[游戏页面] 加载失败:', error);
+                showErrorMessage(error.message);
+            }
         }
 
-        function displayGameDashboard(gameValues, emotionAnalysis, diaryId) {
+        function displayGameDashboard(gameState) {
             const dashboard = document.getElementById('gameDashboard');
 
-            // 计算总收入
-            const totalIncome = Math.round(gameValues.daily_income_base * gameValues.income_multiplier);
-
-            let html = '';
-
-            // 情绪总结（如果有）
-            if (emotionAnalysis) {
-                html += `
-                <div class="emotion-summary">
-                    <h3><i class="fas fa-heart me-2"></i>情绪分析</h3>
-                    <div class="emotion-tags">
-                        <span class="emotion-tag">
-                            <i class="fas fa-face-smile me-1"></i>
-                            主要情绪: ${emotionAnalysis.primary_emotion || '未知'}
-                        </span>
-                        ${emotionAnalysis.positive_emotions && emotionAnalysis.positive_emotions.length > 0 ?
-                            emotionAnalysis.positive_emotions.map(e =>
-                                `<span class="emotion-tag positive">${e}</span>`
-                            ).join('') : ''}
-                        ${emotionAnalysis.negative_emotions && emotionAnalysis.negative_emotions.length > 0 ?
-                            emotionAnalysis.negative_emotions.map(e =>
-                                `<span class="emotion-tag negative">${e}</span>`
-                            ).join('') : ''}
-                    </div>
+            let html = `
+            <!-- 用户状态头部 -->
+            <div class="user-status-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; color: white;">
+                <div style="font-size: 48px; margin-bottom: 10px;">⭐ Lv.${gameState.level}</div>
+                <div style="font-size: 24px; margin-bottom: 10px;">💰 ${gameState.coins} 金币</div>
+                <div style="font-size: 14px; opacity: 0.9;">
+                    📖 已写 ${gameState.total_diaries} 篇日记 ·
+                    距离 Lv.${gameState.level + 1} 还需 ${gameState.diaries_to_next_level} 篇
                 </div>
-                `;
-            }
+            </div>
 
-            // 数值卡片
-            html += `
             <div class="stats-grid">
                 <!-- 心理健康 -->
                 <div class="stat-card health">
                     <div class="stat-icon">💚</div>
                     <div class="stat-label">心理健康指数</div>
-                    <div class="stat-value">${gameValues.mental_health_score}</div>
+                    <div class="stat-value">${gameState.mental_health_score}</div>
                     <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${gameValues.mental_health_score}%; --card-color-1: #10b981; --card-color-2: #34d399;"></div>
+                        <div class="stat-progress-bar" style="width: ${gameState.mental_health_score}%; --card-color-1: #10b981; --card-color-2: #34d399;"></div>
                     </div>
                     <div class="stat-description">
-                        ${gameValues.mental_health_score >= 80 ? '状态良好，继续保持！' :
-                          gameValues.mental_health_score >= 60 ? '状态一般，加油！' : '需要关注，建议多写日记'}
+                        ${gameState.mental_health_score >= 80 ? '状态良好，继续保持！' :
+                          gameState.mental_health_score >= 60 ? '状态一般，加油！' : '需要关注，建议多写日记'}
                     </div>
                 </div>
 
@@ -365,51 +367,13 @@
                 <div class="stat-card stress">
                     <div class="stat-icon">📊</div>
                     <div class="stat-label">压力值</div>
-                    <div class="stat-value">${gameValues.stress_level}</div>
+                    <div class="stat-value">${gameState.stress_level}</div>
                     <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${gameValues.stress_level}%; --card-color-1: #ef4444; --card-color-2: #f87171;"></div>
+                        <div class="stat-progress-bar" style="width: ${gameState.stress_level}%; --card-color-1: #ef4444; --card-color-2: #f87171;"></div>
                     </div>
                     <div class="stat-description">
-                        ${gameValues.stress_level <= 30 ? '压力很小，状态轻松' :
-                          gameValues.stress_level <= 60 ? '压力中等，注意放松' : '压力较大，建议减压'}
-                    </div>
-                </div>
-
-                <!-- 精力值 -->
-                <div class="stat-card energy">
-                    <div class="stat-icon">⚡</div>
-                    <div class="stat-label">精力值</div>
-                    <div class="stat-value">${gameValues.energy_level}</div>
-                    <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${gameValues.energy_level}%; --card-color-1: #f59e0b; --card-color-2: #fbbf24;"></div>
-                    </div>
-                    <div class="stat-description">
-                        ${gameValues.energy_level >= 70 ? '精力充沛！' :
-                          gameValues.energy_level >= 40 ? '精力一般' : '精力不足，需要休息'}
-                    </div>
-                </div>
-
-                <!-- 今日收入 -->
-                <div class="stat-card income">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-label">今日收入</div>
-                    <div class="income-detail">
-                        <div class="stat-value">${totalIncome}</div>
-                        <div class="income-multiplier">金币</div>
-                    </div>
-                    <div class="stat-description">
-                        基础: ${gameValues.daily_income_base} × 倍率: ${gameValues.income_multiplier.toFixed(1)}
-                    </div>
-                </div>
-
-                <!-- 心情加成 -->
-                <div class="stat-card mood">
-                    <div class="stat-icon">${gameValues.mood_bonus >= 0 ? '😊' : '😔'}</div>
-                    <div class="stat-label">心情加成</div>
-                    <div class="stat-value">${gameValues.mood_bonus > 0 ? '+' : ''}${gameValues.mood_bonus}</div>
-                    <div class="stat-description">
-                        ${gameValues.mood_bonus > 0 ? '正面情绪带来加成' :
-                          gameValues.mood_bonus < 0 ? '负面情绪产生减成' : '情绪平衡'}
+                        ${gameState.stress_level <= 30 ? '压力很小，状态轻松' :
+                          gameState.stress_level <= 60 ? '压力中等，注意放松' : '压力较大，建议减压'}
                     </div>
                 </div>
 
@@ -417,15 +381,26 @@
                 <div class="stat-card growth">
                     <div class="stat-icon">🌱</div>
                     <div class="stat-label">成长潜力</div>
-                    <div class="stat-value">${gameValues.growth_potential}</div>
+                    <div class="stat-value">${gameState.growth_potential}</div>
                     <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${gameValues.growth_potential}%; --card-color-1: #06b6d4; --card-color-2: #22d3ee;"></div>
+                        <div class="stat-progress-bar" style="width: ${gameState.growth_potential}%; --card-color-1: #06b6d4; --card-color-2: #22d3ee;"></div>
                     </div>
                     <div class="stat-description">
-                        ${gameValues.growth_potential >= 70 ? '成长空间大！' :
-                          gameValues.growth_potential >= 40 ? '有成长空间' : '稳定状态'}
+                        ${gameState.growth_potential >= 70 ? '成长空间大！' :
+                          gameState.growth_potential >= 40 ? '有成长空间' : '稳定状态'}
                     </div>
                 </div>
+            </div>
+
+            <!-- 游戏提示 -->
+            <div class="game-tips" style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-top: 20px;">
+                <h4 style="margin-bottom: 15px;"><i class="fas fa-lightbulb me-2 text-warning"></i>游戏提示</h4>
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>每次写日记都会获得 <strong>15-50 金币</strong> 奖励</li>
+                    <li>正面情绪日记可以 <strong>提升心理健康值</strong>，降低压力</li>
+                    <li>负面情绪日记也会获得奖励，鼓励记录真实情绪</li>
+                    <li>每写 <strong>10 篇日记</strong> 升一级，解锁更多功能</li>
+                </ul>
             </div>
 
             <!-- 操作按钮 -->
@@ -438,12 +413,10 @@
                     <i class="fas fa-book"></i>
                     查看日记
                 </a>
-                ${diaryId ? `
-                <a href="/diary/${diaryId}" class="game-btn outline">
-                    <i class="fas fa-eye"></i>
-                    查看刚才的日记
+                <a href="/stats" class="game-btn outline">
+                    <i class="fas fa-chart-line"></i>
+                    数据统计
                 </a>
-                ` : ''}
             </div>
             `;
 
@@ -484,15 +457,47 @@
             `;
         }
 
+        function showLoginMessage() {
+            const dashboard = document.getElementById('gameDashboard');
+            dashboard.innerHTML = `
+                <div class="no-data-message">
+                    <i class="fas fa-user-lock"></i>
+                    <h3>请先登录</h3>
+                    <p>登录后即可查看你的游戏数据</p>
+                    <div class="game-actions">
+                        <a href="/login?redirect=/game" class="game-btn primary">
+                            <i class="fas fa-sign-in-alt"></i>
+                            登录
+                        </a>
+                        <a href="/register" class="game-btn outline">
+                            <i class="fas fa-user-plus"></i>
+                            注册
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showErrorMessage(message) {
+            const dashboard = document.getElementById('gameDashboard');
+            dashboard.innerHTML = `
+                <div class="no-data-message">
+                    <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+                    <h3>加载失败</h3>
+                    <p>${message}</p>
+                    <div class="game-actions">
+                        <button onclick="loadGameData()" class="game-btn primary">
+                            <i class="fas fa-redo"></i>
+                            重试
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
         // 页面加载时执行
         document.addEventListener('DOMContentLoaded', () => {
             loadGameData();
-
-            // 同时尝试从sessionStorage读取emotion_analysis
-            const emotionAnalysisStr = sessionStorage.getItem('latest_emotion_analysis');
-            if (emotionAnalysisStr) {
-                console.log('Loaded emotion analysis:', JSON.parse(emotionAnalysisStr));
-            }
         });
     </script>
 </body>

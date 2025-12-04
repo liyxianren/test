@@ -37,7 +37,10 @@
                         <a class="nav-link active" href="/diary">情绪日记</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/game">CBT游戏</a>
+                        <a class="nav-link" href="/game/home">🦊 小橘的家</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/stats">数据统计</a>
@@ -45,13 +48,13 @@
                 </ul>
                 <div class="d-flex gap-2 align-items-center">
                     <!-- 未登录状态 -->
-                    <div id="authGuest" class="d-flex gap-2" style="display: none;">
+                    <div id="authGuest" class="d-flex gap-2">
                         <a href="/login" class="btn btn-outline">登录</a>
                         <a href="/register" class="btn btn-primary">注册</a>
                     </div>
 
                     <!-- 已登录状态 -->
-                    <div id="authUser" class="d-flex gap-2 align-items-center" style="display: flex;">
+                    <div id="authUser" class="d-flex gap-2 align-items-center d-none">
                         <div class="dropdown">
                             <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle me-1"></i>
@@ -163,9 +166,10 @@
                         <label for="dateTo" class="form-label">结束日期</label>
                         <input type="date" class="form-control" id="dateTo">
                     </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button class="btn btn-outline-secondary w-100" type="button" id="clearFiltersBtn" title="清除筛选">
-                            <i class="fas fa-times"></i>
+                    <div class="col-md-1 d-flex flex-column align-items-center">
+                        <label class="form-label text-muted" style="font-size: 0.75rem;">清除</label>
+                        <button class="btn btn-outline-secondary w-100" type="button" id="clearFiltersBtn" title="清除所有筛选条件">
+                            <i class="fas fa-undo"></i>
                         </button>
                     </div>
                 </div>
@@ -318,8 +322,7 @@
 
                 let url;
                 if (hasSearch) {
-                    // 使用搜索API
-                    url = '/diary/search?';
+                    // 使用搜索API（注意：apiClient会自动加/api前缀）
                     const params = [];
                     if (searchParams.keyword) {
                         params.push(`keyword=${encodeURIComponent(searchParams.keyword)}`);
@@ -331,9 +334,10 @@
                         params.push(`date_from=${searchParams.date_from}`);
                     }
                     if (searchParams.date_to) {
-                        params.push(`date_to=${searchParams.date_to}`);
+                        // 日期结束需要包含当天全天
+                        params.push(`date_to=${searchParams.date_to}T23:59:59`);
                     }
-                    url += params.join('&');
+                    url = '/diary/search?' + params.join('&');
                 } else {
                     // 使用普通列表API（支持分页）
                     url = `/diary?page=${page}&limit=10`;
@@ -395,9 +399,6 @@
                             <div class="diary-actions">
                                 <a href="/diary/${diary.id}" class="btn-icon" title="查看">
                                     <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="/diary/new?id=${diary.id}" class="btn-icon" title="编辑">
-                                    <i class="fas fa-edit"></i>
                                 </a>
                                 <button class="btn-icon btn-danger" onclick="deleteDiary(${diary.id})" title="删除">
                                     <i class="fas fa-trash"></i>

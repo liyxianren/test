@@ -14,55 +14,559 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* 日记详情页专用样式 */
+        .detail-page {
+            background: linear-gradient(135deg, #fef7ff 0%, #f0f9ff 50%, #fefff0 100%);
+            min-height: 100vh;
+            padding-bottom: 3rem;
+        }
+
+        .detail-header {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .detail-date {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* 内容卡片通用样式 */
+        .detail-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detail-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-pink), var(--primary-purple));
+        }
+
+        .detail-card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.25rem;
+        }
+
+        .detail-card-title i {
+            color: var(--primary-purple);
+        }
+
+        /* 第一部分：用户输入 */
+        .user-input-section .emotion-tags-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .emotion-tag-badge {
+            background: linear-gradient(135deg, var(--primary-pink), var(--primary-purple));
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .intensity-display {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #fef7ff, #f0f9ff);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .intensity-emoji {
+            font-size: 2.5rem;
+        }
+
+        .intensity-info {
+            flex: 1;
+        }
+
+        .intensity-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        .intensity-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-purple);
+        }
+
+        .intensity-bar-container {
+            flex: 2;
+        }
+
+        .intensity-bar {
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .intensity-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #facc15, #f97316, #ef4444);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .trigger-event-box {
+            background: #fff8e6;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem 1.25rem;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 1rem;
+        }
+
+        .trigger-event-label {
+            font-size: 0.85rem;
+            color: #92400e;
+            margin-bottom: 0.25rem;
+        }
+
+        .trigger-event-text {
+            color: #78350f;
+            font-weight: 500;
+        }
+
+        .diary-content-box {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 12px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-size: 1rem;
+            color: #374151;
+        }
+
+        .diary-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .diary-image-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .diary-image-thumb:hover {
+            transform: scale(1.05);
+        }
+
+        /* 第二部分：AI回复 */
+        .ai-message-box {
+            background: linear-gradient(135deg, #f0fdf4, #ecfeff);
+            border-radius: 16px;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .ai-message-box::before {
+            content: '🤖';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 1.5rem;
+            background: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .ai-message-text {
+            line-height: 1.9;
+            color: #1f2937;
+            font-size: 1rem;
+            white-space: pre-wrap;
+        }
+
+        .highlights-section {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #d1d5db;
+        }
+
+        .highlights-title {
+            font-size: 0.9rem;
+            color: #059669;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .highlight-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .highlight-item i {
+            color: #10b981;
+            margin-top: 0.2rem;
+        }
+
+        /* 第三部分：数值变化 */
+        .score-changes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .score-change-card {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-change-card.positive {
+            border-left: 4px solid #10b981;
+        }
+
+        .score-change-card.negative {
+            border-left: 4px solid #ef4444;
+        }
+
+        .score-change-card.neutral {
+            border-left: 4px solid #6b7280;
+        }
+
+        .score-change-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .score-change-name {
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .score-change-delta {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .score-change-delta.positive {
+            color: #10b981;
+        }
+
+        .score-change-delta.negative {
+            color: #ef4444;
+        }
+
+        .score-change-delta.neutral {
+            color: #6b7280;
+        }
+
+        .score-change-values {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .score-old {
+            color: #9ca3af;
+            text-decoration: line-through;
+        }
+
+        .score-arrow {
+            color: #6b7280;
+        }
+
+        .score-new {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .score-change-reason {
+            font-size: 0.85rem;
+            color: #6b7280;
+            line-height: 1.5;
+            background: white;
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+
+        /* 第四部分：奖励信息 */
+        .rewards-section {
+            background: linear-gradient(135deg, #fef3c7, #fef9c3);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .coins-earned {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .coins-icon {
+            font-size: 2.5rem;
+        }
+
+        .coins-amount {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        .bonus-reason {
+            color: #92400e;
+            font-size: 0.95rem;
+        }
+
+        .level-up-banner {
+            background: linear-gradient(135deg, #a78bfa, #818cf8);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .level-up-banner i {
+            font-size: 1.5rem;
+        }
+
+        /* 第五部分：CBT洞察 */
+        .cbt-section {
+            display: grid;
+            gap: 1.25rem;
+        }
+
+        .cbt-item {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .cbt-item-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cognitive-distortion {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--primary-purple);
+        }
+
+        .distortion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .distortion-type {
+            font-weight: 600;
+            color: #5b21b6;
+        }
+
+        .distortion-severity {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .distortion-desc {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .belief-tag, .thought-tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #3730a3;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin: 0.25rem;
+        }
+
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .recommendation-item:last-child {
+            border-bottom: none;
+        }
+
+        .recommendation-item i {
+            color: var(--primary-purple);
+            margin-top: 0.2rem;
+        }
+
+        /* 加载状态 */
+        .loading-state {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top-color: var(--primary-purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 空状态 */
+        .empty-analysis {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .empty-analysis i {
+            font-size: 3rem;
+            color: #d1d5db;
+            margin-bottom: 1rem;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .detail-header {
+                padding: 1rem 1.25rem;
+            }
+
+            .detail-card {
+                padding: 1.25rem;
+            }
+
+            .intensity-display {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .score-changes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
-<body>
+<body class="detail-page">
     <!-- 导航栏 -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-heart me-2"></i>心灵守护者
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
             </a>
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>首页</a>
+                        <a class="nav-link" href="/">首页</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="/diary"><i class="fas fa-book me-1"></i>日记</a>
+                        <a class="nav-link active" href="/diary">情绪日记</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/game"><i class="fas fa-gamepad me-1"></i>游戏</a>
+                        <a class="nav-link" href="/game/home">🦊 小橘的家</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
                     </li>
                 </ul>
-
-                <div class="navbar-nav">
-                    <!-- 未登录状态 -->
-                    <div id="auth-guest" class="d-flex">
-                        <a class="nav-link login-link" href="/login">登录</a>
-                        <a class="nav-link register-link" href="/register">注册</a>
+                <div class="d-flex gap-2 align-items-center">
+                    <div id="authGuest" class="d-flex gap-2">
+                        <a href="/login" class="btn btn-outline">登录</a>
+                        <a href="/register" class="btn btn-primary">注册</a>
                     </div>
-
-                    <!-- 已登录状态 -->
-                    <div id="auth-user" class="dropdown d-none">
-                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <span id="username">用户</span>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/profile" style="cursor: pointer;"><i class="fas fa-user me-2"></i>个人资料</a></li>
-                            <li><a class="dropdown-item" href="/settings" style="cursor: pointer;"><i class="fas fa-cog me-2"></i>设置</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
-                        </ul>
+                    <div id="authUser" class="d-flex gap-2 align-items-center d-none">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -70,145 +574,212 @@
     </nav>
 
     <!-- 主要内容 -->
-    <main class="container my-5">
+    <main class="container my-4">
         <!-- Alert容器 -->
         <div id="alertContainer" class="mb-3"></div>
 
-        <!-- 日记详情 -->
-        <div class="diary-detail">
-            <div class="diary-header">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h1 id="diaryTitle">日记详情</h1>
-                        <p class="text-muted mb-2">
-                            <i class="fas fa-calendar me-2"></i>
-                            <span id="diaryDate">加载中...</span>
-                        </p>
+        <!-- 加载状态 -->
+        <div id="loadingState" class="detail-card loading-state">
+            <div class="loading-spinner"></div>
+            <p>正在加载日记详情...</p>
+        </div>
+
+        <!-- 日记内容区域 -->
+        <div id="diaryContentArea" style="display: none;">
+            <!-- 顶部操作栏 -->
+            <div class="detail-header">
+                <div class="detail-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="diaryDate">-</span>
+                </div>
+                <div class="detail-actions">
+                    <a href="/diary" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>返回列表
+                    </a>
+                    <button class="btn btn-outline-danger" id="deleteBtn">
+                        <i class="fas fa-trash me-2"></i>删除
+                    </button>
+                </div>
+            </div>
+
+            <!-- 第一部分：用户输入 -->
+            <div class="detail-card user-input-section">
+                <div class="detail-card-title">
+                    <i class="fas fa-pen-fancy"></i>
+                    我的记录
+                </div>
+
+                <!-- 情绪标签 -->
+                <div class="emotion-tags-display" id="emotionTags">
+                    <!-- 动态加载 -->
+                </div>
+
+                <!-- 情绪强度 -->
+                <div class="intensity-display" id="intensityDisplay">
+                    <div class="intensity-emoji" id="intensityEmoji">⚡</div>
+                    <div class="intensity-info">
+                        <div class="intensity-label">情绪强度</div>
+                        <div class="intensity-value"><span id="intensityValue">5</span> / 10</div>
                     </div>
-                    <div class="action-buttons">
-                        <a href="/diary" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>返回
-                        </a>
-                        <a href="#" id="editBtn" class="btn btn-primary">
-                            <i class="fas fa-edit me-2"></i>编辑
-                        </a>
+                    <div class="intensity-bar-container">
+                        <div class="intensity-bar">
+                            <div class="intensity-bar-fill" id="intensityBar" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 触发事件 -->
+                <div class="trigger-event-box" id="triggerEventBox" style="display: none;">
+                    <div class="trigger-event-label">
+                        <i class="fas fa-bolt me-1"></i>触发事件
+                    </div>
+                    <div class="trigger-event-text" id="triggerEvent">-</div>
+                </div>
+
+                <!-- 日记内容 -->
+                <div class="diary-content-box" id="diaryContent">
+                    加载中...
+                </div>
+
+                <!-- 图片展示 -->
+                <div class="diary-images-grid" id="diaryImages" style="display: none;">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+
+            <!-- 第二部分：AI温暖回复 -->
+            <div class="detail-card" id="aiMessageSection" style="display: none;">
+                <div class="detail-card-title">
+                    <i class="fas fa-robot"></i>
+                    AI小助手的话
+                </div>
+
+                <div class="ai-message-box">
+                    <div class="ai-message-text" id="aiMessage">
+                        加载中...
+                    </div>
+
+                    <div class="highlights-section" id="highlightsSection" style="display: none;">
+                        <div class="highlights-title">
+                            <i class="fas fa-star me-1"></i>你的闪光点
+                        </div>
+                        <div id="highlights">
+                            <!-- 动态加载 -->
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 情绪标签 -->
-            <div id="emotionTags" class="emotion-tags">
-                <!-- 情绪标签将动态加载 -->
+            <!-- 第三部分：数值变化 -->
+            <div class="detail-card" id="scoreChangesSection" style="display: none;">
+                <div class="detail-card-title">
+                    <i class="fas fa-chart-line"></i>
+                    属性变化
+                </div>
+
+                <div class="score-changes-grid" id="scoreChanges">
+                    <!-- 动态加载 -->
+                </div>
             </div>
 
-            <!-- 日记内容 -->
-            <div id="diaryContent" class="diary-content">
-                <!-- 日记内容将动态加载 -->
+            <!-- 第四部分：奖励信息 -->
+            <div class="detail-card" id="rewardsSection" style="display: none;">
+                <div class="detail-card-title">
+                    <i class="fas fa-gift"></i>
+                    本次奖励
+                </div>
+
+                <div class="rewards-section">
+                    <div class="coins-earned">
+                        <span class="coins-icon">🪙</span>
+                        <span class="coins-amount">+<span id="coinsEarned">0</span></span>
+                    </div>
+                    <div class="bonus-reason" id="bonusReason">
+                        感谢你记录今天的心情
+                    </div>
+                    <div class="level-up-banner" id="levelUpBanner" style="display: none;">
+                        <i class="fas fa-level-up-alt"></i>
+                        <span>恭喜升级！当前等级：<strong id="newLevel">1</strong></span>
+                    </div>
+                </div>
             </div>
 
-            <!-- 分析状态提示 -->
-            <div id="pendingAnalysis" class="pending-analysis" style="display: none;">
-                <div class="loading-spinner mb-3"></div>
-                <h4>正在分析您的情绪...</h4>
-                <p class="text-muted">AI正在分析您的日记内容，这可能需要几秒钟时间</p>
-                <button class="btn btn-primary mt-3" onclick="refreshAnalysis()">
-                    <i class="fas fa-sync me-2"></i>刷新分析
+            <!-- 第五部分：CBT认知洞察 -->
+            <div class="detail-card" id="cbtSection" style="display: none;">
+                <div class="detail-card-title">
+                    <i class="fas fa-brain"></i>
+                    CBT认知洞察
+                </div>
+
+                <div class="cbt-section">
+                    <!-- 认知扭曲 -->
+                    <div class="cbt-item" id="cognitiveDistortionsSection" style="display: none;">
+                        <div class="cbt-item-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            识别到的认知扭曲
+                        </div>
+                        <div id="cognitiveDistortions">
+                            <!-- 动态加载 -->
+                        </div>
+                    </div>
+
+                    <!-- 核心信念 -->
+                    <div class="cbt-item" id="coreBeliefsSection" style="display: none;">
+                        <div class="cbt-item-title">
+                            <i class="fas fa-heart"></i>
+                            可能的核心信念
+                        </div>
+                        <div id="coreBeliefs">
+                            <!-- 动态加载 -->
+                        </div>
+                    </div>
+
+                    <!-- 自动化思维 -->
+                    <div class="cbt-item" id="autoThoughtsSection" style="display: none;">
+                        <div class="cbt-item-title">
+                            <i class="fas fa-lightbulb"></i>
+                            自动化思维
+                        </div>
+                        <div id="autoThoughts">
+                            <!-- 动态加载 -->
+                        </div>
+                    </div>
+
+                    <!-- CBT建议 -->
+                    <div class="cbt-item" id="recommendationsSection" style="display: none;">
+                        <div class="cbt-item-title">
+                            <i class="fas fa-hand-holding-heart"></i>
+                            实践建议
+                        </div>
+                        <div id="recommendations">
+                            <!-- 动态加载 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 未分析状态 -->
+            <div class="detail-card empty-analysis" id="pendingAnalysis" style="display: none;">
+                <i class="fas fa-hourglass-half"></i>
+                <h4>正在等待AI分析</h4>
+                <p>分析结果将在几秒钟后显示</p>
+                <button class="btn btn-primary mt-2" onclick="loadDiaryDetail()">
+                    <i class="fas fa-sync me-2"></i>刷新
                 </button>
-            </div>
-        </div>
-
-        <!-- AI情绪分析 -->
-        <div id="analysisSection" class="analysis-section" style="display: none;">
-            <h2 class="mb-4">
-                <i class="fas fa-brain me-2"></i>AI情绪分析
-            </h2>
-
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="emotion-dimension">
-                        <div class="dimension-label">主要情绪</div>
-                        <div class="dimension-score" id="overallEmotion">-</div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="emotion-dimension">
-                        <div class="dimension-label">情绪强度</div>
-                        <div class="dimension-score" id="emotionIntensity">-</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    <div class="emotion-dimension">
-                        <div class="dimension-label">情绪维度分析</div>
-                        <div id="emotionDimensions">
-                            <!-- 情绪维度将动态加载 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row mt-3">
-                <div class="col-md-12">
-                    <div class="emotion-dimension">
-                        <div class="dimension-label">关键词提取</div>
-                        <div id="keyWords" class="d-flex flex-wrap gap-2">
-                            <!-- 关键词将动态加载 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="confidence-meter">
-                <span>分析置信度：</span>
-                <div class="confidence-bar">
-                    <div id="confidenceFill" class="confidence-fill" style="width: 0%"></div>
-                </div>
-                <span id="confidenceScore">0%</span>
-            </div>
-        </div>
-
-        <!-- CBT洞察 -->
-        <div id="cbtInsights" class="cbt-insights" style="display: none;">
-            <h2 class="mb-4">
-                <i class="fas fa-lightbulb me-2"></i>CBT认知洞察
-            </h2>
-
-            <div class="insight-item">
-                <div class="insight-title">识别的情绪模式</div>
-                <div id="emotionPatterns">
-                    <!-- 情绪模式将动态加载 -->
-                </div>
-            </div>
-
-            <div class="insight-item">
-                <div class="insight-title">可能的认知偏差</div>
-                <div id="cognitiveBiases">
-                    <!-- 认知偏差将动态加载 -->
-                </div>
-            </div>
-
-            <div class="insight-item">
-                <div class="insight-title">建议的思维重构</div>
-                <div id="reframingSuggestions">
-                    <!-- 思维重构建议将动态加载 -->
-                </div>
-            </div>
-
-            <div class="insight-item">
-                <div class="insight-title">CBT实践建议</div>
-                <div id="cbtSuggestions">
-                    <!-- CBT实践建议将动态加载 -->
-                </div>
             </div>
         </div>
     </main>
 
     <!-- 页脚 -->
-    <footer class="bg-light mt-5 py-4">
+    <footer class="game-footer mt-5 py-4">
         <div class="container text-center">
-            <p class="text-muted mb-0">© 2024 心灵守护者 - 用爱与科学疗愈心灵</p>
+            <h5 class="mb-3">
+                <i class="fas fa-heart-pulse me-2"></i>
+                CBT情绪日记游戏
+            </h5>
+            <p class="text-white-50 mb-2">
+                © 2025 CBT情绪日记游戏. 保留所有权利.
+            </p>
         </div>
     </footer>
 
@@ -218,11 +789,14 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     <script>
-        // 日记详情页面脚本
+        // 日记详情页脚本
         let diaryId = null;
         let refreshTimer = null;
 
-        // 等待authManager初始化完成
+        // 强度对应的emoji
+        const intensityEmojis = ['🌱', '🍃', '💧', '💦', '⚡', '🌊', '🔥', '💥', '🌋', '☄️'];
+
+        // 等待authManager初始化
         function waitForAuthManager() {
             return new Promise((resolve) => {
                 if (window.authManager && window.apiClient) {
@@ -239,10 +813,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // 等待authManager初始化
             await waitForAuthManager();
 
-            // 确保用户已登录
             if (!window.authManager.isAuthenticated()) {
                 window.location.href = '/login';
                 return;
@@ -257,18 +829,24 @@
             } else {
                 window.location.href = '/diary';
             }
+
+            // 绑定删除按钮
+            document.getElementById('deleteBtn').addEventListener('click', deleteDiary);
         });
 
         async function loadDiaryDetail() {
             try {
-                const response = await window.apiClient.get(`/diary/${diaryId}`);
-                if (response && response.ok) {
-                    const data = response.data;
-                    displayDiary(data.diary);
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('diaryContentArea').style.display = 'none';
 
-                    // 检查是否有分析结果
-                    if (data.diary.analysis_status === 'completed' && data.diary.analysis) {
-                        displayAnalysis(data.diary.analysis);
+                const response = await window.apiClient.get(`/diary/${diaryId}`);
+
+                if (response && response.ok) {
+                    const diary = response.data.diary;
+                    displayDiary(diary);
+
+                    if (diary.analysis_status === 'completed' && diary.analysis) {
+                        displayAnalysis(diary.analysis);
                     } else {
                         showPendingAnalysis();
                         startAnalysisRefresh();
@@ -277,162 +855,204 @@
                     throw new Error('Failed to load diary');
                 }
             } catch (error) {
-                console.error('Failed to load diary detail:', error);
+                console.error('Failed to load diary:', error);
                 window.showAlert('加载日记详情失败', 'danger');
+            } finally {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('diaryContentArea').style.display = 'block';
             }
         }
 
         function displayDiary(diary) {
-            // 更新页面标题和日期
+            // 日期
             const date = new Date(diary.created_at);
-            document.getElementById('diaryDate').textContent = date.toLocaleString('zh-CN');
+            document.getElementById('diaryDate').textContent = date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
 
-            // 更新编辑按钮
-            document.getElementById('editBtn').href = `/diary/new?id=${diary.id}`;
-
-            // 显示情绪标签
-            const emotionTagsEl = document.getElementById('emotionTags');
+            // 情绪标签
+            const tagsEl = document.getElementById('emotionTags');
             if (diary.emotion_tags && diary.emotion_tags.length > 0) {
-                emotionTagsEl.innerHTML = diary.emotion_tags.map(tag =>
-                    `<span class="emotion-tag">${tag}</span>`
+                tagsEl.innerHTML = diary.emotion_tags.map(tag =>
+                    `<span class="emotion-tag-badge">${tag}</span>`
                 ).join('');
             } else {
-                emotionTagsEl.innerHTML = '<span class="text-muted">未标记情绪</span>';
+                tagsEl.innerHTML = '<span class="text-muted">未选择情绪标签</span>';
             }
 
-            // 显示日记内容
+            // 情绪强度
+            const intensity = diary.emotion_score?.intensity || 5;
+            document.getElementById('intensityValue').textContent = intensity;
+            document.getElementById('intensityBar').style.width = `${intensity * 10}%`;
+            document.getElementById('intensityEmoji').textContent = intensityEmojis[intensity - 1] || '⚡';
+
+            // 触发事件
+            if (diary.trigger_event) {
+                document.getElementById('triggerEventBox').style.display = 'block';
+                document.getElementById('triggerEvent').textContent = diary.trigger_event;
+            }
+
+            // 日记内容
             document.getElementById('diaryContent').textContent = diary.content;
 
-            // 显示图片
+            // 图片
             if (diary.images && diary.images.length > 0) {
-                const imagesHtml = `
-                    <div class="diary-images-gallery mt-3">
-                        ${diary.images.map(img =>
-                            `<img src="${img}" alt="日记图片" class="diary-image-full">`
-                        ).join('')}
-                    </div>
-                `;
-                document.getElementById('diaryContent').insertAdjacentHTML('afterend', imagesHtml);
+                const imagesEl = document.getElementById('diaryImages');
+                imagesEl.style.display = 'grid';
+                imagesEl.innerHTML = diary.images.map(img =>
+                    `<img src="${img}" alt="日记图片" class="diary-image-thumb" onclick="window.open('${img}', '_blank')">`
+                ).join('');
             }
         }
 
         function displayAnalysis(analysis) {
-            // 隐藏等待分析状态
+            // 隐藏等待状态
             document.getElementById('pendingAnalysis').style.display = 'none';
-
-            // 显示分析结果
-            document.getElementById('analysisSection').style.display = 'block';
-            document.getElementById('cbtInsights').style.display = 'block';
-
-            // 主要情绪
-            if (analysis.overall_emotion) {
-                document.getElementById('overallEmotion').textContent = analysis.overall_emotion;
-            }
-
-            // 情绪强度
-            if (analysis.emotion_intensity) {
-                document.getElementById('emotionIntensity').textContent =
-                    `${analysis.emotion_intensity}/10`;
-            }
-
-            // 情绪维度
-            if (analysis.emotion_dimensions) {
-                const dimensionsEl = document.getElementById('emotionDimensions');
-                let html = '';
-                for (const [dimension, value] of Object.entries(analysis.emotion_dimensions)) {
-                    const percentage = (value * 100).toFixed(0);
-                    html += `
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>${dimension}</span>
-                                <span class="fw-bold">${percentage}%</span>
-                            </div>
-                            <div class="dimension-bar">
-                                <div class="dimension-fill" style="width: ${percentage}%"></div>
-                            </div>
-                        </div>
-                    `;
-                }
-                dimensionsEl.innerHTML = html;
-            }
-
-            // 关键词
-            if (analysis.key_words && analysis.key_words.length > 0) {
-                const keyWordsEl = document.getElementById('keyWords');
-                keyWordsEl.innerHTML = analysis.key_words.map(word =>
-                    `<span class="badge bg-info text-dark me-2">${word}</span>`
-                ).join('');
-            }
-
-            // 置信度
-            if (analysis.confidence_score) {
-                const confidence = (analysis.confidence_score * 100).toFixed(0);
-                document.getElementById('confidenceFill').style.width = `${confidence}%`;
-                document.getElementById('confidenceScore').textContent = `${confidence}%`;
-            }
-
-            // 生成CBT洞察（模拟数据，实际应该来自AI分析）
-            generateCBTInsights(analysis);
 
             // 停止刷新
             if (refreshTimer) {
                 clearInterval(refreshTimer);
                 refreshTimer = null;
             }
+
+            // 获取analysis_payload
+            const payload = analysis.analysis_payload || {};
+
+            // 显示AI消息
+            if (payload.user_message) {
+                document.getElementById('aiMessageSection').style.display = 'block';
+                document.getElementById('aiMessage').textContent = payload.user_message;
+            }
+
+            // 显示亮点
+            if (payload.highlights && payload.highlights.length > 0) {
+                document.getElementById('highlightsSection').style.display = 'block';
+                document.getElementById('highlights').innerHTML = payload.highlights.map(h =>
+                    `<div class="highlight-item">
+                        <i class="fas fa-star"></i>
+                        <span>${h}</span>
+                    </div>`
+                ).join('');
+            }
+
+            // 显示分数变化
+            if (payload.score_changes) {
+                displayScoreChanges(payload.score_changes, payload.reasoning || {});
+            }
+
+            // 显示奖励
+            if (payload.rewards) {
+                displayRewards(payload.rewards);
+            }
+
+            // 显示CBT洞察
+            if (payload.cbt_insights) {
+                displayCBTInsights(payload.cbt_insights);
+            }
         }
 
-        function generateCBTInsights(analysis) {
-            // 识别的情绪模式
-            const patternsEl = document.getElementById('emotionPatterns');
-            patternsEl.innerHTML = `
-                <p class="mb-0">根据您的日记内容，我们识别出以下情绪模式：</p>
-                <ul class="mb-0">
-                    <li>您当前的${analysis.overall_emotion || '情绪'}情绪强度为${Math.round((analysis.emotion_intensity || 0) * 10)}%</li>
-                    <li>这种情绪模式可能与您的认知思维方式有关</li>
-                    <li>建议通过CBT技巧来调整这种思维模式</li>
-                </ul>
-            `;
+        function displayScoreChanges(changes, reasoning) {
+            document.getElementById('scoreChangesSection').style.display = 'block';
 
-            // 可能的认知偏差
-            const biasesEl = document.getElementById('cognitiveBiases');
-            biasesEl.innerHTML = `
-                <p class="mb-0">可能存在的认知偏差：</p>
-                <ul class="mb-0">
-                    <li><strong>过度概括</strong>：基于单一事件得出广泛结论</li>
-                    <li><strong>情绪化推理</strong>：因为感觉某事是真的，就认为它是真的</li>
-                    <li><strong>灾难化思维</strong>：把事情想得过分糟糕</li>
-                </ul>
-            `;
+            const scoreConfig = [
+                { key: 'mental_health_change', reasonKey: 'mental_health_reason', name: '心理健康', icon: 'fa-heart' },
+                { key: 'stress_level_change', reasonKey: 'stress_level_reason', name: '压力水平', icon: 'fa-brain' },
+                { key: 'growth_potential_change', reasonKey: 'growth_potential_reason', name: '成长潜力', icon: 'fa-seedling' }
+            ];
 
-            // 思维重构建议
-            const reframingEl = document.getElementById('reframingSuggestions');
-            reframingEl.innerHTML = `
-                <p class="mb-0">思维重构建议：</p>
-                <ol class="mb-0">
-                    <li>识别触发情绪的具体想法</li>
-                    <li>寻找支持或反驳该想法的证据</li>
-                    <li>考虑更平衡、现实的替代想法</li>
-                    <li>关注可控因素，制定行动计划</li>
-                </ol>
-            `;
+            let html = '';
+            for (const config of scoreConfig) {
+                const change = changes[config.key] || 0;
+                const reason = reasoning[config.reasonKey] || '暂无说明';
+                const statusClass = change > 0 ? 'positive' : (change < 0 ? 'negative' : 'neutral');
+                const deltaText = change > 0 ? `+${change}` : (change < 0 ? `${change}` : '0');
 
-            // CBT实践建议
-            const cbtEl = document.getElementById('cbtSuggestions');
-            cbtEl.innerHTML = `
-                <p class="mb-0">CBT实践建议：</p>
-                <ul class="mb-0">
-                    <li>进行"思维记录"练习，每天记录引发情绪的想法</li>
-                    <li>尝试"证据收集"：寻找支持不同观点的证据</li>
-                    <li>练习"认知重构"：挑战负面思维，寻找替代方案</li>
-                    <li>使用"行为实验"：通过实际行动验证新的思维模式</li>
-                </ul>
-            `;
+                html += `
+                    <div class="score-change-card ${statusClass}">
+                        <div class="score-change-header">
+                            <div class="score-change-name">
+                                <i class="fas ${config.icon}"></i>
+                                ${config.name}
+                            </div>
+                            <div class="score-change-delta ${statusClass}">${deltaText}</div>
+                        </div>
+                        <div class="score-change-reason">${reason}</div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('scoreChanges').innerHTML = html;
+        }
+
+        function displayRewards(rewards) {
+            document.getElementById('rewardsSection').style.display = 'block';
+            document.getElementById('coinsEarned').textContent = rewards.coins_earned || 0;
+
+            if (rewards.bonus_reason) {
+                document.getElementById('bonusReason').textContent = rewards.bonus_reason;
+            }
+
+            if (rewards.level_up && rewards.new_level) {
+                document.getElementById('levelUpBanner').style.display = 'flex';
+                document.getElementById('newLevel').textContent = rewards.new_level;
+            }
+        }
+
+        function displayCBTInsights(insights) {
+            document.getElementById('cbtSection').style.display = 'block';
+
+            // 认知扭曲
+            if (insights.cognitive_distortions && insights.cognitive_distortions.length > 0) {
+                document.getElementById('cognitiveDistortionsSection').style.display = 'block';
+                document.getElementById('cognitiveDistortions').innerHTML = insights.cognitive_distortions.map(d =>
+                    `<div class="cognitive-distortion">
+                        <div class="distortion-header">
+                            <span class="distortion-type">${d.type}</span>
+                            <span class="distortion-severity">程度: ${d.severity}/10</span>
+                        </div>
+                        <div class="distortion-desc">${d.description}</div>
+                    </div>`
+                ).join('');
+            }
+
+            // 核心信念
+            if (insights.core_beliefs && insights.core_beliefs.length > 0) {
+                document.getElementById('coreBeliefsSection').style.display = 'block';
+                document.getElementById('coreBeliefs').innerHTML = insights.core_beliefs.map(b =>
+                    `<span class="belief-tag">${b}</span>`
+                ).join('');
+            }
+
+            // 自动化思维
+            if (insights.automatic_thoughts && insights.automatic_thoughts.length > 0) {
+                document.getElementById('autoThoughtsSection').style.display = 'block';
+                document.getElementById('autoThoughts').innerHTML = insights.automatic_thoughts.map(t =>
+                    `<span class="thought-tag">${t}</span>`
+                ).join('');
+            }
+
+            // 建议
+            if (insights.recommendations && insights.recommendations.length > 0) {
+                document.getElementById('recommendationsSection').style.display = 'block';
+                document.getElementById('recommendations').innerHTML = insights.recommendations.map(r =>
+                    `<div class="recommendation-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>${r}</span>
+                    </div>`
+                ).join('');
+            }
         }
 
         function showPendingAnalysis() {
             document.getElementById('pendingAnalysis').style.display = 'block';
-            document.getElementById('analysisSection').style.display = 'none';
-            document.getElementById('cbtInsights').style.display = 'none';
+            document.getElementById('aiMessageSection').style.display = 'none';
+            document.getElementById('scoreChangesSection').style.display = 'none';
+            document.getElementById('rewardsSection').style.display = 'none';
+            document.getElementById('cbtSection').style.display = 'none';
         }
 
         function startAnalysisRefresh() {
@@ -440,19 +1060,36 @@
                 try {
                     const response = await window.apiClient.get(`/diary/${diaryId}`);
                     if (response && response.ok) {
-                        const data = response.data;
-                        if (data.diary.analysis_status === 'completed' && data.diary.analysis) {
-                            displayAnalysis(data.diary.analysis);
+                        const diary = response.data.diary;
+                        if (diary.analysis_status === 'completed' && diary.analysis) {
+                            displayAnalysis(diary.analysis);
                         }
                     }
                 } catch (error) {
-                    console.error('Failed to refresh analysis:', error);
+                    console.error('Refresh failed:', error);
                 }
-            }, 5000); // 每5秒刷新一次
+            }, 3000);
         }
 
-        function refreshAnalysis() {
-            loadDiaryDetail();
+        async function deleteDiary() {
+            if (!confirm('确定要删除这篇日记吗？此操作不可撤销。')) {
+                return;
+            }
+
+            try {
+                const response = await window.apiClient.delete(`/diary/${diaryId}`);
+                if (response && response.ok) {
+                    window.showAlert('日记已删除', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/diary';
+                    }, 1000);
+                } else {
+                    throw new Error('Delete failed');
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                window.showAlert('删除失败，请重试', 'danger');
+            }
         }
     </script>
 </body>

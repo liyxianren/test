@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from models import User, db
+from models import User, db, GameState
 from datetime import datetime, timedelta
 import secrets
 
@@ -49,6 +49,21 @@ def register():
         )
 
         db.session.add(new_user)
+        db.session.flush()
+
+        # 初始化GameState（增量模式，所有属性从50开始）
+        existing_game_state = GameState.query.filter_by(user_id=new_user.id).first()
+        if not existing_game_state:
+            db.session.add(GameState(
+                user_id=new_user.id,
+                mental_health_score=50,
+                stress_level=50,
+                growth_potential=50,
+                coins=0,
+                level=1,
+                total_diaries=0
+            ))
+
         db.session.commit()
 
         # 创建访问令牌

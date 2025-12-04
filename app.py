@@ -9,8 +9,8 @@ from urllib.parse import quote_plus
 
 # 导入扩展和模型
 from extensions import db, init_extensions
-from models import User, EmotionDiary, EmotionAnalysis, GameState, GameProgress
-from routes import auth_bp, diary_bp, upload_bp
+from models import User, EmotionDiary, EmotionAnalysis, GameState, GameProgress, Postcard
+from routes import auth_bp, diary_bp, upload_bp, analysis_bp, game_bp, postcard_bp
 
 # 加载环境变量
 load_dotenv()
@@ -71,10 +71,35 @@ def ensure_schema_updates():
         },
         'emotion_diaries': {
             'trigger_event': 'TEXT',
-            'images': 'JSON'
+            'images': 'JSON',
+            'score_applied': 'BOOLEAN DEFAULT 0'
         },
         'emotion_analysis': {
             'analysis_payload': 'JSON'
+        },
+        'game_states': {
+            'mental_health_score': 'INTEGER DEFAULT 50',
+            'stress_level': 'INTEGER DEFAULT 50',
+            'growth_potential': 'INTEGER DEFAULT 50',
+            # 新增游戏资源字段
+            'coins': 'INTEGER DEFAULT 0',
+            'level': 'INTEGER DEFAULT 1',
+            'total_diaries': 'INTEGER DEFAULT 0',
+            'created_at': 'DATETIME'
+        },
+        'postcards': {
+            # 明信片表的所有字段（通过db.create_all创建，这里仅做兼容性检查）
+            'image_url': 'VARCHAR(500)',
+            'image_prompt': 'TEXT',
+            'location_name': 'VARCHAR(100)',
+            'message': 'TEXT',
+            'status': 'VARCHAR(20) DEFAULT "pending"',
+            'emotion_tags': 'JSON',
+            'emotion_intensity': 'INTEGER',
+            'mental_health_score': 'INTEGER',
+            'generated_at': 'DATETIME',
+            'is_read': 'BOOLEAN DEFAULT 0',
+            'read_at': 'DATETIME'
         }
     }
 
@@ -102,12 +127,18 @@ def ensure_schema_updates():
                 with db.engine.begin() as connection:
                     for column_name, column_type in missing.items():
                         column_type_sql = column_type
-                        if column_type.upper() == 'JSON' and engine_name == 'sqlite':
+                        col_type_upper = column_type.upper()
+                        if col_type_upper.startswith('BOOLEAN') and engine_name == 'sqlite':
+                            column_type_sql = 'INTEGER DEFAULT 0'
+                        elif col_type_upper == 'JSON' and engine_name == 'sqlite':
                             column_type_sql = 'TEXT'
 
                         connection.execute(
                             text(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type_sql}')
                         )
+                        if table_name == 'emotion_diaries' and column_name == 'score_applied':
+                            # 旧日记默认视为已计分，避免重复影响GameState
+                            connection.execute(text('UPDATE emotion_diaries SET score_applied = 1 WHERE score_applied IS NULL OR score_applied = 0'))
     except Exception as schema_error:
         app.logger.warning(f"Schema check failed: {schema_error}")
 
@@ -118,6 +149,9 @@ ensure_schema_updates()
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(diary_bp, url_prefix='/api/diary')
 app.register_blueprint(upload_bp, url_prefix='/api')
+app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
+app.register_blueprint(game_bp, url_prefix='/api/game')
+app.register_blueprint(postcard_bp, url_prefix='/api/postcard')
 
 # 主页路由
 @app.route('/')
@@ -175,10 +209,38 @@ def diary_edit(diary_id):
     """编辑日记页面"""
     return render_template('diary_edit.html', diary_id=diary_id)
 
+@app.route('/diary/<int:diary_id>/result')
+def diary_result(diary_id):
+    """日记分析结果页面"""
+    return render_template('diary_result.html', diary_id=diary_id)
+
 @app.route('/game')
 def game():
     """游戏数值页面"""
     return render_template('game.html')
+
+@app.route('/postcards')
+def postcards():
+    """明信片列表页面"""
+    return render_template('postcards.html')
+
+@app.route('/postcard/<int:postcard_id>')
+def postcard_detail(postcard_id):
+    """明信片详情页面"""
+    return render_template('postcard_detail.html', postcard_id=postcard_id)
+
+@app.route('/game/home')
+def game_home():
+    """游戏主页面（小橘的家）"""
+    return render_template('game_home.html')
+
+# 静态文件服务：game文件夹
+@app.route('/game/<path:filename>')
+def serve_game_assets(filename):
+    """服务game文件夹中的静态资源"""
+    from flask import send_from_directory
+    game_folder = os.path.join(app.root_path, 'game')
+    return send_from_directory(game_folder, filename)
 
 
 if __name__ == '__main__':

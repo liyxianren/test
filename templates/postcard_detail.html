@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>明信片详情 - CBT日记</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 50%, #feca57 100%);
+        }
+
+        .postcard-detail-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            color: #ff6b6b;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .postcard-frame {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 60px;
+        }
+
+        .postcard-image-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            overflow: hidden;
+        }
+
+        .postcard-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .postcard-image-container .placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8rem;
+            color: #ddd;
+        }
+
+        .postcard-stamp {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: 100px;
+            background: white;
+            border: 3px dashed #ff6b6b;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(5deg);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .postcard-stamp .fox {
+            font-size: 2.5rem;
+        }
+
+        .postcard-stamp .text {
+            font-size: 0.6rem;
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .postcard-body {
+            padding: 2rem;
+            background: #fffef5;
+            background-image:
+                linear-gradient(#e8e8e8 1px, transparent 1px);
+            background-size: 100% 2rem;
+            background-position: 0 1rem;
+        }
+
+        .postcard-location {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #ff6b6b;
+        }
+
+        .postcard-location i {
+            color: #ff6b6b;
+            font-size: 1.5rem;
+        }
+
+        .postcard-location-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            font-family: 'STKaiti', 'KaiTi', serif;
+        }
+
+        .postcard-message {
+            font-size: 1.15rem;
+            line-height: 2;
+            color: #444;
+            font-family: 'STKaiti', 'KaiTi', 'SimSun', serif;
+            white-space: pre-wrap;
+            margin-bottom: 2rem;
+        }
+
+        .postcard-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-top: 1.5rem;
+            border-top: 1px dashed #ddd;
+        }
+
+        .postcard-emotions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .emotion-tag {
+            background: linear-gradient(135deg, #ff9a56, #ff6b6b);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .postcard-date {
+            color: #999;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        .postcard-date .date {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .postcard-date .health {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-btn {
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .action-btn.primary {
+            background: white;
+            color: #ff6b6b;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .action-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: white;
+            margin-top: 100px;
+        }
+
+        .loading-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 20px;
+            margin-top: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .postcard-detail-container {
+                padding: 1rem;
+            }
+
+            .postcard-stamp {
+                width: 60px;
+                height: 75px;
+            }
+
+            .postcard-stamp .fox {
+                font-size: 1.8rem;
+            }
+
+            .postcard-body {
+                padding: 1.5rem;
+            }
+
+            .postcard-message {
+                font-size: 1rem;
+                line-height: 1.8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/postcards" class="back-btn">
+        <i class="fas fa-arrow-left"></i> 返回列表
+    </a>
+
+    <div class="postcard-detail-container">
+        <div id="postcardContent">
+            <div class="loading-state">
+                <i class="fas fa-spinner"></i>
+                <p>正在加载明信片...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 兼容两种token存储方式
+        const token = localStorage.getItem('token') || localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        const postcardId = {{ postcard_id }};
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        async function loadPostcard() {
+            try {
+                const response = await fetch(`/api/postcard/${postcardId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    if (response.status === 404) {
+                        showError('明信片不存在');
+                        return;
+                    }
+                    throw new Error('加载失败');
+                }
+
+                const data = await response.json();
+                renderPostcard(data.postcard, data.diary);
+
+                // 标记为已读
+                if (!data.postcard.is_read) {
+                    markAsRead();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('加载失败，请刷新重试');
+            }
+        }
+
+        function renderPostcard(postcard, diary) {
+            const container = document.getElementById('postcardContent');
+
+            const imageHtml = postcard.image_url ?
+                `<img src="${postcard.image_url}" alt="明信片图片" onerror="this.outerHTML='<div class=\\'placeholder\\'>🦊</div>'">` :
+                `<div class="placeholder">🦊</div>`;
+
+            container.innerHTML = `
+                <div class="postcard-frame">
+                    <div class="postcard-image-container">
+                        ${imageHtml}
+                        <div class="postcard-stamp">
+                            <span class="fox">🦊</span>
+                            <span class="text">小橘邮戳</span>
+                        </div>
+                    </div>
+                    <div class="postcard-body">
+                        <div class="postcard-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span class="postcard-location-text">${postcard.location_name || '神秘之地'}</span>
+                        </div>
+                        <div class="postcard-message">${postcard.message || '小橘正在写信中...'}</div>
+                        <div class="postcard-footer">
+                            <div class="postcard-emotions">
+                                ${(postcard.emotion_tags || []).map(tag =>
+                                    `<span class="emotion-tag">${tag}</span>`
+                                ).join('')}
+                            </div>
+                            <div class="postcard-date">
+                                <span class="date">${formatDate(postcard.created_at)}</span>
+                                ${postcard.mental_health_score ?
+                                    `<span class="health">心理健康 ${postcard.mental_health_score}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    ${diary ? `
+                        <a href="/diary/${diary.id}" class="action-btn primary">
+                            <i class="fas fa-book"></i> 查看日记
+                        </a>
+                    ` : ''}
+                    <a href="/postcards" class="action-btn secondary">
+                        <i class="fas fa-images"></i> 更多明信片
+                    </a>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('postcardContent').innerHTML = `
+                <div class="error-state">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">😿</div>
+                    <h3>${message}</h3>
+                    <a href="/postcards" class="action-btn primary" style="margin-top: 1rem; display: inline-flex;">
+                        返回列表
+                    </a>
+                </div>
+            `;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function markAsRead() {
+            try {
+                await fetch(`/api/postcard/${postcardId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            } catch (e) {
+                // 忽略错误
+            }
+        }
+
+        // 页面加载时获取明信片
+        loadPostcard();
+    </script>
+</body>
+</html>

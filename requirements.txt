@@ -14,3 +14,4 @@ alembic==1.12.1
 gunicorn==21.2.0
 websocket-client==1.6.4
 zai-sdk==0.0.4
+openai>=1.0.0

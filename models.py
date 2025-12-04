@@ -47,6 +47,8 @@ class EmotionDiary(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     analysis_status = db.Column(db.String(20), default='pending')
+    # 计分是否已应用，旧日记缺省时视为已应用，避免重复改分
+    score_applied = db.Column(db.Boolean, default=False)
 
     # 关联
     analysis = db.relationship('EmotionAnalysis', backref='diary', lazy=True, uselist=False, cascade='all, delete-orphan')
@@ -96,32 +98,113 @@ class EmotionAnalysis(db.Model):
         }
 
 class GameState(db.Model):
-    """游戏状态模型"""
+    """
+    游戏状态模型 - 增量模式
+
+    核心属性从50起始，每篇日记可调整±5
+    用于店铺经营游戏的角色属性和资源管理
+    """
     __tablename__ = 'game_states'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    current_level = db.Column(db.Integer, default=1)
-    game_difficulty = db.Column(db.Float, default=1.0)
-    character_stats = db.Column(db.JSON, default={})
-    unlocked_features = db.Column(db.JSON, default={})
-    total_play_time = db.Column(db.Integer, default=0)
+
+    # ===== 核心属性（增量模式，起始50，范围0-100）=====
+    mental_health_score = db.Column(db.Integer, default=50)  # 心理健康值：影响店铺员工效率
+    stress_level = db.Column(db.Integer, default=50)         # 压力水平：影响随机事件概率
+    growth_potential = db.Column(db.Integer, default=50)     # 成长潜力：影响经验获取倍率
+
+    # ===== 游戏资源（累积）=====
+    coins = db.Column(db.Integer, default=0)                 # 金币：游戏货币
+    level = db.Column(db.Integer, default=1)                 # 等级：每10篇日记升1级
+    total_diaries = db.Column(db.Integer, default=0)         # 日记总数：记录写作数量
+
+    # ===== 时间戳 =====
     last_active = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        """返回完整的游戏状态字典"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            # 核心属性
+            'mental_health_score': self.mental_health_score,
+            'stress_level': self.stress_level,
+            'growth_potential': self.growth_potential,
+            # 游戏资源
+            'coins': self.coins,
+            'level': self.level,
+            'total_diaries': self.total_diaries,
+            # 时间戳
+            'last_active': self.last_active.isoformat() if self.last_active else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            # 计算属性
+            'diaries_to_next_level': 10 - (self.total_diaries % 10) if self.total_diaries % 10 != 0 else 10
+        }
+
+class Postcard(db.Model):
+    """
+    明信片模型 - 小狐狸旅行明信片
+
+    每次用户写完日记并分析后，小狐狸会根据情绪状态
+    去不同的地方旅行，并寄回明信片（图片+文字）
+    """
+    __tablename__ = 'postcards'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    diary_id = db.Column(db.Integer, db.ForeignKey('emotion_diaries.id'), nullable=False)
+
+    # 明信片内容
+    image_url = db.Column(db.String(500))           # AI生成的图片URL
+    image_prompt = db.Column(db.Text)               # 生成图片使用的prompt
+    location_name = db.Column(db.String(100))       # 地点名称，如"心灵森林·宁静小径"
+    message = db.Column(db.Text)                    # 小狐狸写给用户的话
+
+    # 生成状态
+    status = db.Column(db.String(20), default='pending')  # pending, generating, completed, failed
+
+    # 关联的情绪数据（冗余存储，方便查询）
+    emotion_tags = db.Column(db.JSON, default=list)
+    emotion_intensity = db.Column(db.Integer)
+    mental_health_score = db.Column(db.Integer)     # 生成时的心理健康值
+
+    # 时间戳
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    generated_at = db.Column(db.DateTime)           # 图片生成完成时间
+
+    # 用户是否已查看
+    is_read = db.Column(db.Boolean, default=False)
+    read_at = db.Column(db.DateTime)
 
     def to_dict(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
-            'current_level': self.current_level,
-            'game_difficulty': self.game_difficulty,
-            'character_stats': self.character_stats,
-            'unlocked_features': self.unlocked_features,
-            'total_play_time': self.total_play_time,
-            'last_active': self.last_active.isoformat()
+            'diary_id': self.diary_id,
+            'image_url': self.image_url,
+            'image_prompt': self.image_prompt,
+            'location_name': self.location_name,
+            'message': self.message,
+            'status': self.status,
+            'emotion_tags': self.emotion_tags or [],
+            'emotion_intensity': self.emotion_intensity,
+            'mental_health_score': self.mental_health_score,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'generated_at': self.generated_at.isoformat() if self.generated_at else None,
+            'is_read': self.is_read,
+            'read_at': self.read_at.isoformat() if self.read_at else None
         }
 
+
 class GameProgress(db.Model):
-    """游戏进度模型"""
+    """
+    游戏进度模型 - [已废弃]
+
+    注意：此表目前未使用，保留供未来CBT四步法游戏化功能使用
+    所有游戏状态现在通过 GameState 模型管理
+    """
     __tablename__ = 'game_progress'
 
     id = db.Column(db.Integer, primary_key=True)

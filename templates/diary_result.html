@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日记分析结果 - CBT情绪日记游戏</title>
+    <meta name="description" content="查看您的情绪日记AI分析结果和游戏数值变化">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .result-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .result-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-purple);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-analysis-content {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            min-height: 100px;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: var(--primary-purple);
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .score-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .score-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .score-value-container {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .score-value {
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .score-change {
+            font-size: 20px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .score-change.positive {
+            color: #4ade80;
+        }
+
+        .score-change.negative {
+            color: #f87171;
+        }
+
+        .score-reason {
+            font-size: 13px;
+            margin-top: 10px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .highlights-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .highlights-list li {
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .highlights-list li::before {
+            content: '⭐';
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            flex: 1;
+            min-width: 180px;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-top-color: var(--primary-purple);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            padding: 20px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 12px;
+            color: #c33;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/game/home">🦊 小橘的家</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/stats">数据统计</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- 已登录状态 -->
+                    <div id="authUser" class="d-flex gap-2 align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="result-container">
+        <!-- 第一部分：AI情绪分析 -->
+        <div class="result-section">
+            <div class="section-title">
+                <i class="fas fa-brain"></i>
+                AI情绪分析
+            </div>
+            <div id="aiAnalysisContent" class="ai-analysis-content">
+                <div class="text-center py-5">
+                    <div class="loading-spinner"></div>
+                    <p class="mt-3 text-muted">正在分析您的情绪日记...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二部分：游戏数值变化 -->
+        <div class="result-section">
+            <div class="section-title">
+                <i class="fas fa-chart-line"></i>
+                游戏数值变化
+            </div>
+
+            <div id="scoresLoading" class="text-center py-5">
+                <div class="loading-spinner"></div>
+                <p class="mt-3 text-muted">正在计算数值变化...</p>
+            </div>
+
+            <div id="scoresContent" class="d-none">
+                <!-- 心理健康值 -->
+                <div class="score-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="score-label">心理健康值</div>
+                    <div class="score-value-container">
+                        <div class="score-value" id="mentalHealthValue">50</div>
+                        <div class="score-change" id="mentalHealthChange">+0</div>
+                    </div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" id="mentalHealthProgress" style="width: 50%"></div>
+                    </div>
+                    <div class="score-reason" id="mentalHealthReason"></div>
+                </div>
+
+                <!-- 压力水平 -->
+                <div class="score-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="score-label">压力水平</div>
+                    <div class="score-value-container">
+                        <div class="score-value" id="stressLevelValue">50</div>
+                        <div class="score-change" id="stressLevelChange">+0</div>
+                    </div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" id="stressLevelProgress" style="width: 50%"></div>
+                    </div>
+                    <div class="score-reason" id="stressLevelReason"></div>
+                </div>
+
+                <!-- 成长潜力 -->
+                <div class="score-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="score-label">成长潜力</div>
+                    <div class="score-value-container">
+                        <div class="score-value" id="growthPotentialValue">50</div>
+                        <div class="score-change" id="growthPotentialChange">+0</div>
+                    </div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" id="growthPotentialProgress" style="width: 50%"></div>
+                    </div>
+                    <div class="score-reason" id="growthPotentialReason"></div>
+                </div>
+
+                <!-- 积极亮点 -->
+                <div id="highlightsSection" class="mt-4 d-none">
+                    <h5 style="color: var(--primary-purple); margin-bottom: 15px;">
+                        <i class="fas fa-star me-2"></i>发现的亮点
+                    </h5>
+                    <ul class="highlights-list" id="highlightsList"></ul>
+                </div>
+            </div>
+
+            <div id="scoresError" class="error-message d-none">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <span id="errorText">加载数值失败，请稍后重试</span>
+            </div>
+        </div>
+
+        <!-- 第三部分：获得奖励 -->
+        <div id="rewardsSection" class="result-section d-none">
+            <div class="section-title">
+                <i class="fas fa-gift"></i>
+                获得奖励
+            </div>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3" style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); border-radius: 12px;">
+                        <div style="font-size: 32px;">💰</div>
+                        <div class="fw-bold fs-4 text-warning" id="coinsEarned">+0</div>
+                        <div class="small text-muted">获得金币</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3" style="background: #f0f0f0; border-radius: 12px;">
+                        <div style="font-size: 32px;">🏦</div>
+                        <div class="fw-bold fs-4" id="totalCoins">0</div>
+                        <div class="small text-muted">总金币</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); border-radius: 12px;">
+                        <div style="font-size: 32px;">⭐</div>
+                        <div class="fw-bold fs-4" id="currentLevel">Lv.1</div>
+                        <div class="small text-muted">当前等级</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-center p-3" style="background: #e8f4f8; border-radius: 12px;">
+                        <div style="font-size: 32px;">📖</div>
+                        <div class="fw-bold fs-4" id="diaryCount">0</div>
+                        <div class="small text-muted">日记数量</div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <small class="text-muted" id="nextLevelProgress">距离下一级还需 10 篇日记</small>
+            </div>
+            <div class="text-center mt-2">
+                <small class="text-success" id="bonusReason"></small>
+            </div>
+        </div>
+
+        <!-- 第四部分：CBT洞察 -->
+        <div id="cbtInsightsSection" class="result-section d-none">
+            <div class="section-title">
+                <i class="fas fa-lightbulb"></i>
+                CBT洞察
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-3"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>识别到的认知模式</h6>
+                    <div id="distortionsList"></div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-3"><i class="fas fa-hand-holding-heart me-2 text-info"></i>建议</h6>
+                    <ul id="recommendationsList" class="list-unstyled"></ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+            <a href="/diary" class="btn btn-outline btn-action">
+                <i class="fas fa-arrow-left me-2"></i>返回情绪日记
+            </a>
+            <a href="/game/home" class="btn btn-primary btn-action">
+                <i class="fas fa-home me-2"></i>小橘的家
+            </a>
+            <a href="/stats" class="btn btn-success btn-action">
+                <i class="fas fa-chart-bar me-2"></i>查看我的数值
+            </a>
+        </div>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Result Page JS -->
+    <script src="{{ url_for('static', filename='js/diary_result.js') }}"></script>
+</body>
+</html>

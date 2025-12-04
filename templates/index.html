@@ -39,7 +39,10 @@
                         <a class="nav-link" href="/diary">情绪日记</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/game">CBT游戏</a>
+                        <a class="nav-link" href="/game/home">🦊 小橘的家</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/stats">数据统计</a>
@@ -47,13 +50,13 @@
                 </ul>
                 <div class="d-flex gap-2 align-items-center">
                     <!-- 未登录状态 -->
-                    <div id="authGuest" class="d-flex gap-2" style="display: flex;">
+                    <div id="authGuest" class="d-flex gap-2">
                         <a href="/login" class="btn btn-outline">登录</a>
                         <a href="/register" class="btn btn-primary">注册</a>
                     </div>
 
                     <!-- 已登录状态 -->
-                    <div id="authUser" class="d-flex gap-2 align-items-center" style="display: none !important;">
+                    <div id="authUser" class="d-flex gap-2 align-items-center d-none">
                         <div class="dropdown">
                             <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
                                 <i class="fas fa-user-circle me-1"></i>
@@ -405,21 +408,21 @@
                 try {
                     const user = JSON.parse(userData);
                     // 已登录状态 - 隐藏未登录按钮，显示用户菜单
-                    authGuest.style.setProperty('display', 'none', 'important');
-                    authUser.style.setProperty('display', 'flex', 'important');
+                    authGuest.classList.add('d-none');
+                    authUser.classList.remove('d-none');
                     if (usernameElement) {
                         usernameElement.textContent = user.username;
                     }
                 } catch (error) {
                     console.error('Failed to parse user data:', error);
                     // 数据解析失败，显示未登录状态
-                    authGuest.style.setProperty('display', 'flex', 'important');
-                    authUser.style.setProperty('display', 'none', 'important');
+                    authGuest.classList.remove('d-none');
+                    authUser.classList.add('d-none');
                 }
             } else {
                 // 未登录状态 - 显示登录注册按钮，隐藏用户菜单
-                authGuest.style.setProperty('display', 'flex', 'important');
-                authUser.style.setProperty('display', 'none', 'important');
+                authGuest.classList.remove('d-none');
+                authUser.classList.add('d-none');
             }
         }
 
@@ -452,8 +455,20 @@
             }, 3000);
         }
 
+        // 清理旧的token数据（兼容性处理）
+        function cleanupOldTokens() {
+            // 如果存在旧的'token'键，将其迁移到'access_token'
+            const oldToken = localStorage.getItem('token');
+            if (oldToken && !localStorage.getItem('access_token')) {
+                localStorage.setItem('access_token', oldToken);
+                localStorage.removeItem('token');
+                console.log('[认证] 已迁移旧token到新格式');
+            }
+        }
+
         // 页面加载完成后更新认证状态
         document.addEventListener('DOMContentLoaded', function() {
+            cleanupOldTokens();
             updateAuthUI();
 
             // 绑定退出登录按钮

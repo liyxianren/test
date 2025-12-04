@@ -8,24 +8,34 @@ bp = Blueprint('game', __name__)
 @bp.route('/state', methods=['GET'])
 @jwt_required()
 def get_game_state():
-    """获取游戏状态"""
+    """
+    获取游戏状态
+
+    返回用户的完整游戏状态，包括：
+    - 核心属性：mental_health_score, stress_level, growth_potential
+    - 游戏资源：coins, level, total_diaries
+    - 计算属性：diaries_to_next_level
+    """
     try:
         user_id = get_jwt_identity()
 
-        # 获取或创建游戏状态
+        # 获取或创建游戏状态（增量模式初始化）
         game_state = GameState.query.filter_by(user_id=user_id).first()
         if not game_state:
             game_state = GameState(
                 user_id=user_id,
-                current_level=1,
-                game_difficulty=1.0,
-                character_stats={"health": 100, "energy": 100, "mood": 50},
-                unlocked_features={"basic_game": True}
+                mental_health_score=50,
+                stress_level=50,
+                growth_potential=50,
+                coins=0,
+                level=1,
+                total_diaries=0
             )
             db.session.add(game_state)
             db.session.commit()
 
         return jsonify({
+            'success': True,
             'game_state': game_state.to_dict()
         }), 200
     except Exception as e:

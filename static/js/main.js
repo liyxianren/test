@@ -149,36 +149,35 @@ class AuthManager {
     }
 
     updateUI() {
-        const authGuest = document.getElementById('auth-guest');
-        const authUser = document.getElementById('auth-user');
-        const usernameElement = document.getElementById('username');
+        // 兼容两种导航栏ID写法（auth-guest/authGuest 与 auth-user/authUser）
+        const guestSections = document.querySelectorAll('#auth-guest, #authGuest');
+        const userSections = document.querySelectorAll('#auth-user, #authUser');
+        const usernameSpans = document.querySelectorAll(
+            '#auth-guest #username, #authGuest #username, #auth-user #username, #authUser #username'
+        );
         const loginLinks = document.querySelectorAll('.login-link');
         const registerLinks = document.querySelectorAll('.register-link');
 
         if (this.isAuthenticated()) {
-            // 已登录状态
-            authGuest?.classList.add('d-none');
-            authUser?.classList.remove('d-none');
-            if (usernameElement) {
-                usernameElement.textContent = this.user.username;
-            }
+            guestSections.forEach(el => el.classList.add('d-none'));
+            userSections.forEach(el => el.classList.remove('d-none'));
+            usernameSpans.forEach(el => {
+                el.textContent = this.user.username;
+            });
 
             loginLinks.forEach(link => {
                 link.style.display = 'none';
             });
-
             registerLinks.forEach(link => {
                 link.style.display = 'none';
             });
         } else {
-            // 未登录状态
-            authGuest?.classList.remove('d-none');
-            authUser?.classList.add('d-none');
+            guestSections.forEach(el => el.classList.remove('d-none'));
+            userSections.forEach(el => el.classList.add('d-none'));
 
             loginLinks.forEach(link => {
                 link.style.display = 'block';
             });
-
             registerLinks.forEach(link => {
                 link.style.display = 'block';
             });

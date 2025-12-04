@@ -2050,6 +2050,8 @@ footer::before {
     background: radial-gradient(circle, rgba(255, 107, 157, 0.1), transparent);
     border-radius: 50%;
     transform: translate(30%, -30%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .diary-card-game:hover {
@@ -2076,6 +2078,8 @@ footer::before {
 .diary-actions {
     display: flex;
     gap: 0.5rem;
+    position: relative;
+    z-index: 1;
 }
 
 .btn-icon {
