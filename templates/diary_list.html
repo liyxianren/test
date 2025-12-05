@@ -37,13 +37,7 @@
                         <a class="nav-link active" href="/diary">情绪日记</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/game/home">🦊 小橘的家</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="/postcards">🦊 明信片</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/stats">数据统计</a>
                     </li>
                 </ul>
                 <div class="d-flex gap-2 align-items-center">
@@ -108,25 +102,21 @@
                                 <i class="fas fa-pen-fancy me-2"></i>
                                 写新日记
                             </a>
-                            <button class="btn btn-secondary btn-lg" id="quickStatsBtn">
-                                <i class="fas fa-chart-pie me-2"></i>
-                                查看统计
-                            </button>
                         </div>
                     </div>
                     <div class="col-lg-4">
-                        <!-- 情绪小精灵 -->
+                        <!-- 小橘 -->
                         <div class="diary-character">
                             <div class="character-card main-character">
                                 <div class="character-avatar">
                                     <div class="avatar-circle diary-avatar">
-                                        📖
+                                        🦊
                                     </div>
                                     <div class="character-sparkle sparkle-1">✨</div>
                                     <div class="character-sparkle sparkle-2">⭐</div>
                                     <div class="character-sparkle sparkle-3">💫</div>
                                 </div>
-                                <h3 class="character-name">日记小助手</h3>
+                                <h3 class="character-name">小橘</h3>
                                 <p class="character-desc" id="diaryCount">加载中...</p>
                             </div>
                         </div>
@@ -300,13 +290,6 @@
             document.getElementById('dateFrom').addEventListener('change', performSearch);
             document.getElementById('dateTo').addEventListener('change', performSearch);
 
-            // 快速统计按钮
-            const quickStatsBtn = document.getElementById('quickStatsBtn');
-            if (quickStatsBtn) {
-                quickStatsBtn.addEventListener('click', () => {
-                    window.location.href = '/stats';
-                });
-            }
         }
 
         async function loadDiaries(page = 1, searchParams = {}) {
