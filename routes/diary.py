@@ -142,6 +142,21 @@ def create_diary():
         except Exception as e:
             print(f"[日记创建] 明信片生成触发失败（不影响日记保存）: {e}", file=sys.stderr)
 
+        # 后台预生成探险题目（不阻塞响应）
+        try:
+            from services.adventure_service import create_adventure_async
+            create_adventure_async(
+                user_id=user_id,
+                diary_id=diary_id,
+                diary_content=content,
+                emotion_tags=emotion_tags or [],
+                emotion_score=emotion_score,
+                trigger_event=trigger_event
+            )
+            print(f"[日记创建] 探险题目生成已触发", file=sys.stderr)
+        except Exception as e:
+            print(f"[日记创建] 探险题目生成触发失败（不影响日记保存）: {e}", file=sys.stderr)
+
         return jsonify({
             'message': 'Diary created successfully',
             'diary': diary_data
