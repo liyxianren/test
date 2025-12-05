@@ -54,7 +54,8 @@ def generate_postcard_data(
     mental_health_score: int,
     diary_content: str,
     trigger_event: str = None,
-    adventure_result: dict = None
+    adventure_result: dict = None,
+    use_fallback: bool = False
 ) -> dict:
     """
     调用豆包AI生成明信片数据（小狐狸的回信 + 场景图片）
@@ -66,6 +67,7 @@ def generate_postcard_data(
         diary_content: 日记内容
         trigger_event: 触发事件
         adventure_result: 探险结果 {'defeated_count': N, 'total_monsters': M}
+        use_fallback: 是否允许使用备用模板（默认False，必须使用AI）
 
     Returns:
         {
@@ -74,56 +76,80 @@ def generate_postcard_data(
             'image_prompt': '图片生成prompt',
             'message': '小狐狸的回信'
         }
+
+    Raises:
+        Exception: 当AI调用失败且use_fallback=False时抛出异常
     """
     if not OpenAI:
-        print("[明信片] OpenAI SDK未安装，使用本地生成", file=sys.stderr)
-        return generate_postcard_local(emotions, intensity, mental_health_score, diary_content)
-
-    try:
-        # 获取prompt（传递探险结果）
-        system_prompt, user_prompt = get_full_postcard_prompt(
-            emotions=emotions,
-            intensity=intensity,
-            mental_health_score=mental_health_score,
-            diary_content=diary_content,
-            trigger_event=trigger_event,
-            adventure_result=adventure_result
-        )
-
-        # 调用豆包Seed模型（质量更好）
-        client = OpenAI(
-            api_key=DOUBAO_API_KEY,
-            base_url=DOUBAO_BASE_URL
-        )
-
-        print(f"[明信片] 调用豆包AI生成明信片数据，模型: {DOUBAO_POSTCARD_MODEL}", file=sys.stderr)
-
-        response = client.chat.completions.create(
-            model=DOUBAO_POSTCARD_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.8,  # 稍高温度以增加创意
-            max_tokens=1024
-        )
-
-        raw_response = response.choices[0].message.content.strip()
-        print(f"[明信片] 豆包响应长度: {len(raw_response)} 字符", file=sys.stderr)
-
-        # 解析JSON
-        postcard_data = parse_json_response(raw_response)
-
-        if postcard_data:
-            print(f"[明信片] 生成成功，场景: {postcard_data.get('scene_name')}", file=sys.stderr)
-            return postcard_data
-        else:
-            print("[明信片] JSON解析失败，使用本地生成", file=sys.stderr)
+        error_msg = "OpenAI SDK未安装，无法调用豆包AI"
+        print(f"[明信片] {error_msg}", file=sys.stderr)
+        if use_fallback:
             return generate_postcard_local(emotions, intensity, mental_health_score, diary_content)
+        raise Exception(error_msg)
 
-    except Exception as e:
-        print(f"[明信片] 豆包调用失败: {str(e)}，使用本地生成", file=sys.stderr)
+    last_error = None
+
+    # 最多重试3次
+    for attempt in range(3):
+        try:
+            # 获取prompt（传递探险结果）
+            system_prompt, user_prompt = get_full_postcard_prompt(
+                emotions=emotions,
+                intensity=intensity,
+                mental_health_score=mental_health_score,
+                diary_content=diary_content,
+                trigger_event=trigger_event,
+                adventure_result=adventure_result
+            )
+
+            # 调用豆包Seed模型
+            client = OpenAI(
+                api_key=DOUBAO_API_KEY,
+                base_url=DOUBAO_BASE_URL
+            )
+
+            print(f"[明信片] 调用豆包AI生成明信片数据，模型: {DOUBAO_POSTCARD_MODEL}，第{attempt+1}次尝试", file=sys.stderr)
+
+            response = client.chat.completions.create(
+                model=DOUBAO_POSTCARD_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.8,
+                max_tokens=1024
+            )
+
+            raw_response = response.choices[0].message.content.strip()
+            print(f"[明信片] 豆包响应长度: {len(raw_response)} 字符", file=sys.stderr)
+
+            # 解析JSON
+            postcard_data = parse_json_response(raw_response)
+
+            if postcard_data and postcard_data.get('message'):
+                print(f"[明信片] 生成成功，场景: {postcard_data.get('scene_name')}", file=sys.stderr)
+                return postcard_data
+            else:
+                last_error = f"JSON解析失败或消息为空，响应内容: {raw_response[:200]}..."
+                print(f"[明信片] {last_error}", file=sys.stderr)
+
+        except Exception as e:
+            last_error = str(e)
+            print(f"[明信片] 第{attempt+1}次尝试失败: {last_error}", file=sys.stderr)
+
+        # 等待1秒后重试
+        import time
+        time.sleep(1)
+
+    # 所有重试都失败了
+    error_msg = f"豆包AI调用失败（重试3次）: {last_error}"
+    print(f"[明信片] {error_msg}", file=sys.stderr)
+
+    if use_fallback:
+        print("[明信片] 使用备用模板生成", file=sys.stderr)
         return generate_postcard_local(emotions, intensity, mental_health_score, diary_content)
+
+    raise Exception(error_msg)
 
 
 def parse_json_response(raw_response: str) -> dict:
@@ -390,97 +416,117 @@ def create_postcard_async(
     trigger_event: str = None
 ):
     """
-    异步创建或更新明信片（用于后台任务）
-    先创建pending状态的记录，然后异步生成图片
-    如果明信片已存在（例如由探险先创建），则更新它
+    完全异步创建明信片（用于后台任务）
 
-    Args:
-        同 create_postcard
+    流程：
+    1. 立即创建 status='generating' 的占位记录
+    2. 后台线程调用豆包AI生成文本
+    3. 后台线程调用豆包生成图片
+    4. 更新记录为 completed
+
+    这样不会阻塞日记创建的响应
     """
-    from models import Postcard, db
+    from app import app
+    from concurrent.futures import ThreadPoolExecutor
 
-    try:
-        # 1. 先生成文本数据
-        postcard_data = generate_postcard_data(
-            emotions=emotions,
-            intensity=intensity,
-            mental_health_score=mental_health_score,
-            diary_content=diary_content,
-            trigger_event=trigger_event
-        )
+    # 先在主线程创建占位记录（避免重复创建）
+    with app.app_context():
+        from models import Postcard, db
 
-        # 2. 检查是否已存在该日记的明信片（可能由探险先创建）
-        postcard = Postcard.query.filter_by(diary_id=diary_id, user_id=user_id).first()
-
-        if postcard:
-            # 已存在，更新内容（保留探险的stat_changes和coins_earned）
-            print(f"[明信片] 已存在记录 #{postcard.id}，更新内容", file=sys.stderr)
-            postcard.image_prompt = postcard_data['image_prompt']
-            postcard.location_name = postcard_data['location_name']
-            postcard.message = postcard_data['message']
-            postcard.emotion_tags = emotions
-            postcard.emotion_intensity = intensity
-            postcard.mental_health_score = mental_health_score
-            if postcard.status == 'pending':
-                # 只有pending状态才需要生成图片
-                pass
+        # 检查是否已存在
+        existing = Postcard.query.filter_by(diary_id=diary_id, user_id=user_id).first()
+        if existing:
+            print(f"[明信片] 已存在记录 #{existing.id}，跳过创建", file=sys.stderr)
+            postcard_id = existing.id
         else:
-            # 不存在，创建新记录
+            # 创建占位记录
             postcard = Postcard(
                 user_id=user_id,
                 diary_id=diary_id,
-                image_prompt=postcard_data['image_prompt'],
-                location_name=postcard_data['location_name'],
-                message=postcard_data['message'],
-                status='pending',
+                image_prompt='',  # 占位
+                location_name='生成中...',
+                message='小橘正在写信给你...',  # 占位消息
+                status='generating',  # 标记为生成中
                 emotion_tags=emotions,
                 emotion_intensity=intensity,
                 mental_health_score=mental_health_score
             )
             db.session.add(postcard)
+            db.session.commit()
+            postcard_id = postcard.id
+            print(f"[明信片] 创建占位记录 #{postcard_id}，开始后台生成", file=sys.stderr)
 
-        db.session.commit()
+    def generate_task():
+        """后台生成任务：文本 + 图片"""
+        with app.app_context():
+            from models import Postcard, db
 
-        postcard_id = postcard.id
-        print(f"[明信片] 创建/更新pending记录，ID: {postcard_id}", file=sys.stderr)
+            try:
+                postcard = Postcard.query.get(postcard_id)
+                if not postcard:
+                    print(f"[明信片] 记录 #{postcard_id} 不存在", file=sys.stderr)
+                    return
 
-        # 3. 异步生成图片（这里可以用线程池或Celery）
-        # 为了简单起见，这里直接在同一线程中生成
-        from concurrent.futures import ThreadPoolExecutor
+                # 如果已经完成，跳过
+                if postcard.status == 'completed':
+                    print(f"[明信片] 记录 #{postcard_id} 已完成，跳过", file=sys.stderr)
+                    return
 
-        def generate_image_task():
-            from app import app
-            with app.app_context():
+                print(f"[明信片] 开始为 #{postcard_id} 生成内容（豆包AI）", file=sys.stderr)
+
+                # 1. 调用豆包AI生成文本（必须成功，不用备用模板）
+                postcard_data = generate_postcard_data(
+                    emotions=emotions,
+                    intensity=intensity,
+                    mental_health_score=mental_health_score,
+                    diary_content=diary_content,
+                    trigger_event=trigger_event
+                )
+
+                # 更新文本内容
+                postcard.image_prompt = postcard_data.get('image_prompt', '')
+                postcard.location_name = postcard_data.get('location_name', '温暖森林')
+                postcard.message = postcard_data.get('message', '')
+                db.session.commit()
+
+                print(f"[明信片] #{postcard_id} 文本生成完成，场景: {postcard.location_name}", file=sys.stderr)
+
+                # 2. 生成图片
+                if postcard.image_prompt:
+                    image_url = generate_postcard_image(postcard.image_prompt)
+                    if image_url:
+                        postcard.image_url = image_url
+                        postcard.status = 'completed'
+                        postcard.generated_at = datetime.utcnow()
+                        print(f"[明信片] #{postcard_id} 图片生成完成", file=sys.stderr)
+                    else:
+                        postcard.status = 'text_only'
+                        print(f"[明信片] #{postcard_id} 图片生成失败，仅保留文本", file=sys.stderr)
+                else:
+                    postcard.status = 'text_only'
+
+                db.session.commit()
+
+            except Exception as e:
+                print(f"[明信片] #{postcard_id} 生成失败: {e}", file=sys.stderr)
+                import traceback
+                traceback.print_exc()
+
+                # 即使失败，也更新状态
                 try:
-                    postcard_record = Postcard.query.get(postcard_id)
-                    if postcard_record:
-                        postcard_record.status = 'generating'
+                    postcard = Postcard.query.get(postcard_id)
+                    if postcard and postcard.status == 'generating':
+                        postcard.status = 'failed'
+                        postcard.message = '生成失败，请稍后重试'
                         db.session.commit()
+                except:
+                    pass
 
-                        image_url = generate_postcard_image(postcard_record.image_prompt)
+    # 启动后台任务
+    executor = ThreadPoolExecutor(max_workers=1)
+    executor.submit(generate_task)
 
-                        if image_url:
-                            postcard_record.image_url = image_url
-                            postcard_record.status = 'completed'
-                            postcard_record.generated_at = datetime.utcnow()
-                        else:
-                            postcard_record.status = 'text_only'
-
-                        db.session.commit()
-                        print(f"[明信片] 图片生成完成，ID: {postcard_id}", file=sys.stderr)
-                except Exception as e:
-                    print(f"[明信片] 异步图片生成失败: {str(e)}", file=sys.stderr)
-
-        # 启动后台任务
-        executor = ThreadPoolExecutor(max_workers=1)
-        executor.submit(generate_image_task)
-
-        return postcard.to_dict()
-
-    except Exception as e:
-        db.session.rollback()
-        print(f"[明信片] 异步创建失败: {str(e)}", file=sys.stderr)
-        return None
+    return {'id': postcard_id, 'status': 'generating'}
 
 
 def get_user_postcards(user_id: int, limit: int = 20, offset: int = 0, unread_only: bool = False) -> list:
