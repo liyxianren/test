@@ -1,7 +1,7 @@
 // CBT情绪日记游戏 - 主JavaScript文件
 
-// API基础URL
-const API_BASE_URL = window.location.origin + '/api';
+// API基础URL - 使用相对路径避免HTTPS/HTTP混合内容问题
+const API_BASE_URL = '/api';
 
 // 通用工具函数
 function showAlert(message, type = 'info', container = null) {
