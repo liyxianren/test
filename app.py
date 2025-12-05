@@ -71,7 +71,11 @@ def ensure_schema_updates():
     schema_updates = {
         'users': {
             'reset_token': 'VARCHAR(255)',
-            'reset_token_expires': 'DATETIME'
+            'reset_token_expires': 'DATETIME',
+            # 管理员字段
+            'is_admin': 'BOOLEAN DEFAULT 0',
+            'last_login_at': 'DATETIME',
+            'login_count': 'INTEGER DEFAULT 0'
         },
         'emotion_diaries': {
             'trigger_event': 'TEXT',
