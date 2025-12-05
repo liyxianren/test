@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
@@ -21,6 +22,16 @@ if os.getenv('FLASK_DEBUG', '').lower() == 'true':
 
 # 创建Flask应用
 app = Flask(__name__)
+
+# 处理反向代理的 X-Forwarded-* 头（Zeabur/Nginx等）
+# 这让 Flask 正确识别 HTTPS 协议，避免 Mixed Content 错误
+app.wsgi_app = ProxyFix(
+    app.wsgi_app,
+    x_for=1,      # X-Forwarded-For: 真实客户端IP
+    x_proto=1,    # X-Forwarded-Proto: 原始协议(https)
+    x_host=1,     # X-Forwarded-Host: 原始主机名
+    x_prefix=1    # X-Forwarded-Prefix: URL前缀
+)
 
 # 基础配置
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
