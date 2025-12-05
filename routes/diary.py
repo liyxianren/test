@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import EmotionDiary, db, User, GameState
+from models import EmotionDiary, db, User, GameState, Postcard, AdventureSession
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import sys
@@ -184,6 +184,18 @@ def get_diary(diary_id):
         if diary.analysis:
             diary_data['analysis'] = diary.analysis.to_dict()
 
+        # 获取关联的明信片
+        postcard = Postcard.query.filter_by(diary_id=diary_id, user_id=user_id).first()
+        if postcard:
+            diary_data['postcard'] = {
+                'id': postcard.id,
+                'status': postcard.status,
+                'location_name': postcard.location_name,
+                'message': postcard.message,
+                'image_url': postcard.image_url,
+                'generated_at': postcard.generated_at.isoformat() if postcard.generated_at else None
+            }
+
         return jsonify({
             'diary': diary_data
         }), 200
@@ -247,7 +259,7 @@ def update_diary(diary_id):
 @bp.route('/<int:diary_id>', methods=['DELETE'])
 @jwt_required()
 def delete_diary(diary_id):
-    """删除日记"""
+    """删除日记（同时删除关联的明信片和图片文件）"""
     try:
         user_id = get_jwt_identity()
 
@@ -257,9 +269,32 @@ def delete_diary(diary_id):
         if not diary:
             return jsonify({'error': 'Diary not found'}), 404
 
-        # 删除日记
+        # 1. 先删除关联的明信片图片文件
+        postcard = Postcard.query.filter_by(diary_id=diary_id, user_id=user_id).first()
+        if postcard and postcard.image_url:
+            try:
+                from services.postcard_service import delete_postcard_image
+                delete_postcard_image(postcard.image_url)
+                print(f"[日记删除] 已删除明信片图片: {postcard.image_url}", file=sys.stderr)
+            except Exception as img_err:
+                print(f"[日记删除] 删除明信片图片失败（不影响日记删除）: {img_err}", file=sys.stderr)
+
+        # 2. 删除明信片数据库记录（如果没有设置级联删除）
+        if postcard:
+            db.session.delete(postcard)
+            print(f"[日记删除] 已删除明信片记录 #{postcard.id}", file=sys.stderr)
+
+        # 3. 删除探险会话记录
+        adventure = AdventureSession.query.filter_by(diary_id=diary_id, user_id=user_id).first()
+        if adventure:
+            db.session.delete(adventure)
+            print(f"[日记删除] 已删除探险记录 #{adventure.id}", file=sys.stderr)
+
+        # 4. 删除日记（会级联删除EmotionAnalysis）
         db.session.delete(diary)
         db.session.commit()
+
+        print(f"[日记删除] 日记 #{diary_id} 及关联数据删除成功", file=sys.stderr)
 
         return jsonify({
             'message': 'Diary deleted successfully'
@@ -267,6 +302,7 @@ def delete_diary(diary_id):
 
     except Exception as e:
         db.session.rollback()
+        print(f"[日记删除] 删除失败: {str(e)}", file=sys.stderr)
         return jsonify({'error': f'Failed to delete diary: {str(e)}'}), 500
 
 @bp.route('/stats', methods=['GET'])

@@ -9,8 +9,8 @@ from urllib.parse import quote_plus
 
 # 导入扩展和模型
 from extensions import db, init_extensions
-from models import User, EmotionDiary, EmotionAnalysis, GameState, GameProgress, Postcard, AdventureSession, UserItem
-from routes import auth_bp, diary_bp, upload_bp, analysis_bp, game_bp, postcard_bp, adventure_bp
+from models import User, EmotionDiary, EmotionAnalysis, GameState, GameProgress, Postcard, AdventureSession, UserItem, AccessLog
+from routes import auth_bp, diary_bp, upload_bp, analysis_bp, game_bp, postcard_bp, adventure_bp, admin_bp
 
 # 加载环境变量（override=True 确保.env文件优先于系统环境变量）
 load_dotenv(override=True)
@@ -127,6 +127,15 @@ def ensure_schema_updates():
             'quantity': 'INTEGER DEFAULT 1',
             'effect_type': 'VARCHAR(30)',
             'effect_value': 'INTEGER DEFAULT 0'
+        },
+        'access_logs': {
+            # 访问日志表字段
+            'ip_address': 'VARCHAR(50)',
+            'user_agent': 'VARCHAR(500)',
+            'path': 'VARCHAR(200)',
+            'method': 'VARCHAR(10)',
+            'user_id': 'INTEGER',
+            'status_code': 'INTEGER'
         }
     }
 
@@ -180,6 +189,76 @@ app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
 app.register_blueprint(game_bp, url_prefix='/api/game')
 app.register_blueprint(postcard_bp, url_prefix='/api/postcard')
 app.register_blueprint(adventure_bp, url_prefix='/api/adventure')
+app.register_blueprint(admin_bp, url_prefix='/api/admin')
+
+
+# ==================== 访问日志中间件 ====================
+
+@app.before_request
+def log_request():
+    """记录访问日志"""
+    # 跳过静态文件、健康检查和管理员访问日志API
+    skip_paths = ['/static', '/api/health', '/api/admin/logs', '/image/', '/game/']
+    for skip in skip_paths:
+        if request.path.startswith(skip):
+            return
+
+    # 跳过favicon
+    if request.path == '/favicon.ico':
+        return
+
+    try:
+        # 尝试获取当前登录用户ID
+        from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+        user_id = None
+        try:
+            verify_jwt_in_request(optional=True)
+            identity = get_jwt_identity()
+            if identity:
+                user_id = int(identity) if isinstance(identity, str) else identity
+        except:
+            pass
+
+        log = AccessLog(
+            ip_address=request.remote_addr or 'unknown',
+            user_agent=(request.user_agent.string[:500] if request.user_agent else 'unknown'),
+            path=request.path[:200],
+            method=request.method,
+            user_id=user_id
+        )
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        # 日志记录失败不影响正常请求
+        db.session.rollback()
+
+
+# ==================== 创建默认管理员 ====================
+
+def create_default_admin():
+    """创建默认管理员账户"""
+    try:
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(
+                username='admin',
+                email='admin@localhost',
+                password_hash=generate_password_hash('kongbai123'),
+                is_admin=True,
+                is_active=True
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("[启动] 默认管理员账户已创建: admin / kongbai123")
+        elif not admin.is_admin:
+            # 如果admin用户存在但不是管理员，升级为管理员
+            admin.is_admin = True
+            db.session.commit()
+            print("[启动] 已将admin用户升级为管理员")
+    except Exception as e:
+        db.session.rollback()
+        print(f"[警告] 创建管理员失败: {e}")
+
 
 # 主页路由
 @app.route('/')
@@ -257,15 +336,50 @@ def postcard_detail(postcard_id):
     """明信片详情页面"""
     return render_template('postcard_detail.html', postcard_id=postcard_id)
 
-@app.route('/game/home')
-def game_home():
-    """游戏主页面（小橘探险）"""
-    return render_template('game_home.html')
-
 @app.route('/adventure/<int:diary_id>')
 def adventure_page(diary_id):
     """探险游戏页面"""
     return render_template('adventure.html', diary_id=diary_id)
+
+
+# ==================== 管理后台页面路由 ====================
+
+@app.route('/admin')
+@app.route('/admin/')
+def admin_index():
+    """管理后台首页（重定向到登录）"""
+    return render_template('admin/login.html')
+
+@app.route('/admin/login')
+def admin_login_page():
+    """管理员登录页面"""
+    return render_template('admin/login.html')
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """管理后台仪表盘"""
+    return render_template('admin/dashboard.html')
+
+@app.route('/admin/users')
+def admin_users():
+    """用户管理页面"""
+    return render_template('admin/users.html')
+
+@app.route('/admin/users/<int:user_id>')
+def admin_user_detail(user_id):
+    """用户详情页面"""
+    return render_template('admin/user_detail.html', user_id=user_id)
+
+@app.route('/admin/diaries')
+def admin_diaries():
+    """日记管理页面"""
+    return render_template('admin/diaries.html')
+
+@app.route('/admin/postcards')
+def admin_postcards():
+    """明信片管理页面"""
+    return render_template('admin/postcards.html')
+
 
 # 静态文件服务：game文件夹
 @app.route('/game/<path:filename>')
@@ -276,11 +390,26 @@ def serve_game_assets(filename):
     return send_from_directory(game_folder, filename)
 
 
+# 静态文件服务：/image/ 目录（Zeabur持久化存储）
+@app.route('/image/<path:filename>')
+def serve_image_assets(filename):
+    """
+    服务/image/目录中的静态资源
+    Zeabur部署时，/image/ 是持久化存储目录
+    本地开发时，可以通过环境变量 IMAGE_FOLDER 指定目录
+    """
+    from flask import send_from_directory
+    image_folder = os.environ.get('IMAGE_FOLDER', '/image')
+    return send_from_directory(image_folder, filename)
+
+
 if __name__ == '__main__':
     with app.app_context():
         # 创建表（如果不存在）
         db.create_all()
         print(f"数据库连接: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
+        # 创建默认管理员
+        create_default_admin()
 
     port = int(os.getenv('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

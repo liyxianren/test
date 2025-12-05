@@ -20,8 +20,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# 明信片图片保存目录 (使用static/uploads以便Flask静态文件服务)
-POSTCARD_UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'postcards')
+# 明信片图片保存目录 (Zeabur部署使用/image/持久化存储)
+# 优先使用环境变量配置的路径，否则使用默认的/image/postcards
+POSTCARD_UPLOAD_FOLDER = os.environ.get('POSTCARD_UPLOAD_FOLDER', '/image/postcards')
 
 # 豆包API配置
 DOUBAO_API_KEY = os.environ.get('DOUBAO_API_KEY', 'a7ce8af1-5b59-467b-984e-4d0934976e80')
@@ -277,16 +278,17 @@ def generate_postcard_image(image_prompt: str) -> str:
         return None
 
 
-def download_and_save_image(image_url: str, user_id: int) -> str:
+def download_and_save_image(image_url: str, user_id: int, diary_id: int = None) -> str:
     """
     下载远程图片并保存到本地服务器
 
     Args:
         image_url: 远程图片URL
         user_id: 用户ID（用于组织目录）
+        diary_id: 日记ID（用于文件命名，便于关联删除）
 
     Returns:
-        本地图片的相对路径（如 /uploads/postcards/9/abc123.jpg），失败返回None
+        本地图片的相对路径（如 /image/postcards/9/diary_123_abc.jpg），失败返回None
     """
     if not image_url:
         return None
@@ -296,8 +298,12 @@ def download_and_save_image(image_url: str, user_id: int) -> str:
         user_folder = os.path.join(POSTCARD_UPLOAD_FOLDER, str(user_id))
         os.makedirs(user_folder, exist_ok=True)
 
-        # 生成唯一文件名
-        filename = f"{uuid.uuid4().hex}.jpg"
+        # 生成唯一文件名（包含diary_id便于追踪）
+        unique_id = uuid.uuid4().hex[:8]
+        if diary_id:
+            filename = f"diary_{diary_id}_{unique_id}.jpg"
+        else:
+            filename = f"{uuid.uuid4().hex}.jpg"
         filepath = os.path.join(user_folder, filename)
 
         print(f"[明信片图片] 正在下载图片到: {filepath}", file=sys.stderr)
@@ -311,8 +317,8 @@ def download_and_save_image(image_url: str, user_id: int) -> str:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
 
-        # 返回相对路径（用于Web访问，通过Flask静态文件服务）
-        relative_path = f"/static/uploads/postcards/{user_id}/{filename}"
+        # 返回相对路径（用于Web访问，通过Flask路由服务）
+        relative_path = f"/image/postcards/{user_id}/{filename}"
         print(f"[明信片图片] 下载成功: {relative_path}", file=sys.stderr)
 
         return relative_path
@@ -322,6 +328,37 @@ def download_and_save_image(image_url: str, user_id: int) -> str:
         import traceback
         traceback.print_exc()
         return None
+
+
+def delete_postcard_image(image_url: str) -> bool:
+    """
+    删除明信片图片文件
+
+    Args:
+        image_url: 图片的相对路径（如 /image/postcards/9/diary_123_abc.jpg）
+
+    Returns:
+        是否删除成功
+    """
+    if not image_url or not image_url.startswith('/image/postcards/'):
+        return False
+
+    try:
+        # 从URL路径构建实际文件路径
+        # /image/postcards/9/filename.jpg -> /image/postcards/9/filename.jpg
+        filepath = image_url  # Zeabur上直接使用/image/作为根目录
+
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            print(f"[明信片图片] 删除成功: {filepath}", file=sys.stderr)
+            return True
+        else:
+            print(f"[明信片图片] 文件不存在: {filepath}", file=sys.stderr)
+            return False
+
+    except Exception as e:
+        print(f"[明信片图片] 删除失败: {str(e)}", file=sys.stderr)
+        return False
 
 
 def create_postcard(
@@ -371,8 +408,8 @@ def create_postcard(
             # 先从豆包API获取临时URL
             temp_image_url = generate_postcard_image(postcard_data['image_prompt'])
             if temp_image_url:
-                # 下载并保存到本地
-                local_image_path = download_and_save_image(temp_image_url, user_id)
+                # 下载并保存到本地（传入diary_id便于关联删除）
+                local_image_path = download_and_save_image(temp_image_url, user_id, diary_id)
                 # 优先使用本地路径，如果下载失败则使用临时URL
                 image_url = local_image_path if local_image_path else temp_image_url
 
@@ -493,12 +530,15 @@ def create_postcard_async(
 
                 # 2. 生成图片
                 if postcard.image_prompt:
-                    image_url = generate_postcard_image(postcard.image_prompt)
-                    if image_url:
-                        postcard.image_url = image_url
+                    temp_image_url = generate_postcard_image(postcard.image_prompt)
+                    if temp_image_url:
+                        # 下载并保存到本地持久化存储
+                        local_image_path = download_and_save_image(temp_image_url, user_id, diary_id)
+                        # 优先使用本地路径，失败则使用临时URL
+                        postcard.image_url = local_image_path if local_image_path else temp_image_url
                         postcard.status = 'completed'
                         postcard.generated_at = datetime.utcnow()
-                        print(f"[明信片] #{postcard_id} 图片生成完成", file=sys.stderr)
+                        print(f"[明信片] #{postcard_id} 图片生成完成，路径: {postcard.image_url}", file=sys.stderr)
                     else:
                         postcard.status = 'text_only'
                         print(f"[明信片] #{postcard_id} 图片生成失败，仅保留文本", file=sys.stderr)

@@ -25,6 +25,11 @@ class User(db.Model):
     reset_token = db.Column(db.String(255), nullable=True)
     reset_token_expires = db.Column(db.DateTime, nullable=True)
 
+    # 管理员字段
+    is_admin = db.Column(db.Boolean, default=False)
+    last_login_at = db.Column(db.DateTime, nullable=True)
+    login_count = db.Column(db.Integer, default=0)
+
     # 关联
     diaries = db.relationship('EmotionDiary', backref='user', lazy=True, cascade='all, delete-orphan')
     game_state = db.relationship('GameState', backref='user', lazy=True, uselist=False, cascade='all, delete-orphan')
@@ -37,7 +42,24 @@ class User(db.Model):
             'email': self.email,
             'created_at': format_datetime(self.created_at),
             'is_active': self.is_active,
+            'is_admin': self.is_admin,
             'profile_data': self.profile_data
+        }
+
+    def to_admin_dict(self):
+        """管理后台使用的完整用户信息"""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email,
+            'created_at': format_datetime(self.created_at),
+            'updated_at': format_datetime(self.updated_at),
+            'is_active': self.is_active,
+            'is_admin': self.is_admin,
+            'last_login_at': format_datetime(self.last_login_at),
+            'login_count': self.login_count,
+            'profile_data': self.profile_data,
+            'diary_count': len(self.diaries) if self.diaries else 0
         }
 
 class EmotionDiary(db.Model):
@@ -292,6 +314,36 @@ class AdventureSession(db.Model):
             'created_at': format_datetime(self.created_at),
             'started_at': format_datetime(self.started_at),
             'completed_at': format_datetime(self.completed_at)
+        }
+
+
+class AccessLog(db.Model):
+    """
+    访问日志模型 - 用于统计网站流量
+
+    记录每次HTTP请求的基本信息，用于后台管理系统的流量分析
+    """
+    __tablename__ = 'access_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.String(500))
+    path = db.Column(db.String(200))
+    method = db.Column(db.String(10))
+    user_id = db.Column(db.Integer, nullable=True)  # 已登录用户的ID
+    status_code = db.Column(db.Integer, nullable=True)  # HTTP响应状态码
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'path': self.path,
+            'method': self.method,
+            'user_id': self.user_id,
+            'status_code': self.status_code,
+            'created_at': format_datetime(self.created_at)
         }
 
 
