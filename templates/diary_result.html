@@ -203,6 +203,107 @@
             opacity: 0.8;
         }
 
+        /* 探险预览区域 */
+        .adventure-preview-section {
+            background: linear-gradient(135deg, #e8f4f8 0%, #d4e8f2 100%);
+            border: 2px solid #a8d4e6;
+        }
+
+        .challenge-preview {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .challenge-monster {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .monster-icon {
+            font-size: 40px;
+        }
+
+        .monster-info h4 {
+            margin: 0;
+            font-size: 18px;
+            color: #5a4a6a;
+        }
+
+        .monster-info p {
+            margin: 0;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .challenge-question {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 16px;
+            color: #333;
+            border-left: 4px solid var(--primary-purple);
+        }
+
+        .challenge-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .challenge-generating {
+            text-align: center;
+            padding: 30px;
+            color: #667eea;
+        }
+
+        .challenge-generating .spinner-border {
+            width: 2rem;
+            height: 2rem;
+        }
+
+        /* 明信片预览小卡片 */
+        .postcard-mini-preview {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .postcard-mini-image {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        }
+
+        .postcard-mini-placeholder {
+            width: 100%;
+            height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #ff8c42;
+        }
+
+        .postcard-mini-placeholder .writing-icon {
+            font-size: 40px;
+            animation: writing 1.5s ease-in-out infinite;
+        }
+
+        .postcard-mini-info {
+            padding: 12px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+        }
+
         /* 操作按钮 */
         .action-buttons {
             display: flex;
@@ -261,9 +362,6 @@
                         <a class="nav-link" href="/diary">情绪日记</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/game/home">🦊 小橘的家</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="/postcards">🦊 明信片</a>
                     </li>
                 </ul>
@@ -307,6 +405,43 @@
                 </a>
                 <div class="mt-4" style="font-size: 14px; opacity: 0.8; position: relative; z-index: 1;">
                     <i class="fas fa-info-circle me-1"></i>完成探险才能收到小橘的明信片
+                </div>
+            </div>
+
+            <!-- 探险题目预览 -->
+            <div id="adventurePreview" class="result-section adventure-preview-section d-none">
+                <div class="section-title">
+                    <i class="fas fa-dragon"></i>
+                    今日探险挑战预览
+                </div>
+                <div id="challengeList" class="challenge-list">
+                    <!-- 动态加载挑战题目 -->
+                    <div class="challenge-generating">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 mb-0">小橘正在准备今天的探险挑战...</p>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/adventure/{{ diary_id }}" class="btn btn-primary">
+                        <i class="fas fa-hiking me-2"></i>开始探险
+                    </a>
+                </div>
+            </div>
+
+            <!-- 明信片预览（在探险前显示） -->
+            <div id="postcardPreview" class="result-section postcard-section d-none">
+                <div class="section-title">
+                    <i class="fas fa-envelope"></i>
+                    小橘的明信片
+                </div>
+                <div class="postcard-mini-preview">
+                    <div id="postcardPreviewImage" class="postcard-mini-placeholder">
+                        <div class="writing-icon">🦊✍️</div>
+                        <p class="mt-2 mb-0">等待探险完成后生成...</p>
+                    </div>
+                    <div class="postcard-mini-info">
+                        完成探险后，小橘会给你写一封专属明信片
+                    </div>
                 </div>
             </div>
 
@@ -354,9 +489,6 @@
             <a href="/diary" class="btn btn-outline btn-action">
                 <i class="fas fa-arrow-left me-2"></i>返回日记列表
             </a>
-            <a href="/game/home" class="btn btn-primary btn-action">
-                <i class="fas fa-home me-2"></i>小橘的家
-            </a>
             <a href="/postcards" class="btn btn-success btn-action" id="viewPostcardsBtn">
                 <i class="fas fa-envelope me-2"></i>查看明信片
             </a>
@@ -366,7 +498,7 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Main JS -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20241205"></script>
 
     <script>
         const diaryId = {{ diary_id }};
@@ -397,23 +529,136 @@
                         showPostcard(data.postcard);
                     }
                 } else if (response.status === 404) {
-                    // 还没有明信片，显示探险邀请
-                    showWaitingAdventure();
+                    // 还没有明信片，检查探险状态并显示预览
+                    await checkAdventureAndShowPreview();
                 }
             } catch (error) {
                 console.error('检查明信片状态失败:', error);
+                await checkAdventureAndShowPreview();
+            }
+        }
+
+        // 检查探险状态并显示题目预览
+        async function checkAdventureAndShowPreview() {
+            try {
+                const response = await fetch(`/api/adventure/session/${diaryId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.status === 'generating') {
+                        // 探险正在生成中，显示加载状态
+                        showAdventurePreview(null, true);
+                        // 3秒后重新检查
+                        setTimeout(checkAdventureAndShowPreview, 3000);
+                    } else if (data.challenges && data.challenges.length > 0) {
+                        // 探险已生成，显示题目预览
+                        showAdventurePreview(data, false);
+                    } else {
+                        // 没有探险数据，显示默认邀请
+                        showWaitingAdventure();
+                    }
+                } else {
+                    // 没有探险会话，显示默认邀请
+                    showWaitingAdventure();
+                }
+            } catch (error) {
+                console.error('获取探险状态失败:', error);
                 showWaitingAdventure();
             }
         }
 
+        // 显示探险题目预览
+        function showAdventurePreview(adventureData, isGenerating) {
+            document.getElementById('waitingAdventure').classList.add('d-none');
+            document.getElementById('adventurePreview').classList.remove('d-none');
+            document.getElementById('postcardPreview').classList.remove('d-none');
+            document.getElementById('postcardPending').classList.add('d-none');
+            document.getElementById('postcardCompleted').classList.add('d-none');
+
+            const challengeList = document.getElementById('challengeList');
+
+            if (isGenerating || !adventureData) {
+                // 正在生成中
+                challengeList.innerHTML = `
+                    <div class="challenge-generating">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 mb-0">小橘正在准备今天的探险挑战...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 显示题目预览
+            const challenges = adventureData.challenges || [];
+            const monsters = adventureData.monsters || [];
+
+            if (challenges.length === 0) {
+                challengeList.innerHTML = `
+                    <div class="challenge-generating">
+                        <p class="mb-0">探险题目准备中...</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 构建题目预览HTML（只显示怪物和题目，不显示选项，避免剧透）
+            let html = '';
+            challenges.forEach((challenge, index) => {
+                const monster = monsters[index] || {};
+                const monsterEmoji = getMonsterEmoji(monster.type || challenge.monster_type);
+
+                html += `
+                    <div class="challenge-preview">
+                        <div class="challenge-monster">
+                            <div class="monster-icon">${monsterEmoji}</div>
+                            <div class="monster-info">
+                                <h4>${monster.name || challenge.monster_name || '思维怪物'}</h4>
+                                <p>${monster.description || challenge.monster_desc || '一个困扰你的想法'}</p>
+                            </div>
+                        </div>
+                        <div class="challenge-question">
+                            <strong>挑战 ${index + 1}:</strong> ${challenge.question || '思考题目加载中...'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            challengeList.innerHTML = html;
+        }
+
+        // 根据怪物类型获取emoji
+        function getMonsterEmoji(type) {
+            const emojiMap = {
+                '灾难化思维': '🌪️',
+                '非黑即白': '⚫',
+                '以偏概全': '🔍',
+                '读心术': '🔮',
+                '情绪推理': '💔',
+                '贴标签': '🏷️',
+                '应该陈述': '📜',
+                '过度自责': '😔',
+                'default': '👾'
+            };
+            return emojiMap[type] || emojiMap['default'];
+        }
+
         function showWaitingAdventure() {
             document.getElementById('waitingAdventure').classList.remove('d-none');
+            document.getElementById('adventurePreview').classList.add('d-none');
+            document.getElementById('postcardPreview').classList.add('d-none');
             document.getElementById('postcardPending').classList.add('d-none');
             document.getElementById('postcardCompleted').classList.add('d-none');
         }
 
         function showPostcard(postcard) {
             document.getElementById('waitingAdventure').classList.add('d-none');
+            document.getElementById('adventurePreview').classList.add('d-none');
+            document.getElementById('postcardPreview').classList.add('d-none');
 
             if (postcard.status === 'pending' || postcard.status === 'generating') {
                 // 明信片生成中
