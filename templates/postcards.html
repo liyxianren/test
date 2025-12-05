@@ -76,6 +76,50 @@
             animation: pulse 2s infinite;
         }
 
+        /* pending状态 - 小橘正在寄出 */
+        .postcard-card.pending::before {
+            content: '寄送中';
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #f59e0b;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            z-index: 10;
+            animation: pulse 2s infinite;
+        }
+
+        .pending-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .pending-fox {
+            font-size: 4rem;
+            animation: foxWalk 1s ease-in-out infinite;
+        }
+
+        @keyframes foxWalk {
+            0%, 100% { transform: translateY(0) rotate(-5deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        .pending-text {
+            color: #92400e;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
@@ -312,34 +356,55 @@
                 return;
             }
 
-            container.innerHTML = postcards.map(postcard => `
-                <div class="postcard-card ${!postcard.is_read ? 'unread' : ''}"
-                     onclick="viewPostcard(${postcard.id})">
-                    ${postcard.image_url ?
-                        `<img src="${postcard.image_url}" alt="明信片" class="postcard-image" onerror="this.outerHTML='<div class=\\'postcard-image placeholder\\'>🦊</div>'">` :
-                        `<div class="postcard-image placeholder">🦊</div>`
-                    }
-                    <div class="postcard-content">
-                        <div class="postcard-location">
-                            <i class="fas fa-map-marker-alt"></i>
-                            ${postcard.location_name || '神秘之地'}
+            container.innerHTML = postcards.map(postcard => {
+                // 判断明信片状态
+                const isPending = postcard.status === 'pending';
+                const isUnread = !postcard.is_read && !isPending;
+
+                // 构建图片区域
+                let imageHtml;
+                if (isPending) {
+                    imageHtml = `
+                        <div class="pending-image-wrapper">
+                            <div class="pending-fox">🦊</div>
+                            <div class="pending-text">小橘正在寄出明信片...</div>
                         </div>
-                        <div class="postcard-message">
-                            ${postcard.message || '小橘正在写信中...'}
-                        </div>
-                        <div class="postcard-meta">
-                            <span class="postcard-date">
-                                ${formatDate(postcard.created_at)}
-                            </span>
-                            <div class="postcard-emotions">
-                                ${(postcard.emotion_tags || []).slice(0, 2).map(tag =>
-                                    `<span class="emotion-tag">${tag}</span>`
-                                ).join('')}
+                    `;
+                } else if (postcard.image_url) {
+                    imageHtml = `<img src="${postcard.image_url}" alt="明信片" class="postcard-image" onerror="this.outerHTML='<div class=\\'postcard-image placeholder\\'>🦊</div>'">`;
+                } else {
+                    imageHtml = `<div class="postcard-image placeholder">🦊</div>`;
+                }
+
+                // 构建消息内容
+                const message = isPending ? '小橘正在赶往寄信的路上，请稍等片刻～' : (postcard.message || '小橘正在写信中...');
+
+                return `
+                    <div class="postcard-card ${isPending ? 'pending' : ''} ${isUnread ? 'unread' : ''}"
+                         onclick="viewPostcard(${postcard.id})">
+                        ${imageHtml}
+                        <div class="postcard-content">
+                            <div class="postcard-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${postcard.location_name || '神秘之地'}
+                            </div>
+                            <div class="postcard-message">
+                                ${message}
+                            </div>
+                            <div class="postcard-meta">
+                                <span class="postcard-date">
+                                    ${formatDate(postcard.created_at)}
+                                </span>
+                                <div class="postcard-emotions">
+                                    ${(postcard.emotion_tags || []).slice(0, 2).map(tag =>
+                                        `<span class="emotion-tag">${tag}</span>`
+                                    ).join('')}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function formatDate(dateStr) {

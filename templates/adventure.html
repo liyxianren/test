@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>迷雾探险 - CBT日记</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        .adventure-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 场景背景 */
+        .scene-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #2d1b4e 0%, #1a1a2e 50%, #0d0d1a 100%);
+            z-index: 0;
+        }
+
+        .scene-background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('/game/forest_bg.svg') center/cover no-repeat;
+            opacity: 0.8;
+        }
+
+        /* 迷雾效果 */
+        .fog-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(100, 100, 150, 0.3) 70%);
+            z-index: 1;
+            pointer-events: none;
+            animation: fogPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes fogPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 0.5; }
+        }
+
+        /* 顶部UI */
+        .top-ui {
+            position: relative;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+        }
+
+        .progress-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .challenge-progress {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .coins-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 215, 0, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .btn-skip {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-skip:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* 主游戏区域 */
+        .game-area {
+            flex: 1;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* 怪物区域 */
+        .monster-area {
+            position: relative;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .monster-sprite {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            background: url('/game/monster_dark_cloud.svg') center/contain no-repeat;
+            animation: monsterFloat 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(100, 50, 150, 0.8));
+        }
+
+        @keyframes monsterFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .monster-name {
+            color: #ff6b6b;
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+
+        .monster-hp-bar {
+            width: 200px;
+            height: 12px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 6px;
+            margin: 10px auto;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .monster-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ff4757);
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        .monster-hp-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* 小橘角色 */
+        .xiaoju-area {
+            position: absolute;
+            bottom: 20%;
+            left: 10%;
+            text-align: center;
+        }
+
+        .xiaoju-sprite {
+            width: 100px;
+            height: 100px;
+            background: url('/game/xiaoju.svg') center/contain no-repeat;
+            animation: xiaojuBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes xiaojuBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* 小橘血量条 */
+        .xiaoju-hp-bar {
+            width: 120px;
+            height: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 5px;
+            margin: 8px auto 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .xiaoju-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .xiaoju-hp-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .xiaoju-speech {
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .xiaoju-speech::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
+        }
+
+        /* ========== 战斗动画 ========== */
+
+        /* 攻击冲刺动画 */
+        .attack-dash {
+            animation: attackDash 0.3s ease-out !important;
+        }
+
+        @keyframes attackDash {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(30px) scale(1.1); }
+            100% { transform: translateX(0) scale(1); }
+        }
+
+        /* 怪物攻击冲刺（向左冲） */
+        #monsterSprite.attack-dash {
+            animation: monsterAttackDash 0.3s ease-out !important;
+        }
+
+        @keyframes monsterAttackDash {
+            0% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(20px) translateX(-20px) scale(1.2); }
+            100% { transform: translateY(0) scale(1); }
+        }
+
+        /* 受击抖动 */
+        .hit-shake {
+            animation: hitShake 0.4s ease !important;
+        }
+
+        @keyframes hitShake {
+            0%, 100% { transform: translateX(0); filter: brightness(1); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); filter: brightness(1.5); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); filter: brightness(0.8); }
+        }
+
+        /* 击败消失动画 */
+        .defeat-fade {
+            animation: defeatFade 0.8s ease forwards !important;
+        }
+
+        @keyframes defeatFade {
+            0% { opacity: 1; transform: scale(1) rotate(0deg); }
+            50% { opacity: 0.5; transform: scale(1.2) rotate(10deg); }
+            100% { opacity: 0; transform: scale(0) rotate(-20deg); }
+        }
+
+        /* 伤害数字 */
+        .damage-number {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff4757;
+            text-shadow: 0 0 10px rgba(255,71,87,0.8), 2px 2px 0 #fff;
+            animation: damageFloat 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes damageFloat {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -80%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -150%) scale(1);
+            }
+        }
+
+        /* 攻击特效闪光 */
+        .attack-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 999;
+            animation: attackFlash 0.1s ease;
+        }
+
+        @keyframes attackFlash {
+            0% { opacity: 0; }
+            50% { opacity: 0.3; }
+            100% { opacity: 0; }
+        }
+
+        /* 挑战面板 */
+        .challenge-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .challenge-type-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .challenge-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .distortion-thought {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 0 10px 10px 0;
+            font-style: italic;
+            color: #856404;
+        }
+
+        .challenge-question {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        /* 选项网格 */
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .option-item:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .option-item.selected {
+            border-color: #667eea;
+            background: #e8edff;
+        }
+
+        .option-item.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .option-item.incorrect {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .option-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .option-item.selected .option-checkbox {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .option-text {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* 提交按钮 */
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 反馈提示 */
+        .feedback-message {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        .feedback-message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .feedback-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        /* CBT洞察 */
+        .cbt-insight {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .cbt-insight.show {
+            display: block;
+        }
+
+        .cbt-insight h4 {
+            color: #2e7d32;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .cbt-insight p {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* 胜利弹窗 */
+        .victory-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .victory-modal.show {
+            display: flex;
+        }
+
+        .victory-content {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: victoryPop 0.5s ease;
+        }
+
+        @keyframes victoryPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .victory-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .victory-title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .victory-subtitle {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .rewards-list {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .reward-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .reward-item:last-child {
+            border-bottom: none;
+        }
+
+        .reward-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #555;
+        }
+
+        .reward-value {
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .reward-value.negative {
+            color: #dc3545;
+        }
+
+        .btn-view-postcard {
+            background: linear-gradient(135deg, #ff9a56, #ff6b6b);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view-postcard:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        /* 加载状态 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .loading-xiaoju {
+            font-size: 80px;
+            animation: xiaojuWave 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes xiaojuWave {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        .loading-tips {
+            color: rgba(255,255,255,0.7);
+            margin-top: 15px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .loading-tips p {
+            margin: 8px 0;
+        }
+
+        /* 初始界面 */
+        .intro-panel {
+            background: rgba(255,255,255,0.95);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .intro-panel h2 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .intro-panel p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+
+        .monster-preview {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .monster-preview-item {
+            text-align: center;
+        }
+
+        .monster-preview-icon {
+            width: 60px;
+            height: 60px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 8px;
+        }
+
+        .monster-preview-name {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .btn-start-adventure {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-start-adventure:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-skip-adventure {
+            background: #e9ecef;
+            color: #666;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-skip-adventure:hover {
+            background: #dee2e6;
+        }
+
+        /* 隐藏状态 */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载遮罩 - AI出题等待页面 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-xiaoju">🦊</div>
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">小橘正在分析你的日记...</div>
+        <div class="loading-tips" id="loadingTips">
+            <p>✨ AI正在根据你的日记内容生成专属挑战</p>
+        </div>
+    </div>
+
+    <div class="adventure-container">
+        <!-- 场景背景 -->
+        <div class="scene-background"></div>
+        <div class="fog-layer"></div>
+
+        <!-- 顶部UI -->
+        <div class="top-ui" id="topUI" style="display: none;">
+            <div class="progress-info">
+                <div class="challenge-progress" id="challengeProgress">
+                    挑战 1/2
+                </div>
+                <div class="coins-display">
+                    <i class="fas fa-coins"></i>
+                    <span id="coinsEarned">0</span>
+                </div>
+            </div>
+            <button class="btn-skip" onclick="skipAdventure()">
+                <i class="fas fa-forward"></i> 跳过
+            </button>
+        </div>
+
+        <!-- 主游戏区域 -->
+        <div class="game-area">
+            <!-- 初始介绍面板 -->
+            <div class="intro-panel" id="introPanel">
+                <h2>迷雾森林探险</h2>
+                <p id="introText">小橘在迷雾森林中发现了一些迷雾怪物，它们是负面想法的化身。帮助小橘完成CBT挑战，消除这些迷雾怪物吧！</p>
+
+                <div class="monster-preview" id="monsterPreview">
+                    <!-- 动态生成怪物预览 -->
+                </div>
+
+                <div>
+                    <button class="btn-start-adventure" onclick="startAdventure()">
+                        <i class="fas fa-play"></i> 开始探险
+                    </button>
+                    <button class="btn-skip-adventure" onclick="skipAdventure()">
+                        跳过探险
+                    </button>
+                </div>
+            </div>
+
+            <!-- 挑战界面 -->
+            <div class="challenge-wrapper hidden" id="challengeWrapper">
+                <!-- 怪物区域 -->
+                <div class="monster-area" id="monsterArea">
+                    <div class="monster-sprite" id="monsterSprite"></div>
+                    <div class="monster-name" id="monsterName">黑云怪</div>
+                    <div class="monster-hp-bar">
+                        <div class="monster-hp-fill" id="monsterHpFill" style="width: 100%;"></div>
+                        <span class="monster-hp-text" id="monsterHpText">3/3</span>
+                    </div>
+                </div>
+
+                <!-- 挑战面板 -->
+                <div class="challenge-panel" id="challengePanel">
+                    <span class="challenge-type-badge" id="challengeTypeBadge">证据收集</span>
+                    <h3 class="challenge-title" id="challengeTitle">找出反驳这个想法的证据</h3>
+
+                    <div class="distortion-thought" id="distortionThought">
+                        "我觉得明天的演讲一定会失败"
+                    </div>
+
+                    <p class="challenge-question" id="challengeQuestion">
+                        从下面的选项中，选出能够反驳这个想法的证据：
+                    </p>
+
+                    <div class="options-grid" id="optionsGrid">
+                        <!-- 动态生成选项 -->
+                    </div>
+
+                    <button class="btn-submit" id="btnSubmit" onclick="submitAnswer()" disabled>
+                        确认选择
+                    </button>
+
+                    <div class="feedback-message" id="feedbackMessage"></div>
+
+                    <div class="cbt-insight" id="cbtInsight">
+                        <h4><i class="fas fa-lightbulb"></i> CBT小知识</h4>
+                        <p id="cbtInsightText"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 小橘角色 -->
+            <div class="xiaoju-area" id="xiaojuArea" style="display: none;">
+                <div class="xiaoju-speech" id="xiaojuSpeech">加油！我们一起战胜迷雾怪物！</div>
+                <div class="xiaoju-sprite"></div>
+                <div class="xiaoju-hp-bar">
+                    <div class="xiaoju-hp-fill" id="xiaojuHpFill" style="width: 100%;"></div>
+                    <span class="xiaoju-hp-text" id="xiaojuHpText">5/5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 胜利弹窗 -->
+    <div class="victory-modal" id="victoryModal">
+        <div class="victory-content">
+            <div class="victory-icon">🎉</div>
+            <h2 class="victory-title">探险完成！</h2>
+            <p class="victory-subtitle">小橘成功消除了所有迷雾怪物</p>
+
+            <div class="rewards-list" id="rewardsList">
+                <!-- 动态生成奖励 -->
+            </div>
+
+            <button class="btn-view-postcard" onclick="viewPostcard()">
+                <i class="fas fa-envelope"></i> 查看明信片
+            </button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/adventure.js') }}"></script>
+    <script>
+        // 从URL获取diary_id
+        const diaryId = {{ diary_id }};
+
+        // 初始化探险
+        document.addEventListener('DOMContentLoaded', function() {
+            initAdventure(diaryId);
+        });
+    </script>
+</body>
+</html>

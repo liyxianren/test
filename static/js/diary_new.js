@@ -296,9 +296,9 @@
             return;
         }
 
-        // 显示loading
+        // 显示loading - 新流程：保存后直接进入探险
         elements.saveDiary.disabled = true;
-        elements.saveDiary.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>保存中...';
+        elements.saveDiary.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>正在准备探险...';
 
         try {
             // 1. 保存日记
@@ -318,17 +318,16 @@
 
             if (saveResponse.data && saveResponse.data.diary) {
                 state.diaryId = saveResponse.data.diary.id;
-                showMessage('日记保存成功！正在跳转到分析结果...', 'success');
+                showMessage('日记保存成功！小橘正在准备探险...', 'success');
 
-                // 跳转到结果页面
+                // 直接跳转到探险页面（跳过result页面）
                 setTimeout(() => {
-                    window.location.href = `/diary/${state.diaryId}/result`;
-                }, 1000);
+                    window.location.href = `/adventure/${state.diaryId}`;
+                }, 800);
             }
         } catch (error) {
             console.error('保存日记失败:', error);
             showMessage(error.response?.data?.message || '保存失败，请重试', 'error');
-        } finally {
             // 恢复按钮
             elements.saveDiary.disabled = false;
             elements.saveDiary.innerHTML = '<i class="fas fa-save me-2"></i>保存日记';

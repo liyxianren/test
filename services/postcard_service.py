@@ -3,9 +3,9 @@
 明信片生成服务
 
 功能：
-1. 根据日记分析结果生成小狐狸旅行明信片
-2. 调用GLM生成图片prompt和明信片消息
-3. 调用图片生成API创建明信片图片
+1. 根据日记分析结果生成小狐狸回信明信片
+2. 调用豆包AI生成明信片消息和图片prompt
+3. 调用豆包Seedream生成明信片图片
 4. 保存明信片到数据库
 """
 
@@ -23,12 +23,17 @@ load_dotenv()
 # 明信片图片保存目录 (使用static/uploads以便Flask静态文件服务)
 POSTCARD_UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'postcards')
 
-# 导入智谱AI SDK
+# 豆包API配置
+DOUBAO_API_KEY = os.environ.get('DOUBAO_API_KEY', 'a7ce8af1-5b59-467b-984e-4d0934976e80')
+DOUBAO_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3"
+DOUBAO_POSTCARD_MODEL = os.environ.get('DOUBAO_POSTCARD_MODEL', 'doubao-seed-1-6-flash-250828')  # 用flash模型，速度更快
+
+# 导入OpenAI SDK（用于豆包API）
 try:
-    from zhipuai import ZhipuAI
+    from openai import OpenAI
 except ImportError:
-    ZhipuAI = None
-    print("警告: 未安装 zhipuai 包，ChatGLM功能将不可用", file=sys.stderr)
+    OpenAI = None
+    print("警告: 未安装 openai 包，豆包功能将不可用", file=sys.stderr)
 
 # 导入Prompt模板
 try:
@@ -48,10 +53,11 @@ def generate_postcard_data(
     intensity: int,
     mental_health_score: int,
     diary_content: str,
-    trigger_event: str = None
+    trigger_event: str = None,
+    adventure_result: dict = None
 ) -> dict:
     """
-    调用GLM生成明信片数据（图片prompt + 文字消息）
+    调用豆包AI生成明信片数据（小狐狸的回信 + 场景图片）
 
     Args:
         emotions: 情绪标签列表
@@ -59,50 +65,51 @@ def generate_postcard_data(
         mental_health_score: 心理健康值 (0-100)
         diary_content: 日记内容
         trigger_event: 触发事件
+        adventure_result: 探险结果 {'defeated_count': N, 'total_monsters': M}
 
     Returns:
         {
             'scene_name': '场景名称',
             'location_name': '诗意地点名',
             'image_prompt': '图片生成prompt',
-            'message': '小狐狸的消息'
+            'message': '小狐狸的回信'
         }
     """
-    zhipu_api_key = os.getenv('ZHIPU_API_KEY')
-
-    if not zhipu_api_key or not ZhipuAI:
-        print("[明信片] ChatGLM未配置，使用本地生成", file=sys.stderr)
+    if not OpenAI:
+        print("[明信片] OpenAI SDK未安装，使用本地生成", file=sys.stderr)
         return generate_postcard_local(emotions, intensity, mental_health_score, diary_content)
 
     try:
-        # 获取prompt
+        # 获取prompt（传递探险结果）
         system_prompt, user_prompt = get_full_postcard_prompt(
             emotions=emotions,
             intensity=intensity,
             mental_health_score=mental_health_score,
             diary_content=diary_content,
-            trigger_event=trigger_event
+            trigger_event=trigger_event,
+            adventure_result=adventure_result
         )
 
-        # 调用GLM-4.5-X（快速模型）
-        client = ZhipuAI(api_key=zhipu_api_key)
-        model_name = os.getenv('ZHIPU_POSTCARD_MODEL', 'glm-4.5-x')
+        # 调用豆包Seed模型（质量更好）
+        client = OpenAI(
+            api_key=DOUBAO_API_KEY,
+            base_url=DOUBAO_BASE_URL
+        )
 
-        print(f"[明信片] 调用GLM生成明信片数据，模型: {model_name}", file=sys.stderr)
+        print(f"[明信片] 调用豆包AI生成明信片数据，模型: {DOUBAO_POSTCARD_MODEL}", file=sys.stderr)
 
         response = client.chat.completions.create(
-            model=model_name,
+            model=DOUBAO_POSTCARD_MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            thinking={"type": "disabled"},
             temperature=0.8,  # 稍高温度以增加创意
             max_tokens=1024
         )
 
         raw_response = response.choices[0].message.content.strip()
-        print(f"[明信片] GLM响应长度: {len(raw_response)} 字符", file=sys.stderr)
+        print(f"[明信片] 豆包响应长度: {len(raw_response)} 字符", file=sys.stderr)
 
         # 解析JSON
         postcard_data = parse_json_response(raw_response)
@@ -115,7 +122,7 @@ def generate_postcard_data(
             return generate_postcard_local(emotions, intensity, mental_health_score, diary_content)
 
     except Exception as e:
-        print(f"[明信片] GLM调用失败: {str(e)}，使用本地生成", file=sys.stderr)
+        print(f"[明信片] 豆包调用失败: {str(e)}，使用本地生成", file=sys.stderr)
         return generate_postcard_local(emotions, intensity, mental_health_score, diary_content)
 
 
@@ -196,20 +203,18 @@ def generate_postcard_image(image_prompt: str) -> str:
     Returns:
         生成的图片URL，失败返回None
     """
-    # 获取豆包API配置
-    ark_api_key = os.getenv('ARK_API_KEY')
+    # 获取豆包API配置（优先使用ARK_API_KEY，否则使用DOUBAO_API_KEY）
+    ark_api_key = os.getenv('ARK_API_KEY') or DOUBAO_API_KEY
     image_model = os.getenv('DOUBAO_IMAGE_MODEL', 'doubao-seedream-4-5-251128')
 
     if not ark_api_key:
-        print("[明信片图片] 未配置豆包API Key (ARK_API_KEY)", file=sys.stderr)
+        print("[明信片图片] 未配置豆包API Key", file=sys.stderr)
         return None
 
     try:
         # 使用OpenAI SDK调用豆包API
-        from openai import OpenAI
-
         client = OpenAI(
-            base_url="https://ark.cn-beijing.volces.com/api/v3",
+            base_url=DOUBAO_BASE_URL,
             api_key=ark_api_key
         )
 
@@ -385,8 +390,9 @@ def create_postcard_async(
     trigger_event: str = None
 ):
     """
-    异步创建明信片（用于后台任务）
+    异步创建或更新明信片（用于后台任务）
     先创建pending状态的记录，然后异步生成图片
+    如果明信片已存在（例如由探险先创建），则更新它
 
     Args:
         同 create_postcard
@@ -403,24 +409,40 @@ def create_postcard_async(
             trigger_event=trigger_event
         )
 
-        # 2. 创建pending状态的记录
-        postcard = Postcard(
-            user_id=user_id,
-            diary_id=diary_id,
-            image_prompt=postcard_data['image_prompt'],
-            location_name=postcard_data['location_name'],
-            message=postcard_data['message'],
-            status='pending',
-            emotion_tags=emotions,
-            emotion_intensity=intensity,
-            mental_health_score=mental_health_score
-        )
+        # 2. 检查是否已存在该日记的明信片（可能由探险先创建）
+        postcard = Postcard.query.filter_by(diary_id=diary_id, user_id=user_id).first()
 
-        db.session.add(postcard)
+        if postcard:
+            # 已存在，更新内容（保留探险的stat_changes和coins_earned）
+            print(f"[明信片] 已存在记录 #{postcard.id}，更新内容", file=sys.stderr)
+            postcard.image_prompt = postcard_data['image_prompt']
+            postcard.location_name = postcard_data['location_name']
+            postcard.message = postcard_data['message']
+            postcard.emotion_tags = emotions
+            postcard.emotion_intensity = intensity
+            postcard.mental_health_score = mental_health_score
+            if postcard.status == 'pending':
+                # 只有pending状态才需要生成图片
+                pass
+        else:
+            # 不存在，创建新记录
+            postcard = Postcard(
+                user_id=user_id,
+                diary_id=diary_id,
+                image_prompt=postcard_data['image_prompt'],
+                location_name=postcard_data['location_name'],
+                message=postcard_data['message'],
+                status='pending',
+                emotion_tags=emotions,
+                emotion_intensity=intensity,
+                mental_health_score=mental_health_score
+            )
+            db.session.add(postcard)
+
         db.session.commit()
 
         postcard_id = postcard.id
-        print(f"[明信片] 创建pending记录，ID: {postcard_id}", file=sys.stderr)
+        print(f"[明信片] 创建/更新pending记录，ID: {postcard_id}", file=sys.stderr)
 
         # 3. 异步生成图片（这里可以用线程池或Celery）
         # 为了简单起见，这里直接在同一线程中生成

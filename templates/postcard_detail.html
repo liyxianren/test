@@ -177,6 +177,96 @@
             font-weight: 600;
         }
 
+        /* 探险收获展示区域 */
+        .adventure-rewards-section {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 2px solid #f59e0b;
+        }
+
+        .adventure-rewards-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 1rem;
+        }
+
+        .adventure-rewards-title i {
+            color: #f59e0b;
+        }
+
+        .stat-changes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .stat-change-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-change-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-change-icon {
+            font-size: 1.3rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-change-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-change-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .stat-change-value.positive {
+            color: #10b981;
+        }
+
+        .stat-change-value.negative {
+            color: #ef4444;
+        }
+
+        .stat-change-value.neutral {
+            color: #6b7280;
+        }
+
+        .coins-earned-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #fcd34d, #f59e0b);
+            color: #78350f;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .coins-earned-display i {
+            color: #b45309;
+            font-size: 1.2rem;
+        }
+
         .action-buttons {
             display: flex;
             justify-content: center;
@@ -234,6 +324,74 @@
             background: white;
             border-radius: 20px;
             margin-top: 100px;
+        }
+
+        /* Pending状态样式 */
+        .pending-postcard {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 20px;
+            margin-top: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .pending-fox-large {
+            font-size: 6rem;
+            animation: foxWalkLarge 1.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes foxWalkLarge {
+            0%, 100% { transform: translateY(0) rotate(-3deg); }
+            25% { transform: translateY(-15px) rotate(3deg); }
+            50% { transform: translateY(0) rotate(-3deg); }
+            75% { transform: translateY(-10px) rotate(3deg); }
+        }
+
+        .pending-title {
+            color: #92400e;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .pending-subtitle {
+            color: #b45309;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .pending-progress {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: #92400e;
+            font-size: 0.9rem;
+        }
+
+        .pending-progress i {
+            animation: spin 1s linear infinite;
+        }
+
+        .pending-location {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px dashed #f59e0b;
+        }
+
+        .pending-location-label {
+            color: #b45309;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pending-location-name {
+            color: #92400e;
+            font-size: 1.2rem;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
@@ -320,9 +478,20 @@
         function renderPostcard(postcard, diary) {
             const container = document.getElementById('postcardContent');
 
+            // 如果是pending状态，显示等待页面
+            if (postcard.status === 'pending') {
+                renderPendingPostcard(container, postcard, diary);
+                // 开始轮询检查状态
+                startPolling();
+                return;
+            }
+
             const imageHtml = postcard.image_url ?
                 `<img src="${postcard.image_url}" alt="明信片图片" onerror="this.outerHTML='<div class=\\'placeholder\\'>🦊</div>'">` :
                 `<div class="placeholder">🦊</div>`;
+
+            // 构建数值变化展示
+            const statChangesHtml = buildStatChangesHtml(postcard.stat_changes, postcard.coins_earned);
 
             container.innerHTML = `
                 <div class="postcard-frame">
@@ -351,6 +520,7 @@
                                     `<span class="health">心理健康 ${postcard.mental_health_score}</span>` : ''}
                             </div>
                         </div>
+                        ${statChangesHtml}
                     </div>
                 </div>
 
@@ -363,6 +533,138 @@
                     <a href="/postcards" class="action-btn secondary">
                         <i class="fas fa-images"></i> 更多明信片
                     </a>
+                </div>
+            `;
+        }
+
+        function renderPendingPostcard(container, postcard, diary) {
+            container.innerHTML = `
+                <div class="pending-postcard">
+                    <div class="pending-fox-large">🦊</div>
+                    <h2 class="pending-title">小橘正在寄出明信片...</h2>
+                    <p class="pending-subtitle">
+                        小橘正在整理这次探险的收获，<br>
+                        精心挑选最美的风景给你～<br>
+                        请稍等片刻，马上就好！
+                    </p>
+                    <div class="pending-progress">
+                        <i class="fas fa-spinner"></i>
+                        <span>正在生成中...</span>
+                    </div>
+                    ${postcard.location_name ? `
+                        <div class="pending-location">
+                            <div class="pending-location-label">小橘的位置</div>
+                            <div class="pending-location-name">
+                                <i class="fas fa-map-marker-alt"></i> ${postcard.location_name}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="action-buttons">
+                    ${diary ? `
+                        <a href="/diary/${diary.id}" class="action-btn primary">
+                            <i class="fas fa-book"></i> 查看日记
+                        </a>
+                    ` : ''}
+                    <a href="/postcards" class="action-btn secondary">
+                        <i class="fas fa-images"></i> 更多明信片
+                    </a>
+                </div>
+            `;
+        }
+
+        let pollingInterval = null;
+
+        function startPolling() {
+            // 每3秒检查一次状态
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/postcard/${postcardId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.postcard.status !== 'pending') {
+                            // 明信片生成完成，停止轮询并重新渲染
+                            clearInterval(pollingInterval);
+                            renderPostcard(data.postcard, data.diary);
+                            if (!data.postcard.is_read) {
+                                markAsRead();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 3000);
+        }
+
+        // 页面离开时清理轮询
+        window.addEventListener('beforeunload', () => {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        });
+
+        function buildStatChangesHtml(statChanges, coinsEarned) {
+            // 如果没有数值变化和金币，不显示这个区域
+            const hasChanges = statChanges && Object.keys(statChanges).length > 0;
+            const hasCoins = coinsEarned && coinsEarned > 0;
+
+            if (!hasChanges && !hasCoins) {
+                return '';
+            }
+
+            const statConfig = {
+                'mental_health': { label: '心理健康', icon: '💚', positiveGood: true },
+                'stress': { label: '压力值', icon: '😰', positiveGood: false },
+                'growth': { label: '成长值', icon: '🌱', positiveGood: true },
+                'energy': { label: '能量', icon: '⚡', positiveGood: true },
+                'happiness': { label: '幸福感', icon: '😊', positiveGood: true }
+            };
+
+            let statItemsHtml = '';
+            if (hasChanges) {
+                for (const [stat, change] of Object.entries(statChanges)) {
+                    if (change === 0) continue;
+
+                    const config = statConfig[stat] || { label: stat, icon: '📊', positiveGood: true };
+                    const isPositive = config.positiveGood ? change > 0 : change < 0;
+                    const valueClass = isPositive ? 'positive' : 'negative';
+                    const displayValue = change > 0 ? `+${change}` : `${change}`;
+
+                    statItemsHtml += `
+                        <div class="stat-change-item">
+                            <div class="stat-change-icon">${config.icon}</div>
+                            <div class="stat-change-label">${config.label}</div>
+                            <div class="stat-change-value ${valueClass}">${displayValue}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            let coinsHtml = '';
+            if (hasCoins) {
+                coinsHtml = `
+                    <div class="coins-earned-display">
+                        <i class="fas fa-coins"></i>
+                        <span>探险获得 ${coinsEarned} 金币</span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="adventure-rewards-section">
+                    <div class="adventure-rewards-title">
+                        <i class="fas fa-trophy"></i>
+                        <span>探险收获</span>
+                    </div>
+                    ${statItemsHtml ? `<div class="stat-changes-grid">${statItemsHtml}</div>` : ''}
+                    ${coinsHtml}
                 </div>
             `;
         }

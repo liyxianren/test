@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 心形怪 - Q版可爱风格 - 情绪推理/以情绪判断事实 -->
+  <!-- 渐变定义 -->
+  <defs>
+    <radialGradient id="heartGrad" cx="30%" cy="30%">
+      <stop offset="0%" style="stop-color:#FDA4AF"/>
+      <stop offset="50%" style="stop-color:#FB7185"/>
+      <stop offset="100%" style="stop-color:#E11D48"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 阴影 -->
+  <ellipse cx="50" cy="90" rx="25" ry="5" fill="#BE123C" opacity="0.3"/>
+
+  <!-- 心形主体 - 跳动效果 -->
+  <path d="M50 82 C15 52 5 32 22 22 C34 14 50 22 50 35 C50 22 66 14 78 22 C95 32 85 52 50 82 Z" fill="url(#heartGrad)" stroke="#BE123C" stroke-width="1">
+    <animate attributeName="d"
+      values="M50 82 C15 52 5 32 22 22 C34 14 50 22 50 35 C50 22 66 14 78 22 C95 32 85 52 50 82 Z;
+              M50 78 C18 50 8 32 23 23 C35 16 50 24 50 36 C50 24 65 16 77 23 C92 32 82 50 50 78 Z;
+              M50 82 C15 52 5 32 22 22 C34 14 50 22 50 35 C50 22 66 14 78 22 C95 32 85 52 50 82 Z"
+      dur="0.8s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- 心形高光 -->
+  <ellipse cx="30" cy="35" rx="10" ry="7" fill="white" opacity="0.4"/>
+  <ellipse cx="70" cy="35" rx="10" ry="7" fill="white" opacity="0.4"/>
+
+  <!-- 超大水汪汪眼睛 -->
+  <ellipse cx="38" cy="45" rx="11" ry="13" fill="white"/>
+  <ellipse cx="62" cy="45" rx="11" ry="13" fill="white"/>
+
+  <!-- 眼珠 - 有点泪眼汪汪 -->
+  <circle cx="40" cy="47" r="6" fill="#BE123C">
+    <animate attributeName="cy" values="47;45;47" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="64" cy="47" r="6" fill="#BE123C">
+    <animate attributeName="cy" values="47;45;47" dur="2s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 眼睛高光 -->
+  <circle cx="42" cy="44" r="2.5" fill="white"/>
+  <circle cx="66" cy="44" r="2.5" fill="white"/>
+  <circle cx="38" cy="49" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="62" cy="49" r="1.5" fill="white" opacity="0.6"/>
+
+  <!-- 担忧的八字眉 -->
+  <path d="M28 36 Q38 32 48 38" fill="none" stroke="#9F1239" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M72 36 Q62 32 52 38" fill="none" stroke="#9F1239" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 可爱泪滴 -->
+  <ellipse cx="28" cy="58" rx="4" ry="6" fill="#93C5FD" opacity="0.8">
+    <animate attributeName="cy" values="58;68;58" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;0.2;0.8" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="72" cy="56" rx="4" ry="6" fill="#93C5FD" opacity="0.8">
+    <animate attributeName="cy" values="56;66;56" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="opacity" values="0.8;0.2;0.8" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+  </ellipse>
+
+  <!-- 嘴巴 - 颤抖的嘟嘴 -->
+  <ellipse cx="50" cy="62" rx="8" ry="5" fill="#FFE4E6"/>
+  <path d="M44 62 Q50 58 56 62" fill="none" stroke="#9F1239" stroke-width="2" stroke-linecap="round">
+    <animate attributeName="d"
+      values="M44 62 Q50 58 56 62;M44 64 Q50 60 56 64;M44 62 Q50 58 56 62"
+      dur="0.5s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- 情绪波动线 - 更可爱 -->
+  <path d="M10 50 Q15 40 20 50 Q25 60 30 50" fill="none" stroke="#FDA4AF" stroke-width="3" stroke-linecap="round" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="1s" repeatCount="indefinite"/>
+  </path>
+  <path d="M70 50 Q75 40 80 50 Q85 60 90 50" fill="none" stroke="#FDA4AF" stroke-width="3" stroke-linecap="round" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="1s" repeatCount="indefinite" begin="0.3s"/>
+  </path>
+
+  <!-- 小爱心装饰 -->
+  <path d="M15 25 C13 23 10 25 15 30 C20 25 17 23 15 25" fill="#FDA4AF" opacity="0.7">
+    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M85 28 C83 26 80 28 85 33 C90 28 87 26 85 28" fill="#FDA4AF" opacity="0.7">
+    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" repeatCount="indefinite" begin="0.5s"/>
+  </path>
+
+  <!-- 可爱小手 -->
+  <ellipse cx="12" cy="55" rx="6" ry="5" fill="#FB7185">
+    <animateTransform attributeName="transform" type="rotate" values="-10 12 55;10 12 55;-10 12 55" dur="0.8s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="88" cy="55" rx="6" ry="5" fill="#FB7185">
+    <animateTransform attributeName="transform" type="rotate" values="10 88 55;-10 88 55;10 88 55" dur="0.8s" repeatCount="indefinite"/>
+  </ellipse>
+</svg>

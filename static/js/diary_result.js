@@ -40,6 +40,30 @@
         }
     }
 
+    // 预加载探险会话（后台执行，不阻塞分析）
+    async function preloadAdventureSession() {
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        if (!token) return;
+
+        try {
+            console.log('[预加载] 开始预加载探险会话...');
+            const response = await fetch(`${window.location.origin}/api/adventure/session/${diaryId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('[预加载] 探险会话已准备:', data.scene_name || '未知场景');
+            }
+        } catch (error) {
+            console.warn('[预加载] 探险预加载失败，用户进入时会重新加载:', error.message);
+        }
+    }
+
     // 统一分析函数 - 使用新的unified-analyze端点
     async function loadUnifiedAnalysis() {
         console.log('[统一分析] 开始调用API');
@@ -50,6 +74,10 @@
             showAnalysisError('请先登录后再查看分析结果');
             return;
         }
+
+        // 并行执行：分析API + 探险预加载
+        // 探险预加载在后台执行，不阻塞分析结果显示
+        preloadAdventureSession();
 
         try {
             const response = await fetch(`${window.location.origin}/api/analysis/${diaryId}/unified-analyze`, {

@@ -2,9 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import EmotionDiary, db, User, GameState
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
 import sys
 
 bp = Blueprint('diary', __name__)
+
+# 线程池用于后台任务
+_executor = ThreadPoolExecutor(max_workers=2)
 
 @bp.route('/', methods=['GET'])
 @jwt_required()
@@ -114,9 +118,16 @@ def create_diary():
         db.session.add(new_diary)
         db.session.commit()
 
+        diary_id = new_diary.id
+        diary_data = new_diary.to_dict()
+
+        # 日记创建完成，不再触发后台分析
+        # 分数和金币在游戏完成时计算，明信片在游戏完成后生成
+        print(f"[日记创建] 日记创建成功，ID: {diary_id}，等待用户完成探险游戏", file=sys.stderr)
+
         return jsonify({
             'message': 'Diary created successfully',
-            'diary': new_diary.to_dict()
+            'diary': diary_data
         }), 201
 
     except Exception as e:

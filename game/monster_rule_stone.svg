@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 规则石 - Q版可爱风格 - 应该思维/完美主义 -->
+  <!-- 渐变定义 -->
+  <defs>
+    <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9CA3AF"/>
+      <stop offset="50%" style="stop-color:#6B7280"/>
+      <stop offset="100%" style="stop-color:#4B5563"/>
+    </linearGradient>
+    <linearGradient id="crackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#374151"/>
+      <stop offset="100%" style="stop-color:#1F2937"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 阴影 -->
+  <ellipse cx="50" cy="92" rx="28" ry="5" fill="#374151" opacity="0.4"/>
+
+  <!-- 圆润的石板身体 -->
+  <rect x="18" y="25" width="64" height="60" rx="12" fill="url(#stoneGrad)" stroke="#4B5563" stroke-width="2"/>
+
+  <!-- 内部浅色区域 -->
+  <rect x="23" y="30" width="54" height="50" rx="8" fill="#D1D5DB" opacity="0.3"/>
+
+  <!-- 可爱的裂纹 - 更艺术化 -->
+  <path d="M38 25 Q40 40 35 55 Q38 70 33 85" stroke="#4B5563" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M62 25 Q58 38 63 52 Q60 68 65 85" stroke="#4B5563" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- 超大眼睛 -->
+  <ellipse cx="38" cy="48" rx="10" ry="12" fill="white"/>
+  <ellipse cx="62" cy="48" rx="10" ry="12" fill="white"/>
+
+  <!-- 严肃的方形眼珠 -->
+  <rect x="34" y="46" width="10" height="10" rx="2" fill="#DC2626">
+    <animate attributeName="height" values="10;6;10" dur="3s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="58" y="46" width="10" height="10" rx="2" fill="#DC2626">
+    <animate attributeName="height" values="10;6;10" dur="3s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- 眼睛高光 -->
+  <rect x="35" y="47" width="3" height="3" rx="1" fill="white"/>
+  <rect x="59" y="47" width="3" height="3" rx="1" fill="white"/>
+
+  <!-- 严厉的眉毛 -->
+  <path d="M28 38 L48 42" stroke="#374151" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 38 L52 42" stroke="#374151" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 嘴巴 - 倒U形不满 -->
+  <path d="M42 68 Q50 62 58 68" fill="none" stroke="#374151" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 可爱的规则文字标签 -->
+  <rect x="25" y="75" width="22" height="8" rx="2" fill="#FEE2E2" stroke="#FECACA" stroke-width="1"/>
+  <text x="36" y="81" font-size="5" fill="#B91C1C" text-anchor="middle" font-family="sans-serif">必须!</text>
+
+  <rect x="53" y="75" width="22" height="8" rx="2" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1"/>
+  <text x="64" y="81" font-size="5" fill="#B45309" text-anchor="middle" font-family="sans-serif">应该!</text>
+
+  <!-- 顶部警告标志 - 可爱版 -->
+  <circle cx="50" cy="18" r="10" fill="#FCD34D" stroke="#F59E0B" stroke-width="2"/>
+  <text x="50" y="22" font-size="12" fill="#B45309" text-anchor="middle" font-weight="bold">!</text>
+
+  <!-- 小手 - 指指点点 -->
+  <ellipse cx="8" cy="55" rx="6" ry="5" fill="#9CA3AF">
+    <animateTransform attributeName="transform" type="rotate" values="-5 8 55;5 8 55;-5 8 55" dur="1s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="92" cy="55" rx="6" ry="5" fill="#9CA3AF">
+    <animateTransform attributeName="transform" type="rotate" values="5 92 55;-5 92 55;5 92 55" dur="1s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 锁链装饰 - 更可爱 -->
+  <circle cx="12" cy="38" r="4" fill="none" stroke="#6B7280" stroke-width="2"/>
+  <circle cx="12" cy="48" r="4" fill="none" stroke="#6B7280" stroke-width="2"/>
+  <circle cx="88" cy="38" r="4" fill="none" stroke="#6B7280" stroke-width="2"/>
+  <circle cx="88" cy="48" r="4" fill="none" stroke="#6B7280" stroke-width="2"/>
+
+  <!-- 小脚 -->
+  <ellipse cx="35" cy="90" rx="8" ry="4" fill="#6B7280"/>
+  <ellipse cx="65" cy="90" rx="8" ry="4" fill="#6B7280"/>
+</svg>

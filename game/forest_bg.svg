@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- 迷雾森林背景 -->
+  <!-- 天空渐变 -->
+  <defs>
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="50%" style="stop-color:#2d1b4e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="fogGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8888aa;stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#8888aa;stop-opacity:0.6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="400" height="300" fill="url(#skyGrad)"/>
+
+  <!-- 星星 -->
+  <circle cx="50" cy="30" r="1" fill="white" opacity="0.8"/>
+  <circle cx="120" cy="50" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="200" cy="20" r="1" fill="white" opacity="0.9"/>
+  <circle cx="280" cy="40" r="1.2" fill="white" opacity="0.7"/>
+  <circle cx="350" cy="25" r="1" fill="white" opacity="0.8"/>
+  <circle cx="80" cy="70" r="0.8" fill="white" opacity="0.5"/>
+  <circle cx="320" cy="60" r="1" fill="white" opacity="0.6"/>
+
+  <!-- 远处山脉 -->
+  <polygon points="0,200 50,150 100,180 150,140 200,170 250,130 300,160 350,120 400,150 400,200" fill="#1a1a3e" opacity="0.8"/>
+
+  <!-- 树木剪影 - 后排 -->
+  <polygon points="20,200 35,120 50,200" fill="#0d0d1a"/>
+  <polygon points="60,200 80,100 100,200" fill="#0d0d1a"/>
+  <polygon points="120,200 145,90 170,200" fill="#0d0d1a"/>
+  <polygon points="200,200 220,110 240,200" fill="#0d0d1a"/>
+  <polygon points="270,200 295,80 320,200" fill="#0d0d1a"/>
+  <polygon points="340,200 360,100 380,200" fill="#0d0d1a"/>
+
+  <!-- 树木剪影 - 前排 -->
+  <polygon points="-10,300 20,180 50,300" fill="#0a0a15"/>
+  <polygon points="80,300 120,160 160,300" fill="#0a0a15"/>
+  <polygon points="230,300 270,170 310,300" fill="#0a0a15"/>
+  <polygon points="350,300 385,190 420,300" fill="#0a0a15"/>
+
+  <!-- 地面 -->
+  <rect x="0" y="250" width="400" height="50" fill="#0d0d1a"/>
+  <ellipse cx="50" cy="260" rx="30" ry="8" fill="#151525"/>
+  <ellipse cx="150" cy="270" rx="40" ry="10" fill="#151525"/>
+  <ellipse cx="280" cy="255" rx="35" ry="8" fill="#151525"/>
+  <ellipse cx="370" cy="265" rx="25" ry="7" fill="#151525"/>
+
+  <!-- 迷雾层 -->
+  <rect x="0" y="150" width="400" height="150" fill="url(#fogGrad)"/>
+
+  <!-- 飘动的迷雾 -->
+  <ellipse cx="100" cy="220" rx="80" ry="20" fill="#8888aa" opacity="0.3">
+    <animate attributeName="cx" values="100;120;100" dur="8s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="300" cy="200" rx="100" ry="25" fill="#9999bb" opacity="0.25">
+    <animate attributeName="cx" values="300;280;300" dur="10s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="200" cy="240" rx="120" ry="30" fill="#7777aa" opacity="0.2">
+    <animate attributeName="cx" values="200;220;200" dur="12s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 神秘光点 -->
+  <circle cx="80" cy="180" r="3" fill="#aabbff" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="320" cy="190" r="2" fill="#aabbff" opacity="0.5">
+    <animate attributeName="opacity" values="0.5;0.1;0.5" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="200" cy="170" r="2.5" fill="#ccddff" opacity="0.4">
+    <animate attributeName="opacity" values="0.4;0.1;0.4" dur="5s" repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -178,6 +178,10 @@ class Postcard(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     read_at = db.Column(db.DateTime)
 
+    # 探险获得的数值变化（JSON格式）
+    stat_changes = db.Column(db.JSON, default=dict)  # {"mental_health": +5, "stress": -3, "growth": +2}
+    coins_earned = db.Column(db.Integer, default=0)  # 探险获得的金币
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -194,7 +198,9 @@ class Postcard(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'generated_at': self.generated_at.isoformat() if self.generated_at else None,
             'is_read': self.is_read,
-            'read_at': self.read_at.isoformat() if self.read_at else None
+            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'stat_changes': self.stat_changes or {},
+            'coins_earned': self.coins_earned or 0
         }
 
 
@@ -228,4 +234,96 @@ class GameProgress(db.Model):
             'alternative_thoughts': self.alternative_thoughts,
             'game_rewards': self.game_rewards,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
+        }
+
+
+class AdventureSession(db.Model):
+    """
+    探险会话模型 - CBT交互式探险游戏
+
+    每次用户写完日记后，可以开始一次探险
+    探险中需要帮助小橘击败"迷雾怪物"（认知扭曲的具象化）
+    """
+    __tablename__ = 'adventure_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    diary_id = db.Column(db.Integer, db.ForeignKey('emotion_diaries.id'), nullable=False)
+
+    # 探险状态
+    status = db.Column(db.String(20), default='pending')  # pending/in_progress/completed/skipped
+    scene_name = db.Column(db.String(100))                # 场景名称，如"迷雾森林"
+
+    # 怪物和挑战配置（JSON）
+    monsters = db.Column(db.JSON, default=list)           # [{type, name_zh, severity, defeated}]
+    challenges = db.Column(db.JSON, default=list)         # [{type, question, options, correct_ids, completed}]
+    current_challenge = db.Column(db.Integer, default=0)  # 当前挑战索引
+
+    # 奖励
+    coins_earned = db.Column(db.Integer, default=0)
+    items_earned = db.Column(db.JSON, default=list)       # [{name, name_zh, effect_type, effect_value}]
+    stat_changes = db.Column(db.JSON, default=dict)       # {mental_health: +3, stress: -5}
+
+    # 时间戳
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'diary_id': self.diary_id,
+            'status': self.status,
+            'scene_name': self.scene_name,
+            'monsters': self.monsters or [],
+            'challenges': self.challenges or [],
+            'current_challenge': self.current_challenge,
+            'coins_earned': self.coins_earned,
+            'items_earned': self.items_earned or [],
+            'stat_changes': self.stat_changes or {},
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+        }
+
+
+class UserItem(db.Model):
+    """
+    用户道具模型 - 探险获得的道具
+
+    道具类型:
+    - healing: 治愈道具，可消除负面效果（如阳光露水、平衡羽毛）
+    - adventure: 探险道具，帮助挑战（如迷雾灯笼、智慧眼镜）
+    - cosmetic: 装饰道具，装扮小橘（MVP暂不实现）
+    """
+    __tablename__ = 'user_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    # 道具信息
+    item_name = db.Column(db.String(50), nullable=False)      # 道具英文名
+    item_name_zh = db.Column(db.String(50), nullable=False)   # 道具中文名
+    item_type = db.Column(db.String(20), default='healing')   # healing/adventure/cosmetic
+    quantity = db.Column(db.Integer, default=1)
+
+    # 道具效果
+    effect_type = db.Column(db.String(30))    # stress_reduce/mental_boost/growth_boost/difficulty_reduce
+    effect_value = db.Column(db.Integer, default=0)
+
+    # 时间戳
+    acquired_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'item_name': self.item_name,
+            'item_name_zh': self.item_name_zh,
+            'item_type': self.item_type,
+            'quantity': self.quantity,
+            'effect_type': self.effect_type,
+            'effect_value': self.effect_value,
+            'acquired_at': self.acquired_at.isoformat() if self.acquired_at else None
         }

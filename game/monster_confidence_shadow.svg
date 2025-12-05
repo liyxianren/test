@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 自信阴影 - 遮挡你看到自己优点的阴影 -->
+  <!-- 阴影主体 - 人形但模糊 -->
+  <ellipse cx="50" cy="75" rx="35" ry="10" fill="#1A1A2E" opacity="0.5"/>
+  <!-- 阴影身体 -->
+  <path d="M35 80 Q30 50 35 35 Q40 20 50 15 Q60 20 65 35 Q70 50 65 80 Z" fill="#2D2D44" opacity="0.9">
+    <animate attributeName="d"
+      values="M35 80 Q30 50 35 35 Q40 20 50 15 Q60 20 65 35 Q70 50 65 80 Z;
+              M33 80 Q28 50 33 35 Q40 18 50 13 Q60 18 67 35 Q72 50 67 80 Z;
+              M35 80 Q30 50 35 35 Q40 20 50 15 Q60 20 65 35 Q70 50 65 80 Z"
+      dur="4s" repeatCount="indefinite"/>
+  </path>
+  <!-- 阴影手臂 - 遮挡姿势 -->
+  <path d="M35 45 Q20 40 15 50" fill="none" stroke="#2D2D44" stroke-width="10" stroke-linecap="round" opacity="0.9">
+    <animate attributeName="d"
+      values="M35 45 Q20 40 15 50;M35 45 Q18 42 12 52;M35 45 Q20 40 15 50"
+      dur="3s" repeatCount="indefinite"/>
+  </path>
+  <path d="M65 45 Q80 40 85 50" fill="none" stroke="#2D2D44" stroke-width="10" stroke-linecap="round" opacity="0.9">
+    <animate attributeName="d"
+      values="M65 45 Q80 40 85 50;M65 45 Q82 42 88 52;M65 45 Q80 40 85 50"
+      dur="3s" repeatCount="indefinite"/>
+  </path>
+  <!-- 眼睛 - 发光的冷光 -->
+  <ellipse cx="43" cy="35" rx="5" ry="6" fill="#6366F1" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.5;0.8" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="57" cy="35" rx="5" ry="6" fill="#6366F1" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.5;0.8" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+  <circle cx="43" cy="35" r="2" fill="white" opacity="0.9"/>
+  <circle cx="57" cy="35" r="2" fill="white" opacity="0.9"/>
+  <!-- 被遮挡的光芒（代表自信） -->
+  <g opacity="0.2">
+    <circle cx="50" cy="50" r="25" fill="#FFD700"/>
+    <circle cx="50" cy="50" r="20" fill="#FFC107"/>
+    <circle cx="50" cy="50" r="15" fill="#FFE082"/>
+  </g>
+  <!-- 阴影边缘的烟雾效果 -->
+  <circle cx="25" cy="60" r="8" fill="#1A1A2E" opacity="0.3">
+    <animate attributeName="r" values="8;10;8" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="75" cy="55" r="6" fill="#1A1A2E" opacity="0.3">
+    <animate attributeName="r" values="6;8;6" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="50" cy="20" r="5" fill="#1A1A2E" opacity="0.2">
+    <animate attributeName="cy" values="20;18;20" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <!-- 嘴巴 - 冷笑 -->
+  <path d="M45 50 Q50 48 55 50" fill="none" stroke="#6366F1" stroke-width="2" opacity="0.6"/>
+</svg>

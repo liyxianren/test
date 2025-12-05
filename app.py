@@ -9,11 +9,15 @@ from urllib.parse import quote_plus
 
 # 导入扩展和模型
 from extensions import db, init_extensions
-from models import User, EmotionDiary, EmotionAnalysis, GameState, GameProgress, Postcard
-from routes import auth_bp, diary_bp, upload_bp, analysis_bp, game_bp, postcard_bp
+from models import User, EmotionDiary, EmotionAnalysis, GameState, GameProgress, Postcard, AdventureSession, UserItem
+from routes import auth_bp, diary_bp, upload_bp, analysis_bp, game_bp, postcard_bp, adventure_bp
 
-# 加载环境变量
-load_dotenv()
+# 加载环境变量（override=True 确保.env文件优先于系统环境变量）
+load_dotenv(override=True)
+
+# 打印AI模型配置（仅在调试模式下）
+if os.getenv('FLASK_DEBUG', '').lower() == 'true':
+    print(f"[启动] AI模型: ZHIPU={os.getenv('ZHIPU_MODEL_NAME')}, POSTCARD={os.getenv('ZHIPU_POSTCARD_MODEL')}")
 
 # 创建Flask应用
 app = Flask(__name__)
@@ -99,7 +103,30 @@ def ensure_schema_updates():
             'mental_health_score': 'INTEGER',
             'generated_at': 'DATETIME',
             'is_read': 'BOOLEAN DEFAULT 0',
-            'read_at': 'DATETIME'
+            'read_at': 'DATETIME',
+            # 探险收获
+            'stat_changes': 'JSON',
+            'coins_earned': 'INTEGER DEFAULT 0'
+        },
+        'adventure_sessions': {
+            # 探险会话表字段
+            'scene_name': 'VARCHAR(100)',
+            'monsters': 'JSON',
+            'challenges': 'JSON',
+            'current_challenge': 'INTEGER DEFAULT 0',
+            'coins_earned': 'INTEGER DEFAULT 0',
+            'items_earned': 'JSON',
+            'stat_changes': 'JSON',
+            'started_at': 'DATETIME',
+            'completed_at': 'DATETIME'
+        },
+        'user_items': {
+            # 用户道具表字段
+            'item_name_zh': 'VARCHAR(50)',
+            'item_type': 'VARCHAR(20) DEFAULT "healing"',
+            'quantity': 'INTEGER DEFAULT 1',
+            'effect_type': 'VARCHAR(30)',
+            'effect_value': 'INTEGER DEFAULT 0'
         }
     }
 
@@ -152,6 +179,7 @@ app.register_blueprint(upload_bp, url_prefix='/api')
 app.register_blueprint(analysis_bp, url_prefix='/api/analysis')
 app.register_blueprint(game_bp, url_prefix='/api/game')
 app.register_blueprint(postcard_bp, url_prefix='/api/postcard')
+app.register_blueprint(adventure_bp, url_prefix='/api/adventure')
 
 # 主页路由
 @app.route('/')
@@ -231,8 +259,13 @@ def postcard_detail(postcard_id):
 
 @app.route('/game/home')
 def game_home():
-    """游戏主页面（小橘的家）"""
+    """游戏主页面（小橘探险）"""
     return render_template('game_home.html')
+
+@app.route('/adventure/<int:diary_id>')
+def adventure_page(diary_id):
+    """探险游戏页面"""
+    return render_template('adventure.html', diary_id=diary_id)
 
 # 静态文件服务：game文件夹
 @app.route('/game/<path:filename>')
