@@ -121,9 +121,26 @@ def create_diary():
         diary_id = new_diary.id
         diary_data = new_diary.to_dict()
 
-        # 日记创建完成，不再触发后台分析
-        # 分数和金币在游戏完成时计算，明信片在游戏完成后生成
-        print(f"[日记创建] 日记创建成功，ID: {diary_id}，等待用户完成探险游戏", file=sys.stderr)
+        # 日记创建完成后，立即触发后台生成明信片
+        # 分数和金币仍在游戏完成时计算
+        print(f"[日记创建] 日记创建成功，ID: {diary_id}", file=sys.stderr)
+
+        # 后台生成明信片（不阻塞响应）
+        try:
+            from services.postcard_service import create_postcard_async
+            intensity = emotion_score.get('intensity', 5) if isinstance(emotion_score, dict) else 5
+            create_postcard_async(
+                user_id=user_id,
+                diary_id=diary_id,
+                emotions=emotion_tags or [],
+                intensity=intensity,
+                mental_health_score=game_state.mental_health_score if game_state else 50,
+                diary_content=content,
+                trigger_event=trigger_event
+            )
+            print(f"[日记创建] 明信片生成已触发", file=sys.stderr)
+        except Exception as e:
+            print(f"[日记创建] 明信片生成触发失败（不影响日记保存）: {e}", file=sys.stderr)
 
         return jsonify({
             'message': 'Diary created successfully',

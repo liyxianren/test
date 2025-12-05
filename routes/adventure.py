@@ -485,7 +485,7 @@ def retry_adventure(adventure_id):
 @adventure_bp.route('/<int:adventure_id>/skip', methods=['POST'])
 @jwt_required()
 def skip_adventure(adventure_id):
-    """跳过探险（不获得奖励）"""
+    """跳过探险（不获得奖励，但仍生成明信片）"""
     user_id = get_jwt_identity()
     session = AdventureSession.query.filter_by(id=adventure_id, user_id=user_id).first()
 
@@ -497,12 +497,46 @@ def skip_adventure(adventure_id):
 
     session.status = 'skipped'
     session.completed_at = datetime.utcnow()
+
+    # 获取日记信息
+    diary = EmotionDiary.query.get(session.diary_id)
+    game_state = GameState.query.filter_by(user_id=user_id).first()
+
+    # 跳过探险也生成明信片（但没有探险奖励）
+    postcard = Postcard.query.filter_by(diary_id=session.diary_id, user_id=user_id).first()
+    postcard_id = None
+
+    if not postcard and diary:
+        print(f"[探险] 跳过探险，创建明信片")
+        postcard = Postcard(
+            user_id=user_id,
+            diary_id=session.diary_id,
+            location_name=session.scene_name or '迷雾森林',
+            message='',
+            status='pending',
+            emotion_tags=diary.emotion_tags or [],
+            emotion_intensity=diary.emotion_score.get('intensity', 5) if isinstance(diary.emotion_score, dict) else 5,
+            mental_health_score=game_state.mental_health_score if game_state else 50,
+            stat_changes={},  # 跳过无奖励
+            coins_earned=0
+        )
+        db.session.add(postcard)
+        db.session.flush()
+
+        # 触发后台生成明信片内容（无探险结果）
+        trigger_postcard_generation(postcard.id, diary, session.scene_name, adventure_result=None)
+        postcard_id = postcard.id
+    elif postcard:
+        postcard_id = postcard.id
+
     db.session.commit()
 
     return jsonify({
         'success': True,
         'message': '已跳过探险',
-        'adventure': session.to_dict()
+        'adventure': session.to_dict(),
+        'postcard_id': postcard_id,
+        'postcard_message': '小橘稍后会给你寄明信片哦～' if postcard_id else None
     })
 
 
