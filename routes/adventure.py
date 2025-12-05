@@ -31,6 +31,7 @@ SCENE_NAMES_POSITIVE = ['阳光草地', '彩虹桥', '欢乐花园', '晨曦小�
 @jwt_required()
 def get_or_create_session(diary_id):
     """获取或创建探险会话 - 支持AI动态生成挑战"""
+    import sys
     user_id = get_jwt_identity()
 
     # 检查日记是否存在且属于当前用户
@@ -42,14 +43,27 @@ def get_or_create_session(diary_id):
     session = AdventureSession.query.filter_by(diary_id=diary_id, user_id=user_id).first()
 
     if session:
-        # 直接返回session数据
+        # 如果是generating状态，告诉前端等待
+        if session.status == 'generating':
+            print(f"[探险] 会话 #{session.id} 正在生成中，请稍候", file=sys.stderr)
+            return jsonify({
+                'success': True,
+                'status': 'generating',
+                'scene_name': session.scene_name,
+                'message': '探险正在准备中，请稍候...'
+            })
+
+        # 已经生成完成，直接返回
         result = session.to_dict()
         result['success'] = True
         result['is_new'] = False
+        print(f"[探险] 返回已存在的会话 #{session.id}", file=sys.stderr)
         return jsonify(result)
 
     # 创建新的探险会话
     if request.method == 'POST':
+        print(f"[探险] 会话不存在，开始同步生成", file=sys.stderr)
+
         # 获取情绪分数
         emotion_score = 50  # 默认中性
         if diary.emotion_score:

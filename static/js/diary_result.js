@@ -40,15 +40,17 @@
         }
     }
 
-    // 预加载探险会话（后台执行，不阻塞分析）
-    async function preloadAdventureSession() {
+    // 检查探险会话状态（只检查，不触发创建，避免重复调用AI）
+    // 探险会话已经在日记创建时后台预生成了
+    async function checkAdventureStatus() {
         const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
         if (!token) return;
 
         try {
-            console.log('[预加载] 开始预加载探险会话...');
+            console.log('[预检查] 检查探险会话状态...');
+            // 使用GET方法只检查状态，不触发创建
             const response = await fetch(`${window.location.origin}/api/adventure/session/${diaryId}`, {
-                method: 'POST',
+                method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -57,10 +59,16 @@
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('[预加载] 探险会话已准备:', data.scene_name || '未知场景');
+                if (data.status === 'generating') {
+                    console.log('[预检查] 探险正在后台生成中...');
+                } else if (data.status === 'pending' || data.status === 'in_progress') {
+                    console.log('[预检查] 探险会话已准备:', data.scene_name || '未知场景');
+                }
+            } else if (response.status === 404) {
+                console.log('[预检查] 探险会话尚未创建');
             }
         } catch (error) {
-            console.warn('[预加载] 探险预加载失败，用户进入时会重新加载:', error.message);
+            console.warn('[预检查] 检查探险状态失败:', error.message);
         }
     }
 
@@ -75,9 +83,8 @@
             return;
         }
 
-        // 并行执行：分析API + 探险预加载
-        // 探险预加载在后台执行，不阻塞分析结果显示
-        preloadAdventureSession();
+        // 后台检查探险状态（不触发创建，探险已在日记提交时预生成）
+        checkAdventureStatus();
 
         try {
             const response = await fetch(`${window.location.origin}/api/analysis/${diaryId}/unified-analyze`, {

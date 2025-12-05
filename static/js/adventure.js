@@ -90,54 +90,79 @@ async function initAdventure(diaryId) {
         updateLoadingText(loadingMessages[messageIndex]);
     }, 2000);
 
-    try {
-        const response = await fetch(`/api/adventure/session/${diaryId}`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+    // 轮询获取探险会话（支持后台预生成）
+    const maxRetries = 20;  // 最多等待40秒
+    let retryCount = 0;
+
+    async function fetchSession() {
+        try {
+            const response = await fetch(`/api/adventure/session/${diaryId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || '获取探险会话失败');
             }
-        });
 
-        clearInterval(loadingInterval);
+            const data = await response.json();
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || '获取探险会话失败');
+            // 如果还在生成中，继续等待
+            if (data.status === 'generating') {
+                retryCount++;
+                console.log(`[探险] 正在生成中...第 ${retryCount} 次检查`);
+
+                if (retryCount >= maxRetries) {
+                    throw new Error('探险生成超时，请稍后重试');
+                }
+
+                // 2秒后重试
+                setTimeout(fetchSession, 2000);
+                return;
+            }
+
+            // 生成完成或已存在
+            clearInterval(loadingInterval);
+
+            state.session = data;
+            state.adventureId = data.id;
+
+            // 恢复战斗状态（如果有）
+            if (data.battle_state) {
+                state.xiaojuHp = data.battle_state.xiaoju_hp || 5;
+                state.currentMonsterIndex = data.battle_state.current_monster || 0;
+                state.monstersDefeated = data.battle_state.monsters_defeated || 0;
+            }
+
+            hideLoading();
+
+            if (data.status === 'completed') {
+                window.location.href = `/postcards`;
+            } else if (data.status === 'skipped') {
+                window.location.href = `/postcards`;
+            } else if (data.status === 'in_progress') {
+                state.currentQuestionIndex = data.current_challenge || 0;
+                initBattleUI();
+                showBattle();
+            } else {
+                showIntroPanel();
+            }
+
+        } catch (error) {
+            clearInterval(loadingInterval);
+            console.error('初始化探险失败:', error);
+            hideLoading();
+            alert('加载失败: ' + error.message);
+            window.location.href = `/diary/${diaryId}/result`;
         }
-
-        const data = await response.json();
-        state.session = data;
-        state.adventureId = data.id;
-
-        // 恢复战斗状态（如果有）
-        if (data.battle_state) {
-            state.xiaojuHp = data.battle_state.xiaoju_hp || 5;
-            state.currentMonsterIndex = data.battle_state.current_monster || 0;
-            state.monstersDefeated = data.battle_state.monsters_defeated || 0;
-        }
-
-        hideLoading();
-
-        if (data.status === 'completed') {
-            window.location.href = `/postcards`;
-        } else if (data.status === 'skipped') {
-            window.location.href = `/postcards`;
-        } else if (data.status === 'in_progress') {
-            state.currentQuestionIndex = data.current_challenge || 0;
-            initBattleUI();
-            showBattle();
-        } else {
-            showIntroPanel();
-        }
-
-    } catch (error) {
-        clearInterval(loadingInterval);
-        console.error('初始化探险失败:', error);
-        hideLoading();
-        alert('加载失败: ' + error.message);
-        window.location.href = `/diary/${diaryId}/result`;
     }
+
+    // 开始获取
+    fetchSession();
 }
 
 function updateLoadingText(text) {
