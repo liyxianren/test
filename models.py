@@ -1,6 +1,13 @@
 from datetime import datetime
 from extensions import db
 
+
+def format_datetime(dt):
+    """格式化datetime为ISO格式字符串，带Z后缀表示UTC时间"""
+    if dt is None:
+        return None
+    return dt.isoformat() + 'Z'
+
 class User(db.Model):
     """用户模型"""
     __tablename__ = 'users'
@@ -28,7 +35,7 @@ class User(db.Model):
             'id': self.id,
             'username': self.username,
             'email': self.email,
-            'created_at': self.created_at.isoformat(),
+            'created_at': format_datetime(self.created_at),
             'is_active': self.is_active,
             'profile_data': self.profile_data
         }
@@ -63,8 +70,8 @@ class EmotionDiary(db.Model):
             'emotion_score': self.emotion_score,
             'trigger_event': self.trigger_event,
             'images': self.images if self.images else [],
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
+            'created_at': format_datetime(self.created_at),
+            'updated_at': format_datetime(self.updated_at),
             'analysis_status': self.analysis_status
         }
 
@@ -92,7 +99,7 @@ class EmotionAnalysis(db.Model):
             'emotion_dimensions': self.emotion_dimensions,
             'key_words': self.key_words,
             'confidence_score': self.confidence_score,
-            'analyzed_at': self.analyzed_at.isoformat(),
+            'analyzed_at': format_datetime(self.analyzed_at),
             'ai_model_version': self.ai_model_version,
             'analysis_payload': self.analysis_payload or {}
         }
@@ -137,8 +144,8 @@ class GameState(db.Model):
             'level': self.level,
             'total_diaries': self.total_diaries,
             # 时间戳
-            'last_active': self.last_active.isoformat() if self.last_active else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_active': format_datetime(self.last_active),
+            'created_at': format_datetime(self.created_at),
             # 计算属性
             'diaries_to_next_level': 10 - (self.total_diaries % 10) if self.total_diaries % 10 != 0 else 10
         }
@@ -195,10 +202,10 @@ class Postcard(db.Model):
             'emotion_tags': self.emotion_tags or [],
             'emotion_intensity': self.emotion_intensity,
             'mental_health_score': self.mental_health_score,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'generated_at': self.generated_at.isoformat() if self.generated_at else None,
+            'created_at': format_datetime(self.created_at),
+            'generated_at': format_datetime(self.generated_at),
             'is_read': self.is_read,
-            'read_at': self.read_at.isoformat() if self.read_at else None,
+            'read_at': format_datetime(self.read_at),
             'stat_changes': self.stat_changes or {},
             'coins_earned': self.coins_earned or 0
         }
@@ -233,7 +240,7 @@ class GameProgress(db.Model):
             'evidence_collected': self.evidence_collected,
             'alternative_thoughts': self.alternative_thoughts,
             'game_rewards': self.game_rewards,
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+            'completed_at': format_datetime(self.completed_at)
         }
 
 
@@ -282,9 +289,9 @@ class AdventureSession(db.Model):
             'coins_earned': self.coins_earned,
             'items_earned': self.items_earned or [],
             'stat_changes': self.stat_changes or {},
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'started_at': self.started_at.isoformat() if self.started_at else None,
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+            'created_at': format_datetime(self.created_at),
+            'started_at': format_datetime(self.started_at),
+            'completed_at': format_datetime(self.completed_at)
         }
 
 
@@ -325,5 +332,5 @@ class UserItem(db.Model):
             'quantity': self.quantity,
             'effect_type': self.effect_type,
             'effect_value': self.effect_value,
-            'acquired_at': self.acquired_at.isoformat() if self.acquired_at else None
+            'acquired_at': format_datetime(self.acquired_at)
         }
