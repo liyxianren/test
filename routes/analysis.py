@@ -256,8 +256,9 @@ def perform_unified_analysis(diary_id: int, user_id) -> dict:
             game_state.level = new_level
             game_state.coins += 50  # 升级奖励
 
-        # 12. 标记日记已计分
+        # 12. 标记日记已计分和分析完成
         diary.score_applied = True
+        diary.analysis_status = 'completed'
 
         # 13. 保存分析记录
         existing_analysis = EmotionAnalysis.query.filter_by(diary_id=diary_id).first()

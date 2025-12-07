@@ -4,9 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**CBT Emotion Diary Game** (CBT情绪日记游戏) - A web application combining Cognitive Behavioral Therapy (CBT) principles with gamification. Users record emotional diaries which are analyzed by AI (ChatGLM/COZE/QWEN) to generate personalized game parameters and CBT insights.
+**CBT Emotion Diary Game** (CBT情绪日记游戏) - A web application combining Cognitive Behavioral Therapy (CBT) principles with gamification. Users record emotional diaries which are analyzed by AI to generate personalized game parameters, CBT insights, adventure challenges, and postcards from a traveling fox mascot (小橘).
 
 **Tech Stack**: Flask + SQLAlchemy + MySQL/SQLite, vanilla JavaScript frontend, deployed on Zeabur
+
+**AI Providers**:
+- **ChatGLM (ZhipuAI)** - Primary diary analysis (`glm-4.5-x` default)
+- **Doubao (豆包)** - CBT challenge generation (`doubao-seed-1-6-flash-250828`)
+- **Doubao Seedream** - Postcard image generation (`doubao-seedream-4-5-251128`)
 
 ## Development Commands
 
@@ -36,256 +41,178 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app  # Linux/Mac
 ### Database Operations
 ```bash
 # Initialize database (creates all tables)
-# The app automatically runs db.create_all() on startup (see app.py:185-188)
-# But you can also do it manually:
+# The app automatically runs db.create_all() on startup (see app.py:275-277)
 python -c "from app import app, db; app.app_context().push(); db.create_all()"
 
-# Database migrations (Flask-Migrate)
-# Note: Migrations may not work on Zeabur - use ensure_schema_updates() instead
-flask db init           # First time only
-flask db migrate -m "message"  # Generate migration
-flask db upgrade        # Apply migration
-```
-
-### Testing
-```bash
-# Run test files
-python test_auth.py              # Auth system tests
-python test_chatglm.py           # ChatGLM integration tests
-python test_integration.py       # Full integration tests
-python test_deployment.py        # Deployment verification
+# Schema auto-patching happens via ensure_schema_updates() - no manual migrations needed on Zeabur
 ```
 
 ## High-Level Architecture
 
 ### Application Structure
 
-**Flask Application Factory Pattern**: The app uses a modular blueprint-based architecture. The main app ([app.py](app.py)) registers blueprints from [routes/](routes/) and initializes extensions via [extensions.py](extensions.py).
+**Flask Blueprint Architecture**: The main app ([app.py](app.py)) registers 8 blueprints from [routes/](routes/) and initializes extensions via [extensions.py](extensions.py).
 
 ### Database Models ([models.py](models.py))
 
-5 core models with cascade relationships:
+8 core models with cascade relationships:
 - **User** → EmotionDiary (1:N), GameState (1:1), GameProgress (1:N)
-- **EmotionDiary** → EmotionAnalysis (1:1), GameProgress (1:N)
+- **EmotionDiary** → EmotionAnalysis (1:1), Postcard (1:1), AdventureSession (1:1)
+- **User** → UserItem (1:N) - Items earned from adventures
+- **AccessLog** - Request logging for admin analytics
 
-Key design: All JSON fields use SQLAlchemy's `db.JSON` type with automatic fallback to `TEXT` for SQLite compatibility.
+Key models:
+- `GameState`: Incremental stats (mental_health_score, stress_level, growth_potential) starting at 50, adjusted ±5 per diary
+- `Postcard`: AI-generated travel postcards from 小橘 (the fox mascot)
+- `AdventureSession`: CBT challenge game sessions with monsters and rewards
+- `UserItem`: Collectible items with healing/adventure effects
+- `AccessLog`: HTTP request logs for traffic analysis in admin panel
 
 ### Database Configuration Strategy
 
-**Multi-environment database resolution** in [app.py:25-46](app.py#L25-L46):
-1. Check `DATABASE_URL` (with postgres→postgresql conversion for Heroku/Zeabur)
+**Multi-environment database resolution** in `resolve_database_url()` ([app.py:40-61](app.py#L40-L61)):
+1. Check `DATABASE_URL` (with postgres→postgresql conversion)
 2. Fall back to MySQL environment variables (`MYSQL_HOST`, `MYSQL_USER`, etc.)
 3. Ultimate fallback to SQLite (`diary.db`) for local development
 
-**Schema migration handling**: The `ensure_schema_updates()` function ([app.py:65-113](app.py#L65-L113)) automatically adds missing columns without migrations, critical for Zeabur deployments where `flask db` may not be available.
+**Schema migration handling**: The `ensure_schema_updates()` function ([app.py:80-195](app.py#L80-L195)) automatically adds missing columns without migrations, supporting 8 tables with comprehensive field definitions.
 
-### AI Analysis Architecture
+### AI Service Architecture
 
-**Multi-provider strategy** with fallback chain in [routes/analysis.py](routes/analysis.py):
+**Three-tier AI integration**:
 
-Primary: **ChatGLM (ZhipuAI)** with dual-prompt parallel execution:
-- **Prompt 1**: User-friendly analysis (温暖的CBT分析) - [prompts/chatglm_prompts.py:7-58](prompts/chatglm_prompts.py#L7-L58)
-- **Prompt 2**: Game data extraction (严格的JSON数值) - [prompts/chatglm_prompts.py:61-132](prompts/chatglm_prompts.py#L61-L132)
+1. **ChatGLM (ZhipuAI)** - Primary diary analysis ([routes/analysis.py](routes/analysis.py))
+   - Unified prompt returns: user_message + score_changes + coins + CBT insights
+   - Fallback to local rule-based calculation if API fails
 
-Fallback chain: ChatGLM → COZE API → QWEN API → Local rule-based analysis
+2. **Doubao (豆包)** - CBT challenge generation ([services/doubao_service.py](services/doubao_service.py))
+   - Fast Flash model for generating 3 CBT challenges per adventure
+   - Compact prompt format: `怪物类型|错误想法|正确想法`
 
-**Key insight**: The dual-call pattern (`analyze_with_chatglm_dual` at [routes/analysis.py:383-449](routes/analysis.py#L383-L449)) uses `ThreadPoolExecutor` to parallelize the two API calls, reducing latency by ~50%.
-
-### Emotion → Game Value Mapping
-
-**CBT Theory Integration**: Emotions drive game mechanics via calculated modifiers:
-- Negative emotions (sad, anxious, angry) → Higher game difficulty, lower income multiplier
-- Positive emotions (happy, calm) → Lower difficulty, bonus multipliers
-- See [routes/analysis.py:982-1023](routes/analysis.py#L982-L1023) for the valence mapping algorithm
-
-**Game projection fields** (`game_values` object):
-- `mental_health_score`: 0-100 (affects character stats)
-- `stress_level`: 0-100 (affects energy regeneration)
-- `income_multiplier`: 0.5-2.0 (economic impact)
-- `daily_income_base`: Base currency generation
+3. **Doubao Seedream** - Postcard image generation ([services/postcard_service.py](services/postcard_service.py))
+   - Generates travel scene images based on emotion state via `doubao-seedream-4-5-251128`
+   - Requires `ARK_API_KEY` environment variable
 
 ### Route Structure
 
-Blueprints registered in [app.py:118-120](app.py#L118-L120):
+Blueprints registered in [app.py:200-207](app.py#L200-L207):
 - `/api/auth/*` - User authentication ([routes/auth.py](routes/auth.py))
-- `/api/diary/*` - CRUD operations ([routes/diary.py](routes/diary.py))
-- `/api/analysis/*` - AI emotion analysis ([routes/analysis.py](routes/analysis.py))
+- `/api/diary/*` - CRUD + AI analysis ([routes/diary.py](routes/diary.py))
+- `/api/analysis/*` - Emotion analysis endpoints ([routes/analysis.py](routes/analysis.py))
 - `/api/upload/*` - File uploads ([routes/upload.py](routes/upload.py))
+- `/api/game/*` - Game state management ([routes/game.py](routes/game.py))
+- `/api/postcard/*` - Postcard generation/retrieval ([routes/postcard.py](routes/postcard.py))
+- `/api/adventure/*` - CBT adventure game ([routes/adventure.py](routes/adventure.py))
+- `/api/admin/*` - Admin panel API ([routes/admin.py](routes/admin.py))
 
-### Frontend JavaScript Architecture
+### Prompt Templates ([prompts/](prompts/))
 
-**Main diary creation flow** ([static/js/diary_new.js](static/js/diary_new.js)):
-1. Step-by-step guided form (emotions → trigger event → intensity → content → images)
-2. On submission: POST `/api/diary/` → POST `/api/diary/{id}/ai-analyze`
-3. Display dual analysis: user-friendly message + game values
+- `chatglm_prompts.py` - Unified diary analysis prompt with CBT framework
+- `adventure_prompts.py` - Monster types and challenge templates
+- `postcard_prompts.py` - Location/scene generation for postcard images
 
-**State management**: Uses plain JavaScript with a global `state` object tracking:
-- `selectedEmotions`: Array of emotion tags
-- `triggerEvent`: Event that triggered the emotion
-- `intensity`: Emotion intensity (1-10 scale)
-- `diaryContent`: Main diary text
-- `uploadedImages`: Array of image URLs
+### Service Layer ([services/](services/))
+
+- `doubao_service.py` - Doubao API client for CBT challenge generation
+- `postcard_service.py` - Async postcard creation with image generation
+- `adventure_service.py` - Adventure session management
 
 ### Complete Diary Workflow
 
-**Creation flow**:
-1. User fills out 4-step form in [diary_new.html](templates/diary_new.html)
-2. Frontend POSTs to `/api/diary/` with: `{content, emotion_tags, emotion_score, trigger_event, images}`
-3. Backend creates `EmotionDiary` record with `analysis_status='pending'`
-4. Frontend immediately calls `/api/diary/{id}/ai-analyze`
-5. Backend runs `analyze_with_chatglm_dual()` which:
-   - Parallel calls ChatGLM twice (user-friendly + game data)
-   - Fallback to COZE → QWEN → local rules if ChatGLM fails
-   - Creates `EmotionAnalysis` record
-   - Updates diary `analysis_status='completed'`
-6. Frontend displays both analysis results in AI panel
+**Creation → Analysis → Adventure → Postcard**:
+1. User submits diary via step-by-step form ([templates/diary_new.html](templates/diary_new.html))
+2. Backend creates `EmotionDiary` with `analysis_status='pending'`
+3. AI analysis via ChatGLM returns warm CBT feedback + game stat changes
+4. `GameState` updated with incremental changes (±5 range)
+5. `AdventureSession` created with Doubao-generated CBT challenges
+6. `Postcard` queued for async image generation
+7. User can play adventure game and view postcard after generation completes
 
 ### Environment Variables
 
-**Critical for AI features** (see [.env.example](.env.example)):
-- `ZHIPU_API_KEY` + `ZHIPU_MODEL_NAME` - Primary AI (ChatGLM, default: `glm-4-flash`)
-- `COZE_API_KEY` + `COZE_BOT_ID` - Fallback #1
-- `QWEN_API_KEY` + `QWEN_MODEL_NAME` - Fallback #2 (default: `qwen-turbo`)
-- `DATABASE_URL` or `MYSQL_*` variables - Database connection
+**AI Services** (see [.env.example](.env.example)):
+- `ZHIPU_API_KEY` + `ZHIPU_MODEL_NAME` - Primary AI (default: `glm-4.5-x`)
+- `DOUBAO_API_KEY` + `DOUBAO_MODEL` - CBT challenge generation (default: `doubao-seed-1-6-flash-250828`)
+- `ARK_API_KEY` + `DOUBAO_IMAGE_MODEL` - Postcard image generation (default: `doubao-seedream-4-5-251128`)
 
-**JWT configuration**:
-- `JWT_SECRET_KEY` - Token signing (must be strong in production)
-- `JWT_ACCESS_TOKEN_EXPIRES_HOURS` - Default 24h
+**Database**:
+- `DATABASE_URL` or `MYSQL_*` variables for production
+- Falls back to SQLite for local development
 
-**File uploads**:
-- `UPLOAD_FOLDER` - Directory for uploaded images (default: `uploads`)
-- `MAX_CONTENT_LENGTH` - Max file size in bytes (default: 16MB)
-- `ALLOWED_EXTENSIONS` - Comma-separated file extensions
+**JWT**: `JWT_SECRET_KEY` - Token signing (24h expiry default)
+
+### Admin Panel
+
+**Default admin credentials**: `admin` / `kongbai123` (created on first startup)
+
+**Admin routes** ([templates/admin/](templates/admin/)):
+- `/admin/login` - Admin login page
+- `/admin/dashboard` - Overview with user stats, traffic analytics
+- `/admin/users` - User management (view, edit, delete)
+- `/admin/diaries` - Browse all user diaries
+- `/admin/postcards` - View generated postcards
 
 ### Deployment-Specific Patterns
 
 **Zeabur compatibility**:
 - Automatic MySQL environment variable injection handling
-- Schema auto-patching to avoid migration failures
-- URL password encoding via `urllib.parse.quote_plus()` ([app.py:41](app.py#L41))
+- Schema auto-patching via `ensure_schema_updates()` - no Flask-Migrate needed
+- URL password encoding via `urllib.parse.quote_plus()` ([app.py:56](app.py#L56))
+- ProxyFix middleware for HTTPS behind reverse proxy ([app.py:28-34](app.py#L28-L34))
 
-**Windows batch scripts** for local development:
-- [deploy.bat](deploy.bat) - Full setup automation
-- [start.bat](start.bat) - Development server
-- [start_prod.bat](start_prod.bat) - Production mode with Gunicorn
+**Windows batch scripts**:
+- `deploy.bat` - Full setup automation
+- `start.bat` - Development server
+- `start_prod.bat` - Production mode
 
 ## Key Implementation Details
 
-### Authentication Flow
-- JWT tokens issued on login ([routes/auth.py](routes/auth.py))
-- Tokens stored in `localStorage` by frontend
-- All API routes use `@jwt_required()` decorator except public endpoints
+### Game State Incremental Model
 
-### Password Reset Mechanism
-- Token-based reset ([models.py:18-19](models.py#L18-L19))
-- `reset_token` + `reset_token_expires` fields on User model
-- No email integration yet - tokens returned in API response for testing
+`GameState` uses incremental scoring ([models.py:129-173](models.py#L129-L173)):
+- **mental_health_score**: 0-100, starts at 50, affects shop efficiency
+- **stress_level**: 0-100, starts at 50, affects random event probability
+- **growth_potential**: 0-100, starts at 50, affects XP multiplier
+- **coins**: Accumulated currency from diaries and adventures
+- **level**: Increases every 10 diaries
 
-### Image Uploads
-- Stored in `uploads/` directory
-- URLs saved as JSON array in `EmotionDiary.images` field
-- File validation via [routes/upload.py](routes/upload.py)
+Each diary adjusts these by ±5 based on emotion analysis.
 
-### CBT Four-Step Method (Planned)
+### CBT Adventure System
 
-The codebase includes references to CBT四步法 (4-step method):
-1. Identify negative thoughts → `cognitive_distortions`
-2. Gather evidence → `evidence_collected` (GameProgress model)
-3. Generate alternatives → `alternative_thoughts`
-4. Evaluate emotional change → Emotion tracking over time
+Adventures ([routes/adventure.py](routes/adventure.py)) gamify CBT concepts:
+- **Monsters**: Represent cognitive distortions (灾难化, 贴标签, 过度概括, etc.)
+- **Challenges**: Multiple-choice questions identifying correct vs. distorted thinking
+- **Rewards**: Coins, stat boosts, collectible items
 
-Currently implemented in AI analysis prompts but not yet fully gamified in frontend.
+### Postcard System
+
+Postcards ([routes/postcard.py](routes/postcard.py)) provide emotional rewards:
+- 小橘 (fox mascot) "travels" to locations matching user's emotional state
+- AI generates scene images via CogView
+- Includes stat changes and coins earned from the "adventure"
 
 ## Common Gotchas
 
-### SQLAlchemy JSON Type Issues
-The `models.py` uses `db.JSON` which works on MySQL but may fail silently on SQLite. The schema auto-patch function ([app.py:65-113](app.py#L65-L113)) automatically converts JSON to TEXT for SQLite compatibility.
+### SQLAlchemy JSON Type
+Uses `db.JSON` with automatic TEXT fallback for SQLite. The schema auto-patch in [app.py:80-195](app.py#L80-L195) handles this.
 
-### ChatGLM Response Parsing
-The AI may return incomplete JSON if `max_tokens` is too low. Current settings: 1500 for user message, 4000 for game data ([routes/analysis.py:410-421](routes/analysis.py#L410-L421)). Monitor the `finish_reason` in API responses. If you see truncated responses, the dual-call pattern will fall back to local rule-based analysis.
-
-### Windows Path Issues
-Use `os.path.join()` for all file paths. The codebase has Windows-specific batch files but Python code should remain cross-platform.
+### AI Response Parsing
+All AI calls have fallback handlers. ChatGLM may return incomplete JSON - the `fallback_calculate()` function ([routes/analysis.py:56-114](routes/analysis.py#L56-L114)) provides rule-based defaults.
 
 ### Database Connection Pooling
-The app uses `pool_pre_ping=True` ([app.py:58](app.py#L58)) to handle stale MySQL connections on Zeabur. This adds a small overhead but prevents "MySQL server has gone away" errors.
+Uses `pool_pre_ping=True` ([app.py:73](app.py#L73)) to handle stale MySQL connections on Zeabur.
 
-### Character Encoding on Windows
-The batch files use `chcp 65001` to set UTF-8 encoding for proper display of Chinese characters in the Windows console.
+### Windows Encoding
+Batch files use `chcp 65001` for UTF-8. Python scripts should work cross-platform.
 
-## Code Style Conventions
+### Deprecated Endpoints
+- `/api/analysis/<diary_id>/unified-analyze` - Returns 410 Gone. Game scores now calculated during adventure completion.
+- Use `/api/analysis/<diary_id>/unified-analyze-legacy` for emergency fallback only.
 
-- **Chinese comments**: Business logic and AI prompts use Chinese for clarity
+## Code Style
+
+- **Chinese comments**: Business logic and AI prompts use Chinese
 - **English API**: All JSON keys and function names in English
-- **Error handling**: Always rollback DB session on exceptions
-- **Frontend**: No build step, vanilla JS with Bootstrap 5.3.0
-
-## Troubleshooting & Debugging
-
-### Common Issues
-
-**Database connection fails on startup**:
-- Check `.env` file exists and `DATABASE_URL` is set
-- For MySQL: Verify `MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
-- Test connection: `python -c "from app import app, db; app.app_context().push(); db.engine.connect()"`
-
-**ChatGLM API errors**:
-- Verify `ZHIPU_API_KEY` is valid
-- Check model name matches available models (use `glm-4-flash` or `glm-4.6`)
-- Monitor console output for `[调试]` messages showing API calls
-- Check `finish_reason` in responses - if `length`, increase `max_tokens`
-
-**JSON parsing errors in AI analysis**:
-- The system has automatic fallbacks - check if COZE/QWEN keys are set
-- Local rule-based analysis runs if all AI providers fail
-- Check `routes/analysis.py` logs for fallback chain execution
-
-**Image upload issues**:
-- Ensure `uploads/` directory exists and is writable
-- Check `MAX_CONTENT_LENGTH` setting (default 16MB)
-- Verify `ALLOWED_EXTENSIONS` includes the file type
-
-**Windows encoding issues**:
-- Run `chcp 65001` before starting the app
-- Batch files automatically set this, but manual Python commands may need it
-
-## Testing Strategy
-
-The project uses manual testing with test files rather than pytest:
-- Test files include full Flask app context setup
-- Use `with app.app_context():` for DB operations
-- API tests use direct endpoint calls, not mocking
-
-## Development Stages & Status
-
-Per [README.md](README.md):
-
-**Stage 1: Authentication & Database** ✅ **COMPLETED**
-- User registration, login, password reset
-- JWT-based authentication
-- MySQL/SQLite dual-database support
-- Zeabur deployment compatibility
-
-**Stage 2: Diary Features** 🚧 **IN PROGRESS**
-- Basic diary CRUD: ✅ Complete
-- AI analysis integration: ✅ Complete (ChatGLM dual-prompt)
-- Step-by-step diary creation UI: ✅ Complete
-- Rich text editor: ⏳ Pending
-- Search & filtering: ⏳ Pending
-
-**Stage 3: Game Implementation** ⏳ **PLANNED**
-- Canvas-based game UI
-- CBT four-step method gamification
-- Character stats & progression
-
-**Stage 4: AI Optimization** ⏳ **PLANNED**
-- Analysis accuracy improvements
-- Response time optimization
-- Caching layer
-
-**Stage 5: Emotion-Game Loop** ⏳ **PLANNED**
-- Real-time game parameter updates
-- Achievement system
-- Trend analysis dashboard
-
-When implementing new features, maintain the dual-analysis pattern and ensure all game values are calculated consistently with the existing valence mapping algorithm.
+- **Error handling**: Rollback DB session on exceptions
+- **Frontend**: Vanilla JS with Bootstrap 5.3.0, no build step

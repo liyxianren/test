@@ -7,12 +7,21 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* 修复滚动问题 */
+        html, body {
+            height: auto !important;
+            min-height: 100vh;
+            overflow-x: hidden;
+            overflow-y: auto !important;
+        }
+
         .game-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: visible;
         }
 
         .game-header {
