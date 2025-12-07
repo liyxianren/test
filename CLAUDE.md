@@ -41,7 +41,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app  # Linux/Mac
 ### Database Operations
 ```bash
 # Initialize database (creates all tables)
-# The app automatically runs db.create_all() on startup (see app.py:275-277)
+# The app automatically runs db.create_all() on startup (see app.py:422-427)
 python -c "from app import app, db; app.app_context().push(); db.create_all()"
 
 # Schema auto-patching happens via ensure_schema_updates() - no manual migrations needed on Zeabur
@@ -95,7 +95,7 @@ Key models:
 
 ### Route Structure
 
-Blueprints registered in [app.py:200-207](app.py#L200-L207):
+Blueprints registered in [app.py:199-207](app.py#L199-L207):
 - `/api/auth/*` - User authentication ([routes/auth.py](routes/auth.py))
 - `/api/diary/*` - CRUD + AI analysis ([routes/diary.py](routes/diary.py))
 - `/api/analysis/*` - Emotion analysis endpoints ([routes/analysis.py](routes/analysis.py))
@@ -189,7 +189,7 @@ Adventures ([routes/adventure.py](routes/adventure.py)) gamify CBT concepts:
 
 Postcards ([routes/postcard.py](routes/postcard.py)) provide emotional rewards:
 - 小橘 (fox mascot) "travels" to locations matching user's emotional state
-- AI generates scene images via CogView
+- AI generates scene images via Doubao Seedream (`doubao-seedream-4-5-251128`)
 - Includes stat changes and coins earned from the "adventure"
 
 ## Common Gotchas
