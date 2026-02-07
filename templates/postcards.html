@@ -1,310 +1,495 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>小狐狸的明信片 - CBT日记</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .postcards-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 50%, #feca57 100%);
+        :root {
+            --card-rotate: 2deg;
         }
 
-        .postcards-header {
+        body {
+            font-family: 'Nunito', 'Segoe UI', sans-serif;
+            background-color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .postcard-hero-section {
+            position: relative;
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            /* Dreamy Purple/Pink */
+            padding: 6rem 0 4rem;
+            margin-bottom: 3rem;
+            border-radius: 0 0 50% 50% / 40px;
+            overflow: hidden;
             text-align: center;
             color: white;
-            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(161, 140, 209, 0.3);
         }
 
-        .postcards-header h1 {
-            font-size: 2.5rem;
+        .postcard-hero-title {
+            font-family: 'Fredoka', sans-serif;
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .postcards-header .fox-emoji {
             font-size: 3rem;
             margin-bottom: 1rem;
-            display: block;
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
+            animation: bounceIn 1s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
-        .postcards-header p {
-            font-size: 1.1rem;
-            opacity: 0.95;
+        .postcard-hero-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
         }
 
+        /* Floating Decorations */
+        .floating-emoji {
+            position: absolute;
+            font-size: 2.5rem;
+            animation: float 6s ease-in-out infinite;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-20px) rotate(10deg);
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+
+            70% {
+                transform: scale(0.9);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Postcard Grid */
         .postcards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2.5rem;
+            padding: 1rem;
         }
 
-        .postcard-card {
+        /* Polaroid Style Card */
+        .postcard-item {
             background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            padding: 1rem 1rem 3rem 1rem;
+            /* Extra bottom padding for polaroid look */
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            transform: rotate(var(--rotation, 0deg));
             cursor: pointer;
+            border: 1px solid #eee;
+        }
+
+        .postcard-item:nth-child(even) {
+            --rotation: 2deg;
+        }
+
+        .postcard-item:nth-child(odd) {
+            --rotation: -1.5deg;
+        }
+
+        .postcard-item:hover {
+            transform: scale(1.05) rotate(0deg) translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+        }
+
+        /* Pin/Sticker Decoration */
+        .postcard-item::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 35px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+            /* Tape look */
+            background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.5) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.5) 50%, rgba(255, 255, 255, 0.5) 75%, transparent 75%, transparent);
+            background-size: 20px 20px;
+            opacity: 0.8;
+            border-radius: 2px;
+        }
+
+        .postcard-img-wrapper {
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+            border: 1px solid #eee;
+            margin-bottom: 1rem;
+            background: #f8f9fa;
             position: relative;
         }
 
-        .postcard-card:hover {
-            transform: translateY(-8px) rotate(1deg);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        }
-
-        .postcard-card.unread::before {
-            content: '新';
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #ff6b6b;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            z-index: 10;
-            animation: pulse 2s infinite;
-        }
-
-        /* pending状态 - 小橘正在寄出 */
-        .postcard-card.pending::before {
-            content: '寄送中';
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #f59e0b;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            z-index: 10;
-            animation: pulse 2s infinite;
-        }
-
-        .pending-image-wrapper {
-            position: relative;
+        .postcard-img {
             width: 100%;
-            height: 200px;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-
-        .pending-fox {
-            font-size: 4rem;
-            animation: foxWalk 1s ease-in-out infinite;
-        }
-
-        @keyframes foxWalk {
-            0%, 100% { transform: translateY(0) rotate(-5deg); }
-            50% { transform: translateY(-10px) rotate(5deg); }
-        }
-
-        .pending-text {
-            color: #92400e;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .postcard-image {
-            width: 100%;
-            height: 200px;
+            height: 100%;
             object-fit: cover;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            transition: transform 0.5s ease;
         }
 
-        .postcard-image.placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            color: #ccc;
+        .postcard-item:hover .postcard-img {
+            transform: scale(1.1);
         }
 
         .postcard-content {
-            padding: 1.5rem;
+            text-align: center;
+            color: #555;
+            font-family: 'Fredoka', cursive;
+            /* Handwritten feel */
         }
 
         .postcard-location {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
             color: #ff6b6b;
             font-weight: 600;
             margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
-        .postcard-location i {
-            font-size: 1rem;
-        }
-
-        .postcard-message {
-            color: #666;
+        .postcard-text {
             font-size: 0.95rem;
-            line-height: 1.6;
+            line-height: 1.5;
+            color: #666;
             margin-bottom: 1rem;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-style: italic;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            z-index: 2;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .status-badge.new {
+            background: #ff6b6b;
+            color: white;
+            transform: rotate(10deg);
+        }
+
+        .status-badge.pending {
+            background: #f59e0b;
+            color: white;
+            transform: rotate(-5deg);
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        /* Empty State */
+        .empty-state-game {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            max-width: 600px;
+            margin: 2rem auto;
+            position: relative;
             overflow: hidden;
         }
 
-        .postcard-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 1rem;
-            border-top: 1px solid #eee;
+        .empty-state-game::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: var(--gradient-candy);
         }
 
-        .postcard-date {
-            color: #999;
-            font-size: 0.85rem;
-        }
-
-        .postcard-emotions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .emotion-tag {
-            background: linear-gradient(135deg, #ff9a56, #ff6b6b);
-            color: white;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 0.75rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        .empty-state .fox-img {
+        .empty-icon {
             font-size: 5rem;
-            margin-bottom: 1rem;
-        }
-
-        .empty-state h3 {
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .empty-state p {
-            color: #666;
             margin-bottom: 1.5rem;
+            animation: float 4s ease-in-out infinite;
+            display: inline-block;
         }
 
-        .empty-state .btn {
-            background: linear-gradient(135deg, #ff9a56, #ff6b6b);
-            color: white;
-            padding: 12px 30px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: transform 0.3s ease;
-        }
-
-        .empty-state .btn:hover {
-            transform: scale(1.05);
-        }
-
-        .loading-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: white;
-        }
-
-        .loading-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .back-btn {
+        /* Back Button */
+        .game-back-btn {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 2rem;
+            left: 2rem;
+            width: 50px;
+            height: 50px;
             background: white;
-            color: #ff6b6b;
-            padding: 10px 20px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 100;
+            text-decoration: none;
+            border: 2px solid transparent;
         }
 
-        .back-btn:hover {
-            transform: scale(1.05);
+        .game-back-btn:hover {
+            transform: scale(1.1) rotate(-10deg);
+            color: var(--primary-pink);
+            border-color: var(--primary-pink);
         }
 
-        .unread-badge {
-            background: #ff6b6b;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            margin-left: 10px;
+        /* Loading */
+        .loading-container {
+            text-align: center;
+            padding: 4rem;
+        }
+
+        .loading-spinner-game {
+            width: 60px;
+            height: 60px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #a18cd1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        /* Pending State Animation */
+        .pending-visual {
+            background: #fff8e1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fox-walk {
+            font-size: 3rem;
+            animation: foxWalk 2s infinite linear;
+        }
+
+        @keyframes foxWalk {
+            0% {
+                transform: translateX(-20px) rotate(-5deg);
+            }
+
+            25% {
+                transform: translateX(0px) rotate(5deg);
+            }
+
+            50% {
+                transform: translateX(20px) rotate(-5deg);
+            }
+
+            75% {
+                transform: translateX(0px) rotate(5deg);
+            }
+
+            100% {
+                transform: translateX(-20px) rotate(-5deg);
+            }
         }
     </style>
 </head>
+
 <body>
-    <a href="/" class="back-btn">
-        <i class="fas fa-arrow-left"></i> 返回首页
+    <!-- Back Button -->
+    <a href="/" class="game-back-btn" title="返回首页">
+        <i class="fas fa-arrow-left"></i>
     </a>
 
-    <div class="postcards-container">
-        <header class="postcards-header">
-            <span class="fox-emoji">🦊</span>
-            <h1>小狐狸的明信片</h1>
-            <p>小橘在旅途中给你寄来的问候 <span id="unreadCount"></span></p>
-        </header>
+    <!-- Navbar (Hidden but kept for Auth Logic if needed, or we implement simple logic here) -->
+    <!-- We will use the main logic to check auth but hide standard navbar for immersion, 
+         OR we can include standard navbar. 
+         Let's stick to the immersive design with back button for now, 
+         as profile page has standard navbar but this is a specific collection page.
+         Actually, let's keep the standard navbar for consistency, but maybe transparent on hero?
+         Let's stick to the Back Button for a cleaner "Album" feel, standard navbar might break the "Hero" immersion if not careful.
+         Profile page had standard navbar. Let's add standard navbar back but transparent?
+         The user asked for "similar to homepage". Homepage has navbar.
+         Let's add the navbar structure compatible with main.js auth logic.
+    -->
 
+    <nav class="navbar navbar-expand-lg fixed-top"
+        style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/postcards">🦊 明信片</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <div id="authGuest" class="d-flex gap-2">
+                        <a href="/login" class="btn btn-outline-primary rounded-pill px-4">登录</a>
+                        <a href="/register" class="btn btn-primary rounded-pill px-4">注册</a>
+                    </div>
+                    <div id="authUser" class="d-flex gap-2 align-items-center d-none">
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary rounded-pill dropdown-toggle" type="button"
+                                id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-4 mt-2">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a>
+                                </li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i
+                                            class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="postcard-hero-section">
+        <!-- Floating Emojis -->
+        <div class="floating-emoji" style="top: 20%; left: 10%; animation-delay: 0s;">🦊</div>
+        <div class="floating-emoji" style="top: 30%; right: 15%; animation-delay: 1.5s;">💌</div>
+        <div class="floating-emoji" style="bottom: 25%; left: 20%; animation-delay: 0.5s;">🌍</div>
+        <div class="floating-emoji" style="top: 15%; right: 10%; animation-delay: 2.5s;">✨</div>
+        <div class="floating-emoji" style="bottom: 20%; right: 25%; animation-delay: 1s;">📮</div>
+
+        <div class="container" style="position: relative; z-index: 2; margin-top: 3rem;">
+            <h1 class="postcard-hero-title">小橘的旅行足迹</h1>
+            <p class="postcard-hero-subtitle">
+                这里收藏了小橘从世界各地寄来的明信片。<br>
+                每一次治愈的对话，都是一段新的旅程。
+            </p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container mb-5">
         <div id="postcardsList" class="postcards-grid">
-            <div class="loading-state">
-                <i class="fas fa-spinner"></i>
-                <p>正在加载明信片...</p>
+            <!-- Loading State -->
+            <div class="loading-container" style="grid-column: 1 / -1;">
+                <div class="loading-spinner-game"></div>
+                <p>正在整理明信片...</p>
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="mt-5 py-4" style="background: white !important; color: #6c757d !important;">
+        <div class="container text-center">
+            <h5 class="mb-3" style="color: var(--primary-pink) !important;">
+                <i class="fas fa-heart-pulse me-2"></i>
+                CBT情绪日记游戏
+            </h5>
+            <p class="mb-2" style="color: #6c757d !important;">
+                © 2024 心灵守护者 - 用爱与科学疗愈心灵
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
     <script>
-        // 兼容两种token存储方式
-        const token = localStorage.getItem('token') || localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        if (!token) {
-            window.location.href = '/login';
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check Auth directly or let main.js handle it
+            const token = localStorage.getItem('token') || localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            if (!token) {
+                // If main.js doesn't redirect automatically (it usually doesn't on all pages), we enforce it here
+                // But main.js usually helps with UI updates. Let's update UI first.
+                // Actually main.js handles UI updates but doesn't auto-redirect unless strictly required or checking protected endpoints.
+                // We will let the loadPostcards function handle 401.
+            }
+            loadPostcards();
+        });
 
         async function loadPostcards() {
+            const token = localStorage.getItem('token') || localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
             try {
                 const response = await fetch('/api/postcard/', {
                     headers: {
@@ -312,23 +497,26 @@
                     }
                 });
 
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login';
-                        return;
-                    }
                     throw new Error('加载失败');
                 }
 
                 const data = await response.json();
                 renderPostcards(data.postcards, data.unread_count);
+
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('postcardsList').innerHTML = `
-                    <div class="empty-state">
-                        <div class="fox-img">😿</div>
-                        <h3>加载失败</h3>
-                        <p>请刷新页面重试</p>
+                   <div class="empty-state-game" style="grid-column: 1 / -1;">
+                        <div class="empty-icon">😿</div>
+                        <h3>哎呀，加载失败了</h3>
+                        <p>网络好像有点小问题，刷新试试看？</p>
+                        <button onclick="window.location.reload()" class="btn btn-primary rounded-pill px-4 mt-3">刷新页面</button>
                     </div>
                 `;
             }
@@ -336,100 +524,93 @@
 
         function renderPostcards(postcards, unreadCount) {
             const container = document.getElementById('postcardsList');
-            const unreadBadge = document.getElementById('unreadCount');
-
-            if (unreadCount > 0) {
-                unreadBadge.innerHTML = `<span class="unread-badge">${unreadCount} 封未读</span>`;
-            }
 
             if (!postcards || postcards.length === 0) {
                 container.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1 / -1;">
-                        <div class="fox-img">🦊</div>
-                        <h3>小橘还没有寄过明信片</h3>
-                        <p>写一篇日记，小橘就会出发旅行啦～</p>
-                        <a href="/diary/new" class="btn">
-                            <i class="fas fa-pen"></i> 写日记
+                    <div class="empty-state-game" style="grid-column: 1 / -1;">
+                        <div class="empty-icon">🗺️</div>
+                        <h3>还没有收到明信片</h3>
+                        <p class="text-muted mb-4">
+                            小橘还在准备行李呢！<br>
+                            写一篇日记，这只小狐狸就会出发去为你寻找治愈的风景。
+                        </p>
+                        <a href="/diary/new" class="btn btn-primary btn-lg rounded-pill pulse-animation">
+                            <i class="fas fa-pen-fancy me-2"></i>
+                            去写日记
                         </a>
                     </div>
-                `;
+                 `;
                 return;
             }
 
             container.innerHTML = postcards.map(postcard => {
-                // 判断明信片状态
                 const isPending = postcard.status === 'pending';
                 const isUnread = !postcard.is_read && !isPending;
 
-                // 构建图片区域
+                // Image handling
                 let imageHtml;
                 if (isPending) {
                     imageHtml = `
-                        <div class="pending-image-wrapper">
-                            <div class="pending-fox">🦊</div>
-                            <div class="pending-text">小橘正在寄出明信片...</div>
+                        <div class="pending-visual">
+                            <div class="fox-walk">🦊</div>
+                            <small class="text-muted mt-2">小橘送信中...</small>
                         </div>
-                    `;
+                     `;
                 } else if (postcard.image_url) {
-                    imageHtml = `<img src="${postcard.image_url}" alt="明信片" class="postcard-image" onerror="this.outerHTML='<div class=\\'postcard-image placeholder\\'>🦊</div>'">`;
+                    imageHtml = `<img src="${postcard.image_url}" alt="${postcard.location_name}" class="postcard-img" loading="lazy">`;
                 } else {
-                    imageHtml = `<div class="postcard-image placeholder">🦊</div>`;
+                    // Fallback placeholder
+                    imageHtml = `
+                        <div class="pending-visual" style="background: #eef2ff;">
+                            <div style="font-size: 3rem;">🏞️</div>
+                        </div>
+                      `;
                 }
 
-                // 构建消息内容
-                const message = isPending ? '小橘正在赶往寄信的路上，请稍等片刻～' : (postcard.message || '小橘正在写信中...');
+                // Location & Message
+                const location = postcard.location_name || '未知秘境';
+                const message = isPending ? '小橘正在翻山越岭为你送信...' : (postcard.message || '（空白明信片）');
+                const date = formatDate(postcard.created_at);
 
                 return `
-                    <div class="postcard-card ${isPending ? 'pending' : ''} ${isUnread ? 'unread' : ''}"
-                         onclick="viewPostcard(${postcard.id})">
-                        ${imageHtml}
+                    <div class="postcard-item animate-fade-in-up" onclick="viewPostcard(${postcard.id})">
+                        ${isUnread ? '<div class="status-badge new">NEW!</div>' : ''}
+                        ${isPending ? '<div class="status-badge pending">送信中</div>' : ''}
+                        
+                        <div class="postcard-img-wrapper">
+                            ${imageHtml}
+                        </div>
+                        
                         <div class="postcard-content">
                             <div class="postcard-location">
-                                <i class="fas fa-map-marker-alt"></i>
-                                ${postcard.location_name || '神秘之地'}
+                                <i class="fas fa-map-marker-alt"></i> ${location}
                             </div>
-                            <div class="postcard-message">
-                                ${message}
+                            <div class="postcard-text">
+                                "${message}"
                             </div>
-                            <div class="postcard-meta">
-                                <span class="postcard-date">
-                                    ${formatDate(postcard.created_at)}
-                                </span>
-                                <div class="postcard-emotions">
-                                    ${(postcard.emotion_tags || []).slice(0, 2).map(tag =>
-                                        `<span class="emotion-tag">${tag}</span>`
-                                    ).join('')}
-                                </div>
-                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="far fa-clock me-1"></i> ${date}
+                            </small>
                         </div>
                     </div>
-                `;
+                 `;
             }).join('');
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            const date = new Date(dateStr);
-            const now = new Date();
-            const diff = now - date;
-
-            if (diff < 60000) return '刚刚';
-            if (diff < 3600000) return `${Math.floor(diff/60000)}分钟前`;
-            if (diff < 86400000) return `${Math.floor(diff/3600000)}小时前`;
-            if (diff < 604800000) return `${Math.floor(diff/86400000)}天前`;
-
-            return date.toLocaleDateString('zh-CN', {
-                month: 'long',
-                day: 'numeric'
-            });
         }
 
         function viewPostcard(id) {
             window.location.href = `/postcard/${id}`;
         }
 
-        // 页面加载时获取明信片
-        loadPostcards();
+        // Helper function for date formatting
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN', {
+                month: 'long',
+                day: 'numeric'
+            });
+        }
     </script>
 </body>
+
 </html>

@@ -1,713 +1,532 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>明信片详情 - CBT日记</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700&family=Ma+Shan+Zheng&display=swap"
+        rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            margin: 0;
-            padding: 0;
+            background-color: #f0f2f5;
             min-height: 100vh;
-            background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 50%, #feca57 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 80px;
+            /* Space for back button */
+            padding-bottom: 4rem;
+            font-family: 'Nunito', sans-serif;
+            background-image:
+                radial-gradient(#e5e7eb 1px, transparent 1px),
+                radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
         }
 
-        .postcard-detail-container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-            min-height: 100vh;
-        }
-
-        .back-btn {
+        /* Back Button - Bubble Style */
+        .game-back-btn {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 2rem;
+            left: 2rem;
+            width: 50px;
+            height: 50px;
             background: white;
-            color: #ff6b6b;
-            padding: 10px 20px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
-            z-index: 100;
-        }
-
-        .back-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .postcard-frame {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            margin-top: 60px;
-        }
-
-        .postcard-image-container {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            overflow: hidden;
-        }
-
-        .postcard-image-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .postcard-image-container .placeholder {
-            width: 100%;
-            height: 100%;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 8rem;
-            color: #ddd;
+            color: #666;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+            text-decoration: none;
+            border: 2px solid transparent;
         }
 
+        .game-back-btn:hover {
+            transform: scale(1.1) rotate(-10deg);
+            color: var(--primary-pink);
+            border-color: var(--primary-pink);
+        }
+
+        /* Main Container */
+        .postcard-detail-wrapper {
+            max-width: 900px;
+            width: 100%;
+            perspective: 1000px;
+            padding: 0 1rem;
+        }
+
+        /* Postcard Frame - Collector's Item Look */
+        .postcard-frame {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: floatIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            border: 8px solid white;
+        }
+
+        @keyframes floatIn {
+            from {
+                transform: translateY(50px) rotateX(5deg);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0) rotateX(0);
+                opacity: 1;
+            }
+        }
+
+        .postcard-frame::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Image Section */
+        .postcard-image-container {
+            width: 100%;
+            position: relative;
+            background: #f3f4f6;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .postcard-full-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+            max-height: 600px;
+        }
+
+        /* Stamp Decoration */
         .postcard-stamp {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 80px;
-            height: 100px;
+            top: 2rem;
+            right: 2rem;
+            width: 100px;
+            height: 120px;
             background: white;
-            border: 3px dashed #ff6b6b;
-            border-radius: 5px;
+            border: 2px dashed #e11d48;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            transform: rotate(5deg);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transform: rotate(8deg);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+            opacity: 0.9;
         }
 
-        .postcard-stamp .fox {
-            font-size: 2.5rem;
+        .stamp-icon {
+            font-size: 3rem;
         }
 
-        .postcard-stamp .text {
-            font-size: 0.6rem;
-            color: #ff6b6b;
-            font-weight: bold;
+        .stamp-text {
+            font-size: 0.7rem;
+            color: #e11d48;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-top: 5px;
         }
 
+        /* Body & Message */
         .postcard-body {
-            padding: 2rem;
-            background: #fffef5;
-            background-image:
-                linear-gradient(#e8e8e8 1px, transparent 1px);
-            background-size: 100% 2rem;
-            background-position: 0 1rem;
+            padding: 3rem;
+            background: #fff;
+            position: relative;
+            background-image: repeating-linear-gradient(transparent, transparent 31px, #f1f5f9 31px, #f1f5f9 32px);
         }
 
         .postcard-location {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.5rem;
+            color: #4b5563;
+            margin-bottom: 2rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #ff6b6b;
+            gap: 0.8rem;
         }
 
         .postcard-location i {
-            color: #ff6b6b;
-            font-size: 1.5rem;
-        }
-
-        .postcard-location-text {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #333;
-            font-family: 'STKaiti', 'KaiTi', serif;
-        }
-
-        .postcard-message {
-            font-size: 1.15rem;
-            line-height: 2;
-            color: #444;
-            font-family: 'STKaiti', 'KaiTi', 'SimSun', serif;
-            white-space: pre-wrap;
-            margin-bottom: 2rem;
-        }
-
-        .postcard-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding-top: 1.5rem;
-            border-top: 1px dashed #ddd;
-        }
-
-        .postcard-emotions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .emotion-tag {
-            background: linear-gradient(135deg, #ff9a56, #ff6b6b);
-            color: white;
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-        }
-
-        .postcard-date {
-            color: #999;
-            font-size: 0.9rem;
-            text-align: right;
-        }
-
-        .postcard-date .date {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .postcard-date .health {
-            color: #10b981;
-            font-weight: 600;
-        }
-
-        /* 探险收获展示区域 */
-        .adventure-rewards-section {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-            border: 2px solid #f59e0b;
-        }
-
-        .adventure-rewards-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #92400e;
-            margin-bottom: 1rem;
-        }
-
-        .adventure-rewards-title i {
-            color: #f59e0b;
-        }
-
-        .stat-changes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 0.75rem;
-        }
-
-        .stat-change-item {
-            background: white;
-            border-radius: 12px;
-            padding: 1rem 0.75rem;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: transform 0.2s ease;
-        }
-
-        .stat-change-item:hover {
-            transform: translateY(-2px);
-        }
-
-        .stat-change-icon {
-            font-size: 1.3rem;
-            margin-bottom: 0.4rem;
-        }
-
-        .stat-change-label {
-            font-size: 0.75rem;
-            color: #666;
-            margin-bottom: 0.2rem;
-        }
-
-        .stat-change-value {
-            font-size: 1.1rem;
-            font-weight: 700;
-        }
-
-        .stat-change-value.positive {
-            color: #10b981;
-        }
-
-        .stat-change-value.negative {
             color: #ef4444;
         }
 
-        .stat-change-value.neutral {
+        .postcard-message {
+            font-family: 'Ma Shan Zheng', cursive, 'KaiTi', serif;
+            font-size: 1.8rem;
+            line-height: 2;
+            color: #1f2937;
+            margin-bottom: 2rem;
+            white-space: pre-wrap;
+        }
+
+        .postcard-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 2rem;
+            border-top: 2px dashed #e5e7eb;
+        }
+
+        .meta-date {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .meta-tags .tag {
+            background: #f3f4f6;
+            color: #4b5563;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* Adventure Rewards "Loot Box" */
+        .adventure-rewards {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 2px solid #fcd34d;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .adventure-rewards::before {
+            content: '✨';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 4rem;
+            opacity: 0.1;
+            transform: rotate(15deg);
+        }
+
+        .rewards-title {
+            color: #92400e;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rewards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .reward-item {
+            background: white;
+            padding: 0.8rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .reward-val {
+            font-weight: 800;
+            font-size: 1.2rem;
+        }
+
+        .reward-val.pos {
+            color: #10b981;
+        }
+
+        .reward-val.neg {
+            color: #ef4444;
+        }
+
+        .reward-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 0.2rem;
+        }
+
+        /* Action Buttons */
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 3rem;
+            padding-bottom: 2rem;
+        }
+
+        /* Loading & Pending States */
+        .loading-container {
+            text-align: center;
+            padding: 5rem 0;
             color: #6b7280;
         }
 
-        .coins-earned-display {
+        .pending-visual {
+            background: #fffbeb;
+            min-height: 400px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            background: linear-gradient(135deg, #fcd34d, #f59e0b);
-            color: #78350f;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-top: 1rem;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            border-bottom: 2px dashed #e5e7eb;
         }
 
-        .coins-earned-display i {
-            color: #b45309;
-            font-size: 1.2rem;
+        .pending-fox {
+            font-size: 5rem;
+            animation: bounce 2s infinite;
         }
 
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
+        @keyframes bounce {
 
-        .action-btn {
-            padding: 12px 30px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .action-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .action-btn.primary {
-            background: white;
-            color: #ff6b6b;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .action-btn.secondary {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        .loading-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: white;
-            margin-top: 100px;
-        }
-
-        .loading-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .error-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: white;
-            border-radius: 20px;
-            margin-top: 100px;
-        }
-
-        /* Pending状态样式 */
-        .pending-postcard {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border-radius: 20px;
-            margin-top: 60px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        }
-
-        .pending-fox-large {
-            font-size: 6rem;
-            animation: foxWalkLarge 1.5s ease-in-out infinite;
-            display: inline-block;
-        }
-
-        @keyframes foxWalkLarge {
-            0%, 100% { transform: translateY(0) rotate(-3deg); }
-            25% { transform: translateY(-15px) rotate(3deg); }
-            50% { transform: translateY(0) rotate(-3deg); }
-            75% { transform: translateY(-10px) rotate(3deg); }
-        }
-
-        .pending-title {
-            color: #92400e;
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 1.5rem 0 1rem;
-        }
-
-        .pending-subtitle {
-            color: #b45309;
-            font-size: 1rem;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-
-        .pending-progress {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            color: #92400e;
-            font-size: 0.9rem;
-        }
-
-        .pending-progress i {
-            animation: spin 1s linear infinite;
-        }
-
-        .pending-location {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 2px dashed #f59e0b;
-        }
-
-        .pending-location-label {
-            color: #b45309;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .pending-location-name {
-            color: #92400e;
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-
-        @media (max-width: 768px) {
-            .postcard-detail-container {
-                padding: 1rem;
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
             }
 
-            .postcard-stamp {
-                width: 60px;
-                height: 75px;
+            40% {
+                transform: translateY(-20px);
             }
 
-            .postcard-stamp .fox {
-                font-size: 1.8rem;
-            }
-
-            .postcard-body {
-                padding: 1.5rem;
-            }
-
-            .postcard-message {
-                font-size: 1rem;
-                line-height: 1.8;
+            60% {
+                transform: translateY(-10px);
             }
         }
     </style>
 </head>
+
 <body>
-    <a href="/postcards" class="back-btn">
-        <i class="fas fa-arrow-left"></i> 返回列表
+    <!-- Back Button -->
+    <a href="/postcards" class="game-back-btn" title="返回列表">
+        <i class="fas fa-arrow-left"></i>
     </a>
 
-    <div class="postcard-detail-container">
-        <div id="postcardContent">
-            <div class="loading-state">
-                <i class="fas fa-spinner"></i>
-                <p>正在加载明信片...</p>
-            </div>
+    <div class="postcard-detail-wrapper" id="postcardContent">
+        <!-- Content injected via JS -->
+        <div class="loading-container">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p>正在读取明信片数据...</p>
         </div>
     </div>
 
     <script>
-        // 兼容两种token存储方式
         const token = localStorage.getItem('token') || localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
         const postcardId = {{ postcard_id }};
 
-        if (!token) {
-            window.location.href = '/login';
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            loadPostcard();
+        });
 
         async function loadPostcard() {
             try {
                 const response = await fetch(`/api/postcard/${postcardId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        window.location.href = '/login';
-                        return;
-                    }
-                    if (response.status === 404) {
-                        showError('明信片不存在');
-                        return;
-                    }
-                    throw new Error('加载失败');
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
                 }
 
-                const data = await response.json();
-                renderPostcard(data.postcard, data.diary);
+                if (!response.ok) throw new Error('Failed to load');
 
-                // 标记为已读
+                const data = await response.json();
+                renderDetail(data.postcard, data.diary);
+
                 if (!data.postcard.is_read) {
                     markAsRead();
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                showError('加载失败，请刷新重试');
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('postcardContent').innerHTML = `
+                    <div class="text-center py-5">
+                        <div style="font-size: 3rem;">😿</div>
+                        <h3 class="mt-3 text-muted">无法加载明信片</h3>
+                        <a href="/postcards" class="btn btn-primary mt-3 rounded-pill">返回列表</a>
+                    </div>
+                 `;
             }
         }
 
-        function renderPostcard(postcard, diary) {
+        function renderDetail(postcard, diary) {
             const container = document.getElementById('postcardContent');
 
-            // 如果是pending状态，显示等待页面
+            // Check if pending
             if (postcard.status === 'pending') {
-                renderPendingPostcard(container, postcard, diary);
-                // 开始轮询检查状态
+                renderPending(container);
                 startPolling();
                 return;
             }
 
-            const imageHtml = postcard.image_url ?
-                `<img src="${postcard.image_url}" alt="明信片图片" onerror="this.outerHTML='<div class=\\'placeholder\\'>🦊</div>'">` :
-                `<div class="placeholder">🦊</div>`;
+            const img = postcard.image_url ?
+                `<img src="${postcard.image_url}" class="postcard-full-img" alt="Postcard">` :
+                `<div style="font-size: 5rem; color: #cbd5e1;">🏞️</div>`;
 
-            // 构建数值变化展示
-            const statChangesHtml = buildStatChangesHtml(postcard.stat_changes, postcard.coins_earned);
+            // Stats
+            let rewardsHtml = '';
+            const stats = postcard.stat_changes || {};
+            const coins = postcard.coins_earned || 0;
+            const hasStats = Object.keys(stats).length > 0;
+
+            if (hasStats || coins > 0) {
+                let items = '';
+                if (coins > 0) {
+                    items += `
+                        <div class="reward-item" style="border: 2px solid #fbbf24; background: #fffbeb;">
+                            <div class="reward-val" style="color: #b45309;">+${coins}</div>
+                            <div class="reward-label">金币</div>
+                        </div>
+                     `;
+                }
+
+                for (let [key, val] of Object.entries(stats)) {
+                    if (val === 0) continue;
+                    const labelMap = {
+                        mental_health: '心理健康',
+                        stress: '压力',
+                        energy: '能量',
+                        happiness: '快乐',
+                        growth: '成长'
+                    };
+                    items += `
+                        <div class="reward-item">
+                            <div class="reward-val ${val > 0 ? 'pos' : 'neg'}">${val > 0 ? '+' : ''}${val}</div>
+                            <div class="reward-label">${labelMap[key] || key}</div>
+                        </div>
+                     `;
+                }
+
+                rewardsHtml = `
+                    <div class="adventure-rewards">
+                        <div class="rewards-title"><i class="fas fa-gift"></i> 探险收获</div>
+                        <div class="rewards-grid">${items}</div>
+                    </div>
+                 `;
+            }
 
             container.innerHTML = `
                 <div class="postcard-frame">
                     <div class="postcard-image-container">
-                        ${imageHtml}
+                        ${img}
                         <div class="postcard-stamp">
-                            <span class="fox">🦊</span>
-                            <span class="text">小橘邮戳</span>
+                            <span class="stamp-icon">🦊</span>
+                            <span class="stamp-text">AIR MAIL</span>
                         </div>
                     </div>
+                    
                     <div class="postcard-body">
                         <div class="postcard-location">
                             <i class="fas fa-map-marker-alt"></i>
-                            <span class="postcard-location-text">${postcard.location_name || '神秘之地'}</span>
+                            ${postcard.location_name || '未知之地'}
                         </div>
-                        <div class="postcard-message">${postcard.message || '小橘正在写信中...'}</div>
-                        <div class="postcard-footer">
-                            <div class="postcard-emotions">
-                                ${(postcard.emotion_tags || []).map(tag =>
-                                    `<span class="emotion-tag">${tag}</span>`
-                                ).join('')}
-                            </div>
-                            <div class="postcard-date">
-                                <span class="date">${formatDate(postcard.created_at)}</span>
-                                ${postcard.mental_health_score ?
-                                    `<span class="health">心理健康 ${postcard.mental_health_score}</span>` : ''}
+                        
+                        <div class="postcard-message">
+                            ${postcard.message || '（这是一张空白的明信片...）'}
+                        </div>
+
+                        <div class="postcard-meta">
+                            <span class="meta-date">
+                                <i class="far fa-calendar-alt me-1"></i>
+                                ${new Date(postcard.created_at).toLocaleDateString()}
+                            </span>
+                            <div class="meta-tags">
+                                ${(postcard.emotion_tags || []).map(t => `<span class="tag">#${t}</span>`).join('')}
                             </div>
                         </div>
-                        ${statChangesHtml}
+
+                        ${rewardsHtml}
                     </div>
                 </div>
 
-                <div class="action-buttons">
+                <div class="action-bar">
                     ${diary ? `
-                        <a href="/diary/${diary.id}" class="action-btn primary">
-                            <i class="fas fa-book"></i> 查看日记
+                        <a href="/diary/${diary.id}" class="btn btn-outline-primary rounded-pill px-4">
+                            <i class="fas fa-book-open me-2"></i> 查看原日记
                         </a>
                     ` : ''}
-                    <a href="/postcards" class="action-btn secondary">
-                        <i class="fas fa-images"></i> 更多明信片
-                    </a>
+                    <button class="btn btn-primary rounded-pill px-4" onclick="window.print()">
+                        <i class="fas fa-share-alt me-2"></i> 收藏/分享
+                    </button>
                 </div>
-            `;
+             `;
         }
 
-        function renderPendingPostcard(container, postcard, diary) {
+        function renderPending(container) {
             container.innerHTML = `
-                <div class="pending-postcard">
-                    <div class="pending-fox-large">🦊</div>
-                    <h2 class="pending-title">小橘正在寄出明信片...</h2>
-                    <p class="pending-subtitle">
-                        小橘正在整理这次探险的收获，<br>
-                        精心挑选最美的风景给你～<br>
-                        请稍等片刻，马上就好！
-                    </p>
-                    <div class="pending-progress">
-                        <i class="fas fa-spinner"></i>
-                        <span>正在生成中...</span>
+                <div class="postcard-frame">
+                    <div class="pending-visual">
+                        <div class="pending-fox">🦊</div>
+                        <h3 class="mt-4 text-muted">小橘正在寄送中...</h3>
+                        <p class="text-secondary">请稍等，精彩的旅行风景即将抵达！</p>
                     </div>
-                    ${postcard.location_name ? `
-                        <div class="pending-location">
-                            <div class="pending-location-label">小橘的位置</div>
-                            <div class="pending-location-name">
-                                <i class="fas fa-map-marker-alt"></i> ${postcard.location_name}
-                            </div>
-                        </div>
-                    ` : ''}
                 </div>
-
-                <div class="action-buttons">
-                    ${diary ? `
-                        <a href="/diary/${diary.id}" class="action-btn primary">
-                            <i class="fas fa-book"></i> 查看日记
-                        </a>
-                    ` : ''}
-                    <a href="/postcards" class="action-btn secondary">
-                        <i class="fas fa-images"></i> 更多明信片
-                    </a>
-                </div>
-            `;
+             `;
         }
 
-        let pollingInterval = null;
-
+        let pollInterval;
         function startPolling() {
-            // 每3秒检查一次状态
-            pollingInterval = setInterval(async () => {
-                try {
-                    const response = await fetch(`/api/postcard/${postcardId}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.postcard.status !== 'pending') {
-                            // 明信片生成完成，停止轮询并重新渲染
-                            clearInterval(pollingInterval);
-                            renderPostcard(data.postcard, data.diary);
-                            if (!data.postcard.is_read) {
-                                markAsRead();
-                            }
-                        }
+            pollInterval = setInterval(async () => {
+                const res = await fetch(`/api/postcard/${postcardId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.postcard.status !== 'pending') {
+                        clearInterval(pollInterval);
+                        renderDetail(data.postcard, data.diary);
                     }
-                } catch (error) {
-                    console.error('Polling error:', error);
                 }
             }, 3000);
         }
 
-        // 页面离开时清理轮询
-        window.addEventListener('beforeunload', () => {
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
-            }
-        });
-
-        function buildStatChangesHtml(statChanges, coinsEarned) {
-            // 如果没有数值变化和金币，不显示这个区域
-            const hasChanges = statChanges && Object.keys(statChanges).length > 0;
-            const hasCoins = coinsEarned && coinsEarned > 0;
-
-            if (!hasChanges && !hasCoins) {
-                return '';
-            }
-
-            const statConfig = {
-                'mental_health': { label: '心理健康', icon: '💚', positiveGood: true },
-                'stress': { label: '压力值', icon: '😰', positiveGood: false },
-                'growth': { label: '成长值', icon: '🌱', positiveGood: true },
-                'energy': { label: '能量', icon: '⚡', positiveGood: true },
-                'happiness': { label: '幸福感', icon: '😊', positiveGood: true }
-            };
-
-            let statItemsHtml = '';
-            if (hasChanges) {
-                for (const [stat, change] of Object.entries(statChanges)) {
-                    if (change === 0) continue;
-
-                    const config = statConfig[stat] || { label: stat, icon: '📊', positiveGood: true };
-                    const isPositive = config.positiveGood ? change > 0 : change < 0;
-                    const valueClass = isPositive ? 'positive' : 'negative';
-                    const displayValue = change > 0 ? `+${change}` : `${change}`;
-
-                    statItemsHtml += `
-                        <div class="stat-change-item">
-                            <div class="stat-change-icon">${config.icon}</div>
-                            <div class="stat-change-label">${config.label}</div>
-                            <div class="stat-change-value ${valueClass}">${displayValue}</div>
-                        </div>
-                    `;
-                }
-            }
-
-            let coinsHtml = '';
-            if (hasCoins) {
-                coinsHtml = `
-                    <div class="coins-earned-display">
-                        <i class="fas fa-coins"></i>
-                        <span>探险获得 ${coinsEarned} 金币</span>
-                    </div>
-                `;
-            }
-
-            return `
-                <div class="adventure-rewards-section">
-                    <div class="adventure-rewards-title">
-                        <i class="fas fa-trophy"></i>
-                        <span>探险收获</span>
-                    </div>
-                    ${statItemsHtml ? `<div class="stat-changes-grid">${statItemsHtml}</div>` : ''}
-                    ${coinsHtml}
-                </div>
-            `;
-        }
-
-        function showError(message) {
-            document.getElementById('postcardContent').innerHTML = `
-                <div class="error-state">
-                    <div style="font-size: 4rem; margin-bottom: 1rem;">😿</div>
-                    <h3>${message}</h3>
-                    <a href="/postcards" class="action-btn primary" style="margin-top: 1rem; display: inline-flex;">
-                        返回列表
-                    </a>
-                </div>
-            `;
-        }
-
-        function formatDate(dateStr) {
-            if (!dateStr) return '';
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('zh-CN', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+        async function markAsRead() {
+            await fetch(`/api/postcard/${postcardId}/read`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
             });
         }
-
-        async function markAsRead() {
-            try {
-                await fetch(`/api/postcard/${postcardId}/read`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-            } catch (e) {
-                // 忽略错误
-            }
-        }
-
-        // 页面加载时获取明信片
-        loadPostcard();
     </script>
 </body>
+
 </html>
