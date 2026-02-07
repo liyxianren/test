@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(git init:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(chcp:*)",
+      "Bash(python3:*)",
+      "Bash(iconv:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c:*)",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "Bash(git push:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc2MjU5NTU1OSwianRpIjoiZTVjMzJkNDgtNjBmNi00ODBmLTgzNzEtOGYzNzZmYmNmMTkyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6OSwibmJmIjoxNzYyNTk1NTU5LCJleHAiOjE3NjI2ODE5NTl9.cBXDUd-HWt4NmiYolSsEoNqfHJX3yWapEpmeSwCKYKk\")",
+      "Bash(cp:*)",
+      "Bash(timeout /t 3)",
+      "Bash(ping:*)",
+      "Bash(findstr:*)",
+      "Bash(nul)",
+      "Bash(netstat:*)",
+      "Bash(cat:*)",
+      "Bash(del \"C:\\Users\\Administrator\\.claude\\plans\\snoopy-spinning-knuth.md\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc2MjU5NTU1OSwianRpIjoiZTVjMzJkNDgtNjBmNi00ODBmLTgzNzEtOGYzNzZmYmNmMTkyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6OSwibmJmIjoxNzYyNTk1NTU5LCJleHAiOjE3NjI2ODE5NTl9.cBXDUd-HWt4NmiYolSsEoNqfHJX3yWapEpmeSwCKYKk\" curl -s -X GET http://localhost:5000/api/game/state -H \"Authorization: Bearer $TOKEN\" -H \"Content-Type: application/json\")",
+      "Bash(dir:*)",
+      "Bash(del /q test_auth.py test_auth_new.py test_chatglm.py test_chatglm_simple.py test_deployment.py test_integration.py test_integration_simple.py test_user_prompt.py)",
+      "Bash(del /q demo_zhipu.py glm4.py)",
+      "Bash(del /q about.md chatglm.md doubao.md gmae.md PROJECT_PLAN.md DESIGN_PROMPT.md DEPLOY.md README_DEPLOY.md AGENTS.md)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
