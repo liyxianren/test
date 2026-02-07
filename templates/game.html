@@ -1,509 +1,556 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>情绪管理游戏 - CBT日记</title>
+    <title>心灵花园 - CBT情绪日记游戏</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 修复滚动问题 */
-        html, body {
-            height: auto !important;
-            min-height: 100vh;
-            overflow-x: hidden;
-            overflow-y: auto !important;
+        /* Mind Garden Theme - Consistent with Design System */
+        .game-hero-section {
+            background: var(--gradient-sky);
+            padding: 3rem 0 5rem;
+            position: relative;
+            margin-bottom: -3rem;
+            overflow: hidden;
         }
 
-        .game-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            overflow: visible;
-        }
-
-        .game-header {
+        .hero-title-area {
+            position: relative;
+            z-index: 2;
             text-align: center;
-            color: white;
-            margin-bottom: 3rem;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .game-header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        .hero-title-area h1 {
+            font-weight: 900;
+            letter-spacing: 2px;
         }
 
-        .game-header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+        /* Card Container */
+        .garden-container {
+            position: relative;
+            z-index: 10;
         }
 
-        .game-dashboard {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        /* Main Card */
+        .garden-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-game);
+            padding: 2.5rem;
+            position: relative;
+            border: 4px solid white;
+            overflow: hidden;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+        /* 装饰性背景元素 */
+        .garden-bg-decoration {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23E0F6FF' fill-opacity='0.5' d='M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,224C672,245,768,267,864,261.3C960,256,1056,224,1152,197.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E") no-repeat bottom;
+            background-size: cover;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Character Spot */
+        .character-spot {
+            text-align: center;
             margin-bottom: 2rem;
+            position: relative;
+            z-index: 1;
         }
 
-        .stat-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 15px;
+        .character-img-wrapper {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+
+        .character-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
+            animation: gentleFloat 4s ease-in-out infinite;
+        }
+
+        .level-pill {
+            background: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-cute);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            border: 2px solid var(--bg-secondary);
+            transition: transform 0.3s var(--bounce);
+        }
+
+        .level-pill:hover {
+            transform: scale(1.05);
+            border-color: var(--primary-yellow);
+        }
+
+        .level-badge-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--gradient-sunset);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+        }
+
+        /* Stats Grid */
+        .stats-grid-cute {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card-cute {
+            background: white;
+            border-radius: var(--radius-md);
             padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s var(--bounce);
+            border: 2px solid transparent;
+            box-shadow: var(--shadow-cute);
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            --card-color: var(--primary-blue);
+            /* Default fallback */
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-
-        .stat-card::before {
+        .stat-card-cute::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
+            right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--card-color-1, #667eea), var(--card-color-2, #764ba2));
+            background: var(--card-color);
+            opacity: 0.7;
         }
 
-        .stat-card.health::before {
-            --card-color-1: #10b981;
-            --card-color-2: #34d399;
+        .stat-card-cute:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--card-color);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
 
-        .stat-card.stress::before {
-            --card-color-1: #ef4444;
-            --card-color-2: #f87171;
-        }
-
-        .stat-card.energy::before {
-            --card-color-1: #f59e0b;
-            --card-color-2: #fbbf24;
-        }
-
-        .stat-card.income::before {
-            --card-color-1: #fbbf24;
-            --card-color-2: #fde047;
-        }
-
-        .stat-card.mood::before {
-            --card-color-1: #8b5cf6;
-            --card-color-2: #a78bfa;
-        }
-
-        .stat-card.growth::before {
-            --card-color-1: #06b6d4;
-            --card-color-2: #22d3ee;
-        }
-
-        .stat-icon {
+        .stat-icon-cute {
             font-size: 2.5rem;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
+            display: block;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: bounce 2s infinite;
+            animation-play-state: paused;
         }
 
-        .stat-label {
+        .stat-card-cute:hover .stat-icon-cute {
+            animation-play-state: running;
+        }
+
+        .stat-value-cute {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            line-height: 1.2;
+        }
+
+        .stat-label-cute {
             font-size: 0.9rem;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-progress {
-            width: 100%;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .stat-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--card-color-1, #667eea), var(--card-color-2, #764ba2));
-            transition: width 0.5s ease;
-            border-radius: 4px;
-        }
-
-        .stat-description {
-            font-size: 0.85rem;
-            color: #9ca3af;
-            margin-top: 0.5rem;
-        }
-
-        .income-detail {
-            display: flex;
-            align-items: baseline;
-            gap: 0.5rem;
-        }
-
-        .income-base {
-            font-size: 2rem;
+            color: var(--text-secondary);
             font-weight: 700;
         }
 
-        .income-multiplier {
-            font-size: 1.2rem;
-            color: #6b7280;
-        }
-
-        .game-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
+        /* Mission Board */
+        .mission-board {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
             margin-top: 2rem;
-            flex-wrap: wrap;
+            border: 2px dashed rgba(78, 205, 196, 0.3);
         }
 
-        .game-btn {
-            padding: 0.75rem 2rem;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .mission-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-            color: white;
+            gap: 0.75rem;
         }
 
-        .game-btn.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .mission-title i {
+            color: var(--primary-blue);
         }
 
-        .game-btn.secondary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        .game-btn.outline {
-            background: transparent;
-            border: 2px solid #667eea;
-            color: #667eea;
-        }
-
-        .game-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .no-data-message {
-            text-align: center;
-            padding: 3rem;
-            color: #6b7280;
-        }
-
-        .no-data-message i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        .no-data-message h3 {
-            margin-bottom: 1rem;
-            color: #374151;
-        }
-
-        .emotion-summary {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .emotion-summary h3 {
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            color: #92400e;
-        }
-
-        .emotion-tags {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .emotion-tag {
+        .mission-item {
             background: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            transition: all 0.3s var(--bounce);
+            cursor: pointer;
+            border: 2px solid transparent;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: var(--shadow-cute);
+        }
+
+        .mission-item:hover {
+            transform: translateX(8px) scale(1.01);
+            border-color: var(--primary-blue);
+            box-shadow: var(--shadow-game);
+        }
+
+        .mission-icon-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 1.25rem;
+            flex-shrink: 0;
+            transition: transform 0.3s var(--bounce);
+        }
+
+        .mission-item:hover .mission-icon-box {
+            transform: rotate(10deg) scale(1.1);
+        }
+
+        .mission-content {
+            flex-grow: 1;
+        }
+
+        .mission-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            font-size: 1.1rem;
+        }
+
+        .mission-desc {
             font-size: 0.9rem;
-            color: #92400e;
-            font-weight: 500;
+            color: var(--text-secondary);
         }
 
-        .emotion-tag.positive {
-            background: #d1fae5;
-            color: #065f46;
+        .mission-action {
+            color: var(--accent-pink);
+            font-size: 1.2rem;
+            opacity: 0.6;
+            transition: all 0.3s;
         }
 
-        .emotion-tag.negative {
-            background: #fee2e2;
-            color: #991b1b;
+        .mission-item:hover .mission-action {
+            opacity: 1;
+            transform: translateX(5px);
         }
 
+        /* Animation keyframes are in main layout (style.css) */
+        /* Responsive */
         @media (max-width: 768px) {
-            .game-container {
-                padding: 1rem;
+            .hero-title-area h1 {
+                font-size: 2rem;
             }
 
-            .game-header h1 {
-                font-size: 1.8rem;
+            .garden-card {
+                padding: 1.5rem;
             }
 
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .game-actions {
-                flex-direction: column;
-            }
-
-            .game-btn {
-                width: 100%;
-                justify-content: center;
+            .stats-grid-cute {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
             }
         }
     </style>
 </head>
-<body>
-    <div class="game-container">
-        <div class="game-header">
-            <h1><i class="fas fa-gamepad me-2"></i>情绪管理游戏</h1>
-            <p>通过CBT情绪日记，培养更健康的心理状态</p>
-        </div>
 
-        <div class="game-dashboard" id="gameDashboard">
-            <!-- 数据将由JavaScript动态加载 -->
-            <div class="no-data-message">
-                <i class="fas fa-spinner fa-spin"></i>
-                <h3>正在加载游戏数据...</h3>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <div id="authUser" class="d-flex gap-2 align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown"
+                                data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">Loading...</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a>
+                                </li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i
+                                            class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero 背景 -->
+    <section class="game-hero-section">
+        <!-- 漂浮元素 -->
+        <div class="floating-emoji" style="top: 15%; left: 10%; animation-delay: 0s;">🌱</div>
+        <div class="floating-emoji" style="top: 25%; right: 15%; animation-delay: 1.5s;">🦋</div>
+        <div class="floating-emoji" style="bottom: 40%; left: 20%; animation-delay: 2.5s;">✨</div>
+        <div class="bubble" style="left: 50%; top: 20%; width: 60px; height: 60px;"></div>
+
+        <div class="container hero-title-area">
+            <h1 class="fw-bold mb-2">心灵花园</h1>
+            <p class="opacity-75">你的心灵栖息地与成长空间</p>
+        </div>
+    </section>
+
+    <!-- 主要内容容器 -->
+    <div class="container garden-container mb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="garden-card animate-fade-in-up">
+                    <div class="garden-bg-decoration"></div>
+
+                    <!-- 角色状态区 -->
+                    <div class="character-spot">
+                        <div class="character-img-wrapper">
+                            <!-- 使用小橘作为默认形象 -->
+                            <img src="{{ url_for('static', filename='game/xiaoju_hero_sprite.png') }}"
+                                class="character-avatar"
+                                onerror="this.src='{{ url_for('static', filename='images/fox_default.png') }}'; this.onerror=null;">
+                        </div>
+                        <h2 class="h3 fw-bold mb-2" id="gardenUsername">...</h2>
+
+                        <div class="level-pill" data-bs-toggle="tooltip" title="再写 3 篇日记升级！">
+                            <div class="level-badge-icon"><i class="fas fa-star"></i></div>
+                            <span>Lv.<span id="levelDisplay">-</span></span>
+                            <div style="width: 1px; height: 15px; background: #dee2e6; margin: 0 5px;"></div>
+                            <span class="text-primary small" id="xpDisplay">XP --/--</span>
+                        </div>
+                    </div>
+
+                    <!-- 属性展示区 -->
+                    <div class="stats-grid-cute">
+                        <!-- 心理健康 -->
+                        <div class="stat-card-cute" style="--card-color: var(--accent-green);">
+                            <span class="stat-icon-cute">💚</span>
+                            <div class="stat-value-cute" id="mhScore">-</div>
+                            <div class="stat-label-cute">心理健康</div>
+                        </div>
+
+                        <!-- 压力值 -->
+                        <div class="stat-card-cute" style="--card-color: var(--primary-pink);">
+                            <span class="stat-icon-cute">☁️</span> <!-- 用云朵代替闪电，更柔和 -->
+                            <div class="stat-value-cute" id="stressScore">-</div>
+                            <div class="stat-label-cute">压力指数</div>
+                        </div>
+
+                        <!-- 能量/成长 -->
+                        <div class="stat-card-cute" style="--card-color: var(--primary-orange);">
+                            <span class="stat-icon-cute">🌻</span>
+                            <div class="stat-value-cute" id="growthScore">-</div>
+                            <div class="stat-label-cute">成长值</div>
+                        </div>
+
+                        <!-- 金币 -->
+                        <div class="stat-card-cute" style="--card-color: var(--primary-yellow);">
+                            <span class="stat-icon-cute">💰</span>
+                            <div class="stat-value-cute" id="coinScore">-</div>
+                            <div class="stat-label-cute">金币</div>
+                        </div>
+                    </div>
+
+                    <!-- 任务/行动板 -->
+                    <div class="mission-board">
+                        <div class="mission-title">
+                            <i class="fas fa-clipboard-list text-primary"></i>
+                            今日探索
+                        </div>
+
+                        <a href="/diary/new" class="mission-item">
+                            <div class="mission-icon-box"
+                                style="background: var(--bg-secondary); color: var(--primary-blue);">
+                                <i class="fas fa-pen-fancy"></i>
+                            </div>
+                            <div class="mission-content">
+                                <div class="mission-name">记录心情</div>
+                                <div class="mission-desc">写下一篇日记，释放情绪 +50 XP</div>
+                            </div>
+                            <div class="mission-action"><i class="fas fa-chevron-right"></i></div>
+                        </a>
+
+                        <a href="/adventure/1" class="mission-item">
+                            <div class="mission-icon-box"
+                                style="background: var(--accent-yellow); color: var(--primary-orange);">
+                                <i class="fas fa-map-signs"></i>
+                            </div>
+                            <div class="mission-content">
+                                <div class="mission-name">心灵探险</div>
+                                <div class="mission-desc">挑战认知扭曲怪兽 +100 金币</div>
+                            </div>
+                            <div class="mission-action"><i class="fas fa-chevron-right"></i></div>
+                        </a>
+
+                        <a href="/postcards" class="mission-item">
+                            <div class="mission-icon-box"
+                                style="background: var(--accent-purple); color: var(--primary-purple);">
+                                <i class="fas fa-envelope-open-text"></i>
+                            </div>
+                            <div class="mission-content">
+                                <div class="mission-name">查看明信片</div>
+                                <div class="mission-desc">收集治愈时刻</div>
+                            </div>
+                            <div class="mission-action"><i class="fas fa-chevron-right"></i></div>
+                        </a>
+
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // 从API获取游戏数值（不再使用sessionStorage）
-        async function loadGameData() {
-            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    <!-- 页脚 -->
+    <footer class="mt-5 py-4 text-center text-muted border-top bg-white">
+        <div class="container">
+            <h5 class="mb-3 text-secondary">
+                <i class="fas fa-heart-pulse text-danger me-2"></i>CBT情绪日记游戏
+            </h5>
+            <p class="small mb-0">© 2025 心灵守护者. 用爱与科学疗愈心灵.</p>
+        </div>
+    </footer>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS (Auth) -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', initializeGarden);
+
+        async function initializeGarden() {
+            // Check Auth (handled by main.js logic mostly, but double check)
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
             if (!token) {
-                showLoginMessage();
+                window.location.href = '/login?redirect=/game';
                 return;
             }
 
+            // Load User & Game Data
             try {
-                const response = await fetch('/api/game/state', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                // 1. Get User Profile for Name
+                const userRes = await fetch('/api/auth/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    document.getElementById('gardenUsername').innerText = userData.user.username + " 的花园";
+                    // Update Navbar name if main.js hasn't
+                    const navUser = document.getElementById('username');
+                    if (navUser) navUser.innerText = userData.user.username;
+                }
+
+                // 2. Get Game Stats
+                const gameRes = await fetch('/api/game/state', {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        showLoginMessage();
-                        return;
+                if (gameRes.ok) {
+                    const data = await gameRes.json();
+                    if (data.success && data.game_state) {
+                        updateGardenStats(data.game_state);
                     }
-                    throw new Error('加载失败');
                 }
 
-                const data = await response.json();
-                console.log('[游戏页面] 加载游戏数据:', data);
-
-                if (data.success && data.game_state) {
-                    displayGameDashboard(data.game_state);
-                } else {
-                    showNoDataMessage();
-                }
-            } catch (error) {
-                console.error('[游戏页面] 加载失败:', error);
-                showErrorMessage(error.message);
+            } catch (e) {
+                console.error("Garden init failed:", e);
             }
         }
 
-        function displayGameDashboard(gameState) {
-            const dashboard = document.getElementById('gameDashboard');
+        function updateGardenStats(state) {
+            // Level & XP
+            document.getElementById('levelDisplay').innerText = state.level;
+            const currentXP = 10 - state.diaries_to_next_level; // Assuming 10 per level
+            document.getElementById('xpDisplay').innerText = `XP ${currentXP}/10`;
 
-            let html = `
-            <!-- 用户状态头部 -->
-            <div class="user-status-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; color: white;">
-                <div style="font-size: 48px; margin-bottom: 10px;">⭐ Lv.${gameState.level}</div>
-                <div style="font-size: 24px; margin-bottom: 10px;">💰 ${gameState.coins} 金币</div>
-                <div style="font-size: 14px; opacity: 0.9;">
-                    📖 已写 ${gameState.total_diaries} 篇日记 ·
-                    距离 Lv.${gameState.level + 1} 还需 ${gameState.diaries_to_next_level} 篇
-                </div>
-            </div>
-
-            <div class="stats-grid">
-                <!-- 心理健康 -->
-                <div class="stat-card health">
-                    <div class="stat-icon">💚</div>
-                    <div class="stat-label">心理健康指数</div>
-                    <div class="stat-value">${gameState.mental_health_score}</div>
-                    <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${gameState.mental_health_score}%; --card-color-1: #10b981; --card-color-2: #34d399;"></div>
-                    </div>
-                    <div class="stat-description">
-                        ${gameState.mental_health_score >= 80 ? '状态良好，继续保持！' :
-                          gameState.mental_health_score >= 60 ? '状态一般，加油！' : '需要关注，建议多写日记'}
-                    </div>
-                </div>
-
-                <!-- 压力值 -->
-                <div class="stat-card stress">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-label">压力值</div>
-                    <div class="stat-value">${gameState.stress_level}</div>
-                    <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${gameState.stress_level}%; --card-color-1: #ef4444; --card-color-2: #f87171;"></div>
-                    </div>
-                    <div class="stat-description">
-                        ${gameState.stress_level <= 30 ? '压力很小，状态轻松' :
-                          gameState.stress_level <= 60 ? '压力中等，注意放松' : '压力较大，建议减压'}
-                    </div>
-                </div>
-
-                <!-- 成长潜力 -->
-                <div class="stat-card growth">
-                    <div class="stat-icon">🌱</div>
-                    <div class="stat-label">成长潜力</div>
-                    <div class="stat-value">${gameState.growth_potential}</div>
-                    <div class="stat-progress">
-                        <div class="stat-progress-bar" style="width: ${gameState.growth_potential}%; --card-color-1: #06b6d4; --card-color-2: #22d3ee;"></div>
-                    </div>
-                    <div class="stat-description">
-                        ${gameState.growth_potential >= 70 ? '成长空间大！' :
-                          gameState.growth_potential >= 40 ? '有成长空间' : '稳定状态'}
-                    </div>
-                </div>
-            </div>
-
-            <!-- 游戏提示 -->
-            <div class="game-tips" style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-top: 20px;">
-                <h4 style="margin-bottom: 15px;"><i class="fas fa-lightbulb me-2 text-warning"></i>游戏提示</h4>
-                <ul style="margin: 0; padding-left: 20px;">
-                    <li>每次写日记都会获得 <strong>15-50 金币</strong> 奖励</li>
-                    <li>正面情绪日记可以 <strong>提升心理健康值</strong>，降低压力</li>
-                    <li>负面情绪日记也会获得奖励，鼓励记录真实情绪</li>
-                    <li>每写 <strong>10 篇日记</strong> 升一级，解锁更多功能</li>
-                </ul>
-            </div>
-
-            <!-- 操作按钮 -->
-            <div class="game-actions">
-                <a href="/diary/new" class="game-btn primary">
-                    <i class="fas fa-pen"></i>
-                    写新日记
-                </a>
-                <a href="/diary" class="game-btn secondary">
-                    <i class="fas fa-book"></i>
-                    查看日记
-                </a>
-            </div>
-            `;
-
-            dashboard.innerHTML = html;
-
-            // 添加动画效果
-            setTimeout(() => {
-                document.querySelectorAll('.stat-card').forEach((card, index) => {
-                    card.style.opacity = '0';
-                    card.style.transform = 'translateY(20px)';
-                    setTimeout(() => {
-                        card.style.transition = 'all 0.5s ease';
-                        card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
-                    }, index * 100);
-                });
-            }, 100);
+            // Stats Animate
+            animateValue('mhScore', 0, state.mental_health_score, 1000);
+            animateValue('stressScore', 0, state.stress_level, 1000);
+            animateValue('growthScore', 0, state.growth_potential, 1000);
+            animateValue('coinScore', 0, state.coins, 1500);
         }
 
-        function showNoDataMessage() {
-            const dashboard = document.getElementById('gameDashboard');
-            dashboard.innerHTML = `
-                <div class="no-data-message">
-                    <i class="fas fa-inbox"></i>
-                    <h3>还没有游戏数据</h3>
-                    <p>写一篇情绪日记，开始你的情绪管理之旅吧！</p>
-                    <div class="game-actions">
-                        <a href="/diary/new" class="game-btn primary">
-                            <i class="fas fa-pen"></i>
-                            开始写日记
-                        </a>
-                        <a href="/diary" class="game-btn outline">
-                            <i class="fas fa-book"></i>
-                            查看历史日记
-                        </a>
-                    </div>
-                </div>
-            `;
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            if (!obj) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
         }
-
-        function showLoginMessage() {
-            const dashboard = document.getElementById('gameDashboard');
-            dashboard.innerHTML = `
-                <div class="no-data-message">
-                    <i class="fas fa-user-lock"></i>
-                    <h3>请先登录</h3>
-                    <p>登录后即可查看你的游戏数据</p>
-                    <div class="game-actions">
-                        <a href="/login?redirect=/game" class="game-btn primary">
-                            <i class="fas fa-sign-in-alt"></i>
-                            登录
-                        </a>
-                        <a href="/register" class="game-btn outline">
-                            <i class="fas fa-user-plus"></i>
-                            注册
-                        </a>
-                    </div>
-                </div>
-            `;
-        }
-
-        function showErrorMessage(message) {
-            const dashboard = document.getElementById('gameDashboard');
-            dashboard.innerHTML = `
-                <div class="no-data-message">
-                    <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
-                    <h3>加载失败</h3>
-                    <p>${message}</p>
-                    <div class="game-actions">
-                        <button onclick="loadGameData()" class="game-btn primary">
-                            <i class="fas fa-redo"></i>
-                            重试
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 页面加载时执行
-        document.addEventListener('DOMContentLoaded', () => {
-            loadGameData();
-        });
     </script>
 </body>
+
 </html>
