@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日记详情 - CBT情绪日记游戏</title>
+    <meta name="description" content="查看您的CBT情绪日记详情">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        /* 日记详情页专用样式 - 二次元游戏风格 */
+        .detail-page {
+            background: linear-gradient(180deg, #FFF5F8 0%, #F0F9FF 50%, #FEFFF0 100%);
+            min-height: 100vh;
+            padding-bottom: 3rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 漂浮的装饰元素 */
+        .floating-decor {
+            position: fixed;
+            font-size: 2rem;
+            opacity: 0.4;
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        /* 页面标题区域 */
+        .page-header {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+            border-radius: 0 0 50px 50px;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .page-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B9D, #A78BFA, #4ECDC4);
+            border-radius: 2px;
+        }
+
+        .detail-header {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 30px rgba(255, 107, 157, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .detail-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B9D, #A78BFA, #4ECDC4);
+        }
+
+        .detail-date {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .detail-date i {
+            color: #A78BFA;
+            font-size: 1.3rem;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* 内容卡片通用样式 */
+        .detail-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 30px rgba(167, 139, 250, 0.12);
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .detail-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(167, 139, 250, 0.2);
+        }
+
+        .detail-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, var(--card-color-1, #FF6B9D), var(--card-color-2, #A78BFA));
+        }
+
+        .detail-card-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-card-title .icon-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 用户输入区域 */
+        .user-input-section {
+            --card-color-1: #FF6B9D;
+            --card-color-2: #FFC107;
+        }
+
+        .user-input-section .icon-circle {
+            background: linear-gradient(135deg, #FF6B9D, #FFC107);
+            color: white;
+        }
+
+        .emotion-tags-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .emotion-tag-badge {
+            background: linear-gradient(135deg, #FF6B9D 0%, #A78BFA 100%);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .emotion-tag-badge:hover {
+            transform: scale(1.1);
+        }
+
+        .intensity-display {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #FFF5F8 0%, #F0F9FF 100%);
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            border: 2px solid rgba(255, 107, 157, 0.2);
+        }
+
+        .intensity-emoji {
+            font-size: 3.5rem;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .intensity-info {
+            flex: 1;
+        }
+
+        .intensity-label {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+
+        .intensity-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FF6B9D, #A78BFA);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .intensity-bar-container {
+            flex: 2;
+        }
+
+        .intensity-bar {
+            height: 16px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .intensity-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #facc15, #f97316, #ef4444);
+            border-radius: 10px;
+            transition: width 0.8s ease;
+            position: relative;
+        }
+
+        .intensity-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+            border-radius: 10px 10px 0 0;
+        }
+
+        .trigger-event-box {
+            background: linear-gradient(135deg, #FFF7E6 0%, #FFFBF0 100%);
+            border-left: 5px solid #f59e0b;
+            padding: 1.25rem 1.5rem;
+            border-radius: 0 16px 16px 0;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+        }
+
+        .trigger-event-label {
+            font-size: 0.85rem;
+            color: #92400e;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .trigger-event-text {
+            color: #78350f;
+            font-weight: 500;
+            font-size: 1.05rem;
+        }
+
+        .diary-content-box {
+            background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            line-height: 2;
+            white-space: pre-wrap;
+            font-size: 1.05rem;
+            color: #374151;
+            border: 2px dashed rgba(167, 139, 250, 0.3);
+            position: relative;
+        }
+
+        .diary-content-box::before {
+            content: '"';
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 4rem;
+            color: rgba(167, 139, 250, 0.2);
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+
+        .diary-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .diary-image-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .diary-image-thumb:hover {
+            transform: scale(1.08) rotate(2deg);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 小狐狸明信片区域 */
+        .postcard-section {
+            --card-color-1: #FF9800;
+            --card-color-2: #FF6B9D;
+        }
+
+        .postcard-section .icon-circle {
+            background: linear-gradient(135deg, #FF9800, #FF6B9D);
+            color: white;
+        }
+
+        .postcard-box {
+            background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%);
+            border-radius: 24px;
+            padding: 2rem;
+            position: relative;
+            border: 3px solid #FED7AA;
+            box-shadow: 0 8px 30px rgba(255, 152, 0, 0.15);
+        }
+
+        .postcard-box::before {
+            content: '🦊';
+            position: absolute;
+            top: -20px;
+            right: 30px;
+            font-size: 2.5rem;
+            background: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            animation: wiggle 3s ease-in-out infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        .postcard-image-container {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .postcard-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            object-fit: contain;
+            border: 4px solid white;
+        }
+
+        .postcard-message {
+            line-height: 2.2;
+            color: #78350f;
+            font-size: 1.1rem;
+            white-space: pre-wrap;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 16px;
+            border-left: 5px solid #F97316;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .postcard-message::before {
+            content: '💌';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 1.5rem;
+            background: white;
+            padding: 0.25rem;
+            border-radius: 50%;
+        }
+
+        .postcard-location {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 2px dashed #FED7AA;
+            color: #92400e;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .postcard-location i {
+            color: #F97316;
+            font-size: 1.1rem;
+        }
+
+        /* 明信片加载和空状态 */
+        .postcard-loading-section,
+        .postcard-empty-section {
+            --card-color-1: #A78BFA;
+            --card-color-2: #4ECDC4;
+        }
+
+        .postcard-loading-section .icon-circle,
+        .postcard-empty-section .icon-circle {
+            background: linear-gradient(135deg, #A78BFA, #4ECDC4);
+            color: white;
+        }
+
+        .loading-content {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .loading-fox {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            animation: writing 1.5s ease-in-out infinite;
+        }
+
+        @keyframes writing {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(5px) rotate(5deg); }
+            75% { transform: translateX(-5px) rotate(-5deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #A78BFA;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-content {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.6;
+        }
+
+        .empty-text {
+            color: #888;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* 快捷操作区域 */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .quick-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(167, 139, 250, 0.2);
+            border-color: #A78BFA;
+            color: #333;
+        }
+
+        .quick-action-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .quick-action-text {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* 加载状态 */
+        .loading-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 30px rgba(167, 139, 250, 0.12);
+        }
+
+        .loading-state .loading-spinner {
+            margin-bottom: 1.5rem;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .detail-header {
+                padding: 1.25rem;
+            }
+
+            .detail-card {
+                padding: 1.5rem;
+                border-radius: 20px;
+            }
+
+            .intensity-display {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .postcard-box::before {
+                top: -15px;
+                right: 20px;
+                font-size: 2rem;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 动画入场效果 */
+        .animate-in {
+            animation: fadeInUp 0.6s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in:nth-child(1) { animation-delay: 0.1s; }
+        .animate-in:nth-child(2) { animation-delay: 0.2s; }
+        .animate-in:nth-child(3) { animation-delay: 0.3s; }
+        .animate-in:nth-child(4) { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="detail-page">
+    <!-- 漂浮装饰 -->
+    <div class="floating-decor" style="top: 10%; left: 5%; animation-delay: 0s;">✨</div>
+    <div class="floating-decor" style="top: 30%; right: 8%; animation-delay: 1s;">💖</div>
+    <div class="floating-decor" style="top: 60%; left: 3%; animation-delay: 2s;">🌸</div>
+    <div class="floating-decor" style="bottom: 20%; right: 5%; animation-delay: 0.5s;">⭐</div>
+    <div class="floating-decor" style="bottom: 40%; left: 8%; animation-delay: 1.5s;">🦊</div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <div id="authGuest" class="d-flex gap-2">
+                        <a href="/login" class="btn btn-outline">登录</a>
+                        <a href="/register" class="btn btn-primary">注册</a>
+                    </div>
+                    <div id="authUser" class="d-flex gap-2 align-items-center d-none">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="container my-4" style="position: relative; z-index: 1;">
+        <!-- Alert容器 -->
+        <div id="alertContainer" class="mb-3"></div>
+
+        <!-- 加载状态 -->
+        <div id="loadingState" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p class="text-muted">正在加载日记详情...</p>
+        </div>
+
+        <!-- 日记内容区域 -->
+        <div id="diaryContentArea" style="display: none;">
+            <!-- 顶部操作栏 -->
+            <div class="detail-header animate-in">
+                <div class="detail-date">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="diaryDate">-</span>
+                </div>
+                <div class="detail-actions">
+                    <a href="/diary" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>返回列表
+                    </a>
+                    <button class="btn btn-outline-danger" id="deleteBtn">
+                        <i class="fas fa-trash me-2"></i>删除
+                    </button>
+                </div>
+            </div>
+
+            <!-- 第一部分：用户输入 -->
+            <div class="detail-card user-input-section animate-in">
+                <div class="detail-card-title">
+                    <div class="icon-circle">
+                        <i class="fas fa-pen-fancy"></i>
+                    </div>
+                    我的记录
+                </div>
+
+                <!-- 情绪标签 -->
+                <div class="emotion-tags-display" id="emotionTags">
+                    <!-- 动态加载 -->
+                </div>
+
+                <!-- 情绪强度 -->
+                <div class="intensity-display" id="intensityDisplay">
+                    <div class="intensity-emoji" id="intensityEmoji">⚡</div>
+                    <div class="intensity-info">
+                        <div class="intensity-label">情绪强度</div>
+                        <div class="intensity-value"><span id="intensityValue">5</span> / 10</div>
+                    </div>
+                    <div class="intensity-bar-container">
+                        <div class="intensity-bar">
+                            <div class="intensity-bar-fill" id="intensityBar" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 触发事件 -->
+                <div class="trigger-event-box" id="triggerEventBox" style="display: none;">
+                    <div class="trigger-event-label">
+                        <i class="fas fa-bolt"></i>触发事件
+                    </div>
+                    <div class="trigger-event-text" id="triggerEvent">-</div>
+                </div>
+
+                <!-- 日记内容 -->
+                <div class="diary-content-box" id="diaryContent">
+                    加载中...
+                </div>
+
+                <!-- 图片展示 -->
+                <div class="diary-images-grid" id="diaryImages" style="display: none;">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+
+            <!-- 第二部分：小狐狸的明信片 -->
+            <div class="detail-card postcard-section animate-in" id="postcardSection" style="display: none;">
+                <div class="detail-card-title">
+                    <div class="icon-circle">
+                        🦊
+                    </div>
+                    小狐狸想对你说
+                </div>
+
+                <div class="postcard-box">
+                    <!-- 明信片图片 -->
+                    <div class="postcard-image-container" id="postcardImageContainer" style="display: none;">
+                        <img id="postcardImage" src="" alt="小狐狸的明信片" class="postcard-image">
+                    </div>
+
+                    <!-- 明信片消息 -->
+                    <div class="postcard-message" id="postcardMessage">
+                        加载中...
+                    </div>
+
+                    <!-- 地点标签 -->
+                    <div class="postcard-location" id="postcardLocation" style="display: none;">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span id="postcardLocationName">未知地点</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 明信片加载中状态 -->
+            <div class="detail-card postcard-loading-section animate-in" id="postcardLoading" style="display: none;">
+                <div class="detail-card-title">
+                    <div class="icon-circle">
+                        🦊
+                    </div>
+                    小狐狸想对你说
+                </div>
+                <div class="loading-content">
+                    <div class="loading-fox">🦊✍️</div>
+                    <div class="loading-text">小狐狸正在准备给你的回信...</div>
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+
+            <!-- 暂无明信片状态 -->
+            <div class="detail-card postcard-empty-section animate-in" id="noPostcard" style="display: none;">
+                <div class="detail-card-title">
+                    <div class="icon-circle">
+                        🦊
+                    </div>
+                    小狐狸想对你说
+                </div>
+                <div class="empty-content">
+                    <div class="empty-icon">📭</div>
+                    <div class="empty-text">小狐狸还没来得及给你写信呢<br>完成探险后就能收到啦～</div>
+                    <a href="/postcards" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-2"></i>去看看明信片
+                    </a>
+                </div>
+            </div>
+
+            <!-- 快捷操作 -->
+            <div class="quick-actions animate-in">
+                <a href="/diary/new" class="quick-action-btn">
+                    <div class="quick-action-icon">📝</div>
+                    <div class="quick-action-text">写新日记</div>
+                </a>
+                <a href="/postcards" class="quick-action-btn">
+                    <div class="quick-action-icon">💌</div>
+                    <div class="quick-action-text">我的明信片</div>
+                </a>
+                <a href="/diary" class="quick-action-btn">
+                    <div class="quick-action-icon">📚</div>
+                    <div class="quick-action-text">全部日记</div>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="game-footer mt-5 py-4">
+        <div class="container text-center">
+            <h5 class="mb-3">
+                <i class="fas fa-heart-pulse me-2"></i>
+                CBT情绪日记游戏
+            </h5>
+            <p class="text-white-50 mb-2">
+                © 2025 CBT情绪日记游戏. 保留所有权利.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20241206"></script>
+
+    <script>
+        // 日记详情页脚本
+        let diaryId = null;
+        let postcardRefreshTimer = null;
+
+        // 强度对应的emoji
+        const intensityEmojis = ['🌱', '🍃', '💧', '💦', '⚡', '🌊', '🔥', '💥', '🌋', '☄️'];
+
+        // 等待authManager初始化
+        function waitForAuthManager() {
+            return new Promise((resolve) => {
+                if (window.authManager && window.apiClient) {
+                    resolve();
+                } else {
+                    const interval = setInterval(() => {
+                        if (window.authManager && window.apiClient) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await waitForAuthManager();
+
+            if (!window.authManager.isAuthenticated()) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // 获取日记ID
+            const pathParts = window.location.pathname.split('/');
+            diaryId = parseInt(pathParts[pathParts.length - 1]);
+
+            if (diaryId) {
+                await loadDiaryDetail();
+            } else {
+                window.location.href = '/diary';
+            }
+
+            // 绑定删除按钮
+            document.getElementById('deleteBtn').addEventListener('click', deleteDiary);
+        });
+
+        async function loadDiaryDetail() {
+            console.log('[日记详情] loadDiaryDetail 开始执行, diaryId:', diaryId);
+            try {
+                document.getElementById('loadingState').style.display = 'block';
+                document.getElementById('diaryContentArea').style.display = 'none';
+
+                console.log('[日记详情] 调用API: /diary/' + diaryId);
+                const response = await window.apiClient.get(`/diary/${diaryId}`);
+                console.log('[日记详情] API响应:', response);
+
+                if (response && response.ok) {
+                    const diary = response.data.diary;
+                    displayDiary(diary);
+                    displayPostcard(diary.postcard);
+                } else {
+                    throw new Error('Failed to load diary');
+                }
+            } catch (error) {
+                console.error('[日记详情] loadDiaryDetail 错误:', error);
+                window.showAlert('加载日记详情失败', 'danger');
+            } finally {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('diaryContentArea').style.display = 'block';
+            }
+        }
+
+        function displayDiary(diary) {
+            console.log('[日记详情] displayDiary 被调用:', diary);
+
+            // 日期
+            const date = new Date(diary.created_at);
+            document.getElementById('diaryDate').textContent = date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // 情绪标签
+            const tagsEl = document.getElementById('emotionTags');
+            if (diary.emotion_tags && diary.emotion_tags.length > 0) {
+                tagsEl.innerHTML = diary.emotion_tags.map(tag =>
+                    `<span class="emotion-tag-badge">${tag}</span>`
+                ).join('');
+            } else {
+                tagsEl.innerHTML = '<span class="text-muted">未选择情绪标签</span>';
+            }
+
+            // 情绪强度
+            const intensity = diary.emotion_score?.intensity || 5;
+            document.getElementById('intensityValue').textContent = intensity;
+            document.getElementById('intensityBar').style.width = `${intensity * 10}%`;
+            document.getElementById('intensityEmoji').textContent = intensityEmojis[intensity - 1] || '⚡';
+
+            // 触发事件
+            if (diary.trigger_event) {
+                document.getElementById('triggerEventBox').style.display = 'block';
+                document.getElementById('triggerEvent').textContent = diary.trigger_event;
+            }
+
+            // 日记内容
+            document.getElementById('diaryContent').textContent = diary.content;
+
+            // 图片
+            if (diary.images && diary.images.length > 0) {
+                const imagesEl = document.getElementById('diaryImages');
+                imagesEl.style.display = 'grid';
+                imagesEl.innerHTML = diary.images.map(img =>
+                    `<img src="${img}" alt="日记图片" class="diary-image-thumb" onclick="window.open('${img}', '_blank')">`
+                ).join('');
+            }
+        }
+
+        // 显示小狐狸明信片
+        function displayPostcard(postcard) {
+            console.log('[日记详情] displayPostcard 被调用:', postcard);
+
+            // 隐藏所有明信片相关区域
+            document.getElementById('postcardSection').style.display = 'none';
+            document.getElementById('postcardLoading').style.display = 'none';
+            document.getElementById('noPostcard').style.display = 'none';
+
+            // 停止之前的刷新
+            if (postcardRefreshTimer) {
+                clearInterval(postcardRefreshTimer);
+                postcardRefreshTimer = null;
+            }
+
+            if (!postcard) {
+                // 没有明信片
+                document.getElementById('noPostcard').style.display = 'block';
+                return;
+            }
+
+            if (postcard.status === 'generating') {
+                // 正在生成中
+                document.getElementById('postcardLoading').style.display = 'block';
+                startPostcardRefresh();
+                return;
+            }
+
+            if (postcard.status === 'completed' && postcard.message) {
+                // 明信片已完成，显示内容
+                document.getElementById('postcardSection').style.display = 'block';
+
+                // 设置消息内容
+                document.getElementById('postcardMessage').textContent = postcard.message;
+
+                // 设置图片（如果有）
+                if (postcard.image_url) {
+                    document.getElementById('postcardImageContainer').style.display = 'block';
+                    document.getElementById('postcardImage').src = postcard.image_url;
+                }
+
+                // 设置地点（如果有）
+                if (postcard.location_name) {
+                    document.getElementById('postcardLocation').style.display = 'flex';
+                    document.getElementById('postcardLocationName').textContent = postcard.location_name;
+                }
+            } else if (postcard.status === 'text_only' && postcard.message) {
+                // 只有文字，没有图片
+                document.getElementById('postcardSection').style.display = 'block';
+                document.getElementById('postcardMessage').textContent = postcard.message;
+
+                if (postcard.location_name) {
+                    document.getElementById('postcardLocation').style.display = 'flex';
+                    document.getElementById('postcardLocationName').textContent = postcard.location_name;
+                }
+            } else {
+                // 其他状态（pending, failed等）显示暂无明信片
+                document.getElementById('noPostcard').style.display = 'block';
+            }
+        }
+
+        // 轮询检查明信片状态
+        function startPostcardRefresh() {
+            postcardRefreshTimer = setInterval(async () => {
+                try {
+                    const response = await window.apiClient.get(`/diary/${diaryId}`);
+                    if (response && response.ok) {
+                        const diary = response.data.diary;
+                        if (diary.postcard && diary.postcard.status !== 'generating') {
+                            displayPostcard(diary.postcard);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[日记详情] 刷新明信片状态失败:', error);
+                }
+            }, 3000);
+        }
+
+        async function deleteDiary() {
+            if (!confirm('确定要删除这篇日记吗？此操作不可撤销。')) {
+                return;
+            }
+
+            try {
+                const response = await window.apiClient.delete(`/diary/${diaryId}`);
+                if (response && response.ok) {
+                    window.showAlert('日记已删除', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/diary';
+                    }, 1000);
+                } else {
+                    throw new Error('Delete failed');
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                window.showAlert('删除失败，请重试', 'danger');
+            }
+        }
+    </script>
+</body>
+</html>

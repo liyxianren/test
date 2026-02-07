@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>明信片管理 - 管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            overflow-y: auto;
+        }
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .sidebar-logo i { font-size: 28px; color: var(--primary); }
+        .sidebar-logo span { font-size: 1.1rem; font-weight: 600; }
+        .nav-section { margin-bottom: 24px; }
+        .nav-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+        }
+        .nav-link.active { background: var(--primary); color: white; }
+        .nav-link i { width: 20px; text-align: center; }
+        .main-content {
+            margin-left: 260px;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .page-title { font-size: 1.5rem; font-weight: 600; }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-body { padding: 20px; }
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .filter-bar input, .filter-bar select {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 8px;
+        }
+        .filter-bar input:focus, .filter-bar select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .filter-bar select option {
+            background: var(--bg-dark);
+        }
+        .btn-search {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn-search:hover { background: var(--primary-dark); }
+        .postcards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .postcard-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .postcard-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+        .postcard-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: var(--bg-card);
+        }
+        .postcard-image-placeholder {
+            width: 100%;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+        }
+        .postcard-body {
+            padding: 16px;
+        }
+        .postcard-location {
+            font-weight: 600;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .postcard-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        .postcard-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .badge-secondary { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            flex: 1;
+        }
+        .btn-outline-primary {
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            background: transparent;
+        }
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-outline-danger {
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            background: transparent;
+        }
+        .btn-outline-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+        .pagination {
+            margin: 20px 0 0;
+            justify-content: center;
+        }
+        .page-link {
+            background: var(--bg-dark);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        .page-link:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        .page-item.active .page-link {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        .page-item.disabled .page-link {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+        .modal-header { border-bottom: 1px solid var(--border-color); }
+        .modal-footer { border-top: 1px solid var(--border-color); }
+        .modal-image {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .modal-message {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 16px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .btn-close { filter: invert(1); }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+            .filter-bar { flex-direction: column; }
+            .postcards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i>
+            <span>管理后台</span>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">概览</div>
+            <a href="/admin/dashboard" class="nav-link">
+                <i class="fas fa-chart-pie"></i><span>仪表盘</span>
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">内容管理</div>
+            <a href="/admin/users" class="nav-link">
+                <i class="fas fa-users"></i><span>用户管理</span>
+            </a>
+            <a href="/admin/diaries" class="nav-link">
+                <i class="fas fa-book"></i><span>日记管理</span>
+            </a>
+            <a href="/admin/postcards" class="nav-link active">
+                <i class="fas fa-image"></i><span>明信片管理</span>
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">系统</div>
+            <a href="/" class="nav-link">
+                <i class="fas fa-home"></i><span>返回网站</span>
+            </a>
+            <a href="#" class="nav-link" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i><span>退出登录</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">明信片管理</h1>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>明信片列表</span>
+                <span id="totalCount">共 0 张明信片</span>
+            </div>
+            <div class="card-body">
+                <div class="filter-bar">
+                    <input type="number" id="userIdInput" placeholder="用户ID" style="width: 120px;">
+                    <select id="statusSelect" style="width: 150px;">
+                        <option value="">全部状态</option>
+                        <option value="completed">已生成</option>
+                        <option value="generating">生成中</option>
+                        <option value="pending">等待中</option>
+                        <option value="failed">失败</option>
+                    </select>
+                    <button class="btn-search" onclick="loadPostcards(1)">
+                        <i class="fas fa-search me-1"></i>筛选
+                    </button>
+                </div>
+
+                <div class="postcards-grid" id="postcardsGrid">
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>加载中...</p>
+                    </div>
+                </div>
+
+                <nav id="pagination"></nav>
+            </div>
+        </div>
+    </main>
+
+    <!-- 明信片详情模态框 -->
+    <div class="modal fade" id="postcardModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">明信片详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalImage" class="modal-image" src="" alt="明信片图片">
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>用户：</strong><span id="modalUsername"></span>
+                        </div>
+                        <div class="col-6">
+                            <strong>日记ID：</strong><span id="modalDiaryId"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>地点：</strong><span id="modalLocation"></span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>情绪标签：</strong>
+                        <div id="modalEmotions" class="mt-1"></div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>小狐狸的话：</strong>
+                        <div id="modalMessage" class="modal-message mt-1"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>创建时间：</strong><span id="modalCreatedAt"></span>
+                        </div>
+                        <div class="col-6">
+                            <strong>生成时间：</strong><span id="modalGeneratedAt"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-danger" id="modalDeleteBtn">
+                        <i class="fas fa-trash me-1"></i>删除明信片
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        此操作将永久删除该明信片及其图片文件，无法恢复！
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('admin_token');
+        if (!token) window.location.href = '/admin/login';
+
+        let currentPage = 1;
+        let selectedPostcardId = null;
+        let postcardsData = [];
+
+        async function loadPostcards(page = 1) {
+            currentPage = page;
+            const userId = document.getElementById('userIdInput').value;
+            const status = document.getElementById('statusSelect').value;
+            const grid = document.getElementById('postcardsGrid');
+
+            grid.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
+
+            let url = `/api/admin/postcards?page=${page}&per_page=12`;
+            if (userId) url += `&user_id=${userId}`;
+            if (status) url += `&status=${status}`;
+
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!res.ok) {
+                    if (res.status === 403) {
+                        window.location.href = '/admin/login';
+                        return;
+                    }
+                    throw new Error('请求失败');
+                }
+
+                const data = await res.json();
+                postcardsData = data.postcards;
+                document.getElementById('totalCount').textContent = `共 ${data.total} 张明信片`;
+
+                if (data.postcards.length === 0) {
+                    grid.innerHTML = '<div class="empty-state"><i class="fas fa-image"></i><p>暂无明信片</p></div>';
+                    return;
+                }
+
+                grid.innerHTML = data.postcards.map(pc => `
+                    <div class="postcard-card">
+                        ${pc.image_url
+                            ? `<img class="postcard-image" src="${pc.image_url}" alt="明信片" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                               <div class="postcard-image-placeholder" style="display: none;"><i class="fas fa-image fa-2x"></i></div>`
+                            : `<div class="postcard-image-placeholder"><i class="fas fa-image fa-2x"></i></div>`
+                        }
+                        <div class="postcard-body">
+                            <div class="postcard-location">${pc.location_name || '未知地点'}</div>
+                            <div class="postcard-meta">
+                                <span><i class="fas fa-user me-1"></i>${pc.username}</span>
+                                <span class="badge ${getStatusBadgeClass(pc.status)}">${getStatusText(pc.status)}</span>
+                            </div>
+                            <div class="postcard-actions">
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewPostcard(${pc.id})">
+                                    <i class="fas fa-eye me-1"></i>查看
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal(${pc.id})">
+                                    <i class="fas fa-trash me-1"></i>删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                renderPagination(data.pages, page);
+            } catch (e) {
+                grid.innerHTML = '<div class="empty-state text-danger"><i class="fas fa-exclamation-circle"></i><p>加载失败</p></div>';
+            }
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'completed': return 'badge-success';
+                case 'generating': return 'badge-warning';
+                case 'failed': return 'badge-danger';
+                default: return 'badge-secondary';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'completed': return '已生成';
+                case 'generating': return '生成中';
+                case 'failed': return '失败';
+                case 'pending': return '等待中';
+                default: return status;
+            }
+        }
+
+        function renderPagination(totalPages, currentPage) {
+            if (totalPages <= 1) {
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            let html = '<ul class="pagination">';
+            html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadPostcards(${currentPage - 1})">上一页</a>
+            </li>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadPostcards(${i})">${i}</a>
+                    </li>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadPostcards(${currentPage + 1})">下一页</a>
+            </li>`;
+            html += '</ul>';
+
+            document.getElementById('pagination').innerHTML = html;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN');
+        }
+
+        function viewPostcard(postcardId) {
+            selectedPostcardId = postcardId;
+            const pc = postcardsData.find(p => p.id === postcardId);
+            if (!pc) return;
+
+            document.getElementById('modalImage').src = pc.image_url || '';
+            document.getElementById('modalImage').style.display = pc.image_url ? 'block' : 'none';
+            document.getElementById('modalUsername').textContent = pc.username;
+            document.getElementById('modalDiaryId').textContent = pc.diary_id;
+            document.getElementById('modalLocation').textContent = pc.location_name || '-';
+            document.getElementById('modalEmotions').innerHTML = (pc.emotion_tags || []).map(tag =>
+                `<span style="display: inline-block; padding: 2px 8px; background: rgba(99, 102, 241, 0.2); color: var(--primary); border-radius: 4px; font-size: 0.75rem; margin-right: 4px;">${tag}</span>`
+            ).join('');
+            document.getElementById('modalMessage').textContent = pc.message || '无';
+            document.getElementById('modalCreatedAt').textContent = formatDate(pc.created_at);
+            document.getElementById('modalGeneratedAt').textContent = formatDate(pc.generated_at);
+
+            document.getElementById('modalDeleteBtn').onclick = () => {
+                bootstrap.Modal.getInstance(document.getElementById('postcardModal')).hide();
+                showDeleteModal(postcardId);
+            };
+
+            new bootstrap.Modal(document.getElementById('postcardModal')).show();
+        }
+
+        function showDeleteModal(postcardId) {
+            selectedPostcardId = postcardId;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        async function confirmDelete() {
+            try {
+                const res = await fetch(`/api/admin/postcards/${selectedPostcardId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
+                    loadPostcards(currentPage);
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '删除失败');
+                }
+            } catch (e) {
+                alert('网络错误');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_token');
+            window.location.href = '/admin/login';
+        }
+
+        loadPostcards();
+    </script>
+</body>
+</html>

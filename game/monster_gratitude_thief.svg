@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 感恩小偷 - Q版可爱风格 - 偷走你对好事的感激 -->
+  <!-- 身体阴影 -->
+  <ellipse cx="50" cy="90" rx="25" ry="5" fill="#2D3748" opacity="0.3"/>
+
+  <!-- 渐变定义 -->
+  <defs>
+    <radialGradient id="thiefBodyGrad" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#718096"/>
+      <stop offset="100%" style="stop-color:#4A5568"/>
+    </radialGradient>
+    <radialGradient id="hoodGrad" cx="30%" cy="30%">
+      <stop offset="0%" style="stop-color:#4A5568"/>
+      <stop offset="100%" style="stop-color:#2D3748"/>
+    </radialGradient>
+    <radialGradient id="bagGrad" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#D69E2E"/>
+      <stop offset="100%" style="stop-color:#B7791F"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 圆润的身体 -->
+  <ellipse cx="50" cy="60" rx="28" ry="26" fill="url(#thiefBodyGrad)">
+    <animate attributeName="ry" values="26;28;26" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 可爱的兜帽 -->
+  <path d="M22 50 Q20 25 50 18 Q80 25 78 50 Q70 45 50 40 Q30 45 22 50 Z" fill="url(#hoodGrad)"/>
+  <!-- 兜帽边缘高光 -->
+  <path d="M28 48 Q50 38 72 48" fill="none" stroke="#5A6779" stroke-width="2" opacity="0.5"/>
+
+  <!-- 兜帽尖角装饰 -->
+  <ellipse cx="50" cy="18" rx="4" ry="3" fill="#4A5568"/>
+
+  <!-- 超大闪亮眼睛 - 狡黠但可爱 -->
+  <ellipse cx="38" cy="48" rx="10" ry="11" fill="white"/>
+  <ellipse cx="62" cy="48" rx="10" ry="11" fill="white"/>
+
+  <!-- 眼珠 - 贼溜溜的 -->
+  <ellipse cx="40" cy="50" rx="5" ry="6" fill="#1A202C">
+    <animate attributeName="cx" values="40;36;40" dur="3s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="64" cy="50" rx="5" ry="6" fill="#1A202C">
+    <animate attributeName="cx" values="64;60;64" dur="3s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 眼睛高光 -->
+  <circle cx="42" cy="47" r="2.5" fill="white"/>
+  <circle cx="66" cy="47" r="2.5" fill="white"/>
+  <circle cx="38" cy="52" r="1.5" fill="white" opacity="0.5"/>
+  <circle cx="62" cy="52" r="1.5" fill="white" opacity="0.5"/>
+
+  <!-- 狡黠的眉毛 -->
+  <path d="M28 38 L46 42" stroke="#2D3748" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M72 38 L54 42" stroke="#2D3748" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 俏皮的面罩 -->
+  <rect x="32" y="55" width="36" height="10" rx="5" fill="#1A202C" opacity="0.9"/>
+
+  <!-- 嘴巴 - 得意的笑 -->
+  <path d="M42 70 Q50 76 58 70" fill="none" stroke="#A0AEC0" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- 可爱的小手 - 做偷窃动作 -->
+  <ellipse cx="20" cy="58" rx="8" ry="7" fill="#718096"/>
+  <ellipse cx="15" cy="50" rx="5" ry="4" fill="#718096">
+    <animate attributeName="cy" values="50;45;50" dur="1.5s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 装满宝藏的袋子 -->
+  <ellipse cx="82" cy="70" rx="14" ry="16" fill="url(#bagGrad)" stroke="#B7791F" stroke-width="1"/>
+  <!-- 袋口 -->
+  <path d="M70 60 Q82 54 94 60" fill="none" stroke="#92400E" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 袋子里闪闪发光的东西 - 代表偷走的感恩 -->
+  <circle cx="78" cy="68" r="5" fill="#FBBF24" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;0.5;0.9" dur="1s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="86" cy="72" r="4" fill="#F59E0B" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0.4;0.8" dur="1.2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="80" cy="76" r="3" fill="#FCD34D" opacity="0.7">
+    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="0.8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 金币/星星飞出效果 -->
+  <polygon points="75,55 76,58 79,58 77,60 78,63 75,61 72,63 73,60 71,58 74,58" fill="#FBBF24" opacity="0.6">
+    <animate attributeName="opacity" values="0.6;0.2;0.6" dur="1.5s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="translate" values="0,0;-5,-5;0,0" dur="1.5s" repeatCount="indefinite"/>
+  </polygon>
+
+  <!-- 可爱小脚 -->
+  <ellipse cx="38" cy="85" rx="8" ry="5" fill="#4A5568"/>
+  <ellipse cx="62" cy="85" rx="8" ry="5" fill="#4A5568"/>
+</svg>

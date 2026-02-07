@@ -1,0 +1,17 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.0.5
+Flask-JWT-Extended==4.5.3
+Flask-CORS==4.0.0
+PyMySQL==1.1.0
+mysql-connector-python==8.2.0
+redis==5.0.0
+python-dotenv==1.0.0
+requests==2.31.0
+Werkzeug==2.3.7
+SQLAlchemy==2.0.36
+alembic==1.12.1
+gunicorn==21.2.0
+websocket-client==1.6.4
+zai-sdk==0.0.4
+openai>=1.0.0

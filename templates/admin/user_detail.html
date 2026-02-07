@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户详情 - 管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-sidebar: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            overflow-y: auto;
+        }
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        .sidebar-logo i { font-size: 28px; color: var(--primary); }
+        .sidebar-logo span { font-size: 1.1rem; font-weight: 600; }
+        .nav-section { margin-bottom: 24px; }
+        .nav-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            padding: 0 12px;
+            margin-bottom: 8px;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--text-primary);
+        }
+        .nav-link.active { background: var(--primary); color: white; }
+        .nav-link i { width: 20px; text-align: center; }
+        .main-content {
+            margin-left: 260px;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .page-title { font-size: 1.5rem; font-weight: 600; }
+        .back-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .back-btn:hover {
+            border-color: var(--primary);
+            color: var(--text-primary);
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            font-weight: 600;
+        }
+        .card-body { padding: 20px; }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .info-value {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .badge-primary { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+        .badge-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .form-control, .form-select {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+        }
+        .form-control:focus, .form-select:focus {
+            background: var(--bg-dark);
+            border-color: var(--primary);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+        .form-label { color: var(--text-secondary); font-size: 0.875rem; }
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-danger {
+            background: var(--danger);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        .btn-secondary {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        .game-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .game-stat {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        .game-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .game-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .diary-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .diary-item {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+        }
+        .diary-item:last-child { margin-bottom: 0; }
+        .diary-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        .diary-preview {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .main-content { margin-left: 0; }
+            .info-grid { grid-template-columns: 1fr; }
+            .game-stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <nav class="sidebar">
+        <div class="sidebar-logo">
+            <i class="fas fa-shield-halved"></i>
+            <span>管理后台</span>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">概览</div>
+            <a href="/admin/dashboard" class="nav-link">
+                <i class="fas fa-chart-pie"></i><span>仪表盘</span>
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">内容管理</div>
+            <a href="/admin/users" class="nav-link active">
+                <i class="fas fa-users"></i><span>用户管理</span>
+            </a>
+            <a href="/admin/diaries" class="nav-link">
+                <i class="fas fa-book"></i><span>日记管理</span>
+            </a>
+            <a href="/admin/postcards" class="nav-link">
+                <i class="fas fa-image"></i><span>明信片管理</span>
+            </a>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">系统</div>
+            <a href="/" class="nav-link">
+                <i class="fas fa-home"></i><span>返回网站</span>
+            </a>
+            <a href="#" class="nav-link" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i><span>退出登录</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <div class="page-header">
+            <h1 class="page-title">用户详情</h1>
+            <a href="/admin/users" class="back-btn">
+                <i class="fas fa-arrow-left"></i>返回列表
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- 基本信息 -->
+                <div class="card">
+                    <div class="card-header">基本信息</div>
+                    <div class="card-body">
+                        <form id="userForm">
+                            <div class="info-grid">
+                                <div class="mb-3">
+                                    <label class="form-label">用户名</label>
+                                    <input type="text" class="form-control" id="username">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">邮箱</label>
+                                    <input type="email" class="form-control" id="email">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">账号状态</label>
+                                    <select class="form-select" id="isActive">
+                                        <option value="true">正常</option>
+                                        <option value="false">禁用</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">管理员权限</label>
+                                    <select class="form-select" id="isAdmin">
+                                        <option value="false">普通用户</option>
+                                        <option value="true">管理员</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>保存修改
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="showPasswordModal()">
+                                    <i class="fas fa-key me-1"></i>重置密码
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 最近日记 -->
+                <div class="card">
+                    <div class="card-header">最近日记</div>
+                    <div class="card-body">
+                        <div class="diary-list" id="diaryList">
+                            <div class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin me-2"></i>加载中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- 统计信息 -->
+                <div class="card">
+                    <div class="card-header">统计信息</div>
+                    <div class="card-body">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">用户ID</span>
+                                <span class="info-value" id="userId">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">注册时间</span>
+                                <span class="info-value" id="createdAt">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">日记数量</span>
+                                <span class="info-value" id="diaryCount">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">明信片数量</span>
+                                <span class="info-value" id="postcardCount">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">最后登录</span>
+                                <span class="info-value" id="lastLogin">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">登录次数</span>
+                                <span class="info-value" id="loginCount">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 游戏状态 -->
+                <div class="card">
+                    <div class="card-header">游戏状态</div>
+                    <div class="card-body">
+                        <div class="game-stats" id="gameStats">
+                            <div class="text-center py-3">
+                                <i class="fas fa-spinner fa-spin me-2"></i>加载中...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 危险操作 -->
+                <div class="card" id="dangerZone" style="display: none;">
+                    <div class="card-header" style="color: var(--danger);">
+                        <i class="fas fa-exclamation-triangle me-2"></i>危险操作
+                    </div>
+                    <div class="card-body">
+                        <p class="text-secondary" style="font-size: 0.875rem;">
+                            删除用户将永久移除该用户的所有数据，包括日记、明信片、游戏进度等。此操作不可恢复。
+                        </p>
+                        <button class="btn btn-danger w-100" onclick="deleteUser()">
+                            <i class="fas fa-trash me-1"></i>删除用户
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 重置密码模态框 -->
+    <div class="modal fade" id="passwordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-color: var(--border-color);">
+                    <h5 class="modal-title">重置密码</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter: invert(1);"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">新密码</label>
+                        <input type="password" class="form-control" id="newPassword" placeholder="至少6位">
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-color: var(--border-color);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="resetPassword()">确认重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('admin_token');
+        if (!token) window.location.href = '/admin/login';
+
+        const userId = {{ user_id }};
+        let userData = null;
+
+        async function loadUser() {
+            try {
+                const res = await fetch(`/api/admin/users/${userId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!res.ok) {
+                    if (res.status === 404) {
+                        alert('用户不存在');
+                        window.location.href = '/admin/users';
+                        return;
+                    }
+                    throw new Error('请求失败');
+                }
+
+                userData = await res.json();
+
+                // 填充表单
+                document.getElementById('username').value = userData.username;
+                document.getElementById('email').value = userData.email;
+                document.getElementById('isActive').value = userData.is_active.toString();
+                document.getElementById('isAdmin').value = userData.is_admin.toString();
+
+                // 填充统计信息
+                document.getElementById('userId').textContent = userData.id;
+                document.getElementById('createdAt').textContent = formatDate(userData.created_at);
+                document.getElementById('diaryCount').textContent = userData.diary_count;
+                document.getElementById('postcardCount').textContent = userData.postcard_count || 0;
+                document.getElementById('lastLogin').textContent = formatDate(userData.last_login_at) || '从未登录';
+                document.getElementById('loginCount').textContent = userData.login_count || 0;
+
+                // 填充游戏状态
+                if (userData.game_state) {
+                    const gs = userData.game_state;
+                    document.getElementById('gameStats').innerHTML = `
+                        <div class="game-stat">
+                            <div class="game-stat-value">${gs.mental_health_score}</div>
+                            <div class="game-stat-label">心理健康</div>
+                        </div>
+                        <div class="game-stat">
+                            <div class="game-stat-value">${gs.stress_level}</div>
+                            <div class="game-stat-label">压力水平</div>
+                        </div>
+                        <div class="game-stat">
+                            <div class="game-stat-value">${gs.growth_potential}</div>
+                            <div class="game-stat-label">成长潜力</div>
+                        </div>
+                        <div class="game-stat">
+                            <div class="game-stat-value">${gs.coins}</div>
+                            <div class="game-stat-label">金币</div>
+                        </div>
+                        <div class="game-stat">
+                            <div class="game-stat-value">Lv.${gs.level}</div>
+                            <div class="game-stat-label">等级</div>
+                        </div>
+                        <div class="game-stat">
+                            <div class="game-stat-value">${gs.total_diaries}</div>
+                            <div class="game-stat-label">总日记数</div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('gameStats').innerHTML = '<div class="text-center text-secondary py-2">暂无游戏数据</div>';
+                }
+
+                // 填充最近日记
+                if (userData.recent_diaries && userData.recent_diaries.length > 0) {
+                    document.getElementById('diaryList').innerHTML = userData.recent_diaries.map(d => `
+                        <div class="diary-item">
+                            <div class="diary-date">${formatDate(d.created_at)}</div>
+                            <div class="diary-preview">${d.content.substring(0, 100)}${d.content.length > 100 ? '...' : ''}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('diaryList').innerHTML = '<div class="text-center text-secondary py-3">暂无日记</div>';
+                }
+
+                // 显示危险操作区域（非管理员用户）
+                if (!userData.is_admin) {
+                    document.getElementById('dangerZone').style.display = 'block';
+                }
+
+            } catch (e) {
+                console.error('加载用户失败', e);
+                alert('加载失败');
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            return d.toLocaleString('zh-CN');
+        }
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            try {
+                const res = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        email: document.getElementById('email').value,
+                        is_active: document.getElementById('isActive').value === 'true',
+                        is_admin: document.getElementById('isAdmin').value === 'true'
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('保存成功');
+                    loadUser();
+                } else {
+                    alert(data.error || '保存失败');
+                }
+            } catch (e) {
+                alert('网络错误');
+            }
+        });
+
+        function showPasswordModal() {
+            document.getElementById('newPassword').value = '';
+            new bootstrap.Modal(document.getElementById('passwordModal')).show();
+        }
+
+        async function resetPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            if (!newPassword || newPassword.length < 6) {
+                alert('密码长度至少6位');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ new_password: newPassword })
+                });
+
+                if (res.ok) {
+                    bootstrap.Modal.getInstance(document.getElementById('passwordModal')).hide();
+                    alert('密码已重置');
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '操作失败');
+                }
+            } catch (e) {
+                alert('网络错误');
+            }
+        }
+
+        async function deleteUser() {
+            if (!confirm('确定要删除此用户吗？此操作不可恢复！')) return;
+            if (!confirm('再次确认：删除后用户的所有数据将永久丢失！')) return;
+
+            try {
+                const res = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (res.ok) {
+                    alert('用户已删除');
+                    window.location.href = '/admin/users';
+                } else {
+                    const data = await res.json();
+                    alert(data.error || '删除失败');
+                }
+            } catch (e) {
+                alert('网络错误');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_token');
+            window.location.href = '/admin/login';
+        }
+
+        loadUser();
+    </script>
+</body>
+</html>

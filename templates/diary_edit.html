@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>写日记 - CBT情绪日记游戏</title>
+    <meta name="description" content="记录您的情绪和想法，开始CBT认知行为疗法练习">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/diary"><i class="fas fa-book me-1"></i>日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
+                    </li>
+                </ul>
+
+                <div class="navbar-nav">
+                    <!-- 未登录状态 -->
+                    <div id="auth-guest" class="d-flex">
+                        <a class="nav-link login-link" href="/login">登录</a>
+                        <a class="nav-link register-link" href="/register">注册</a>
+                    </div>
+
+                    <!-- 已登录状态 -->
+                    <div id="auth-user" class="dropdown d-none">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span id="username">用户</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/profile" style="cursor: pointer;"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                            <li><a class="dropdown-item" href="/settings" style="cursor: pointer;"><i class="fas fa-cog me-2"></i>设置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="container my-5">
+        <!-- Alert容器 -->
+        <div id="alertContainer" class="mb-3"></div>
+
+        <div class="diary-editor">
+            <!-- 页面标题 -->
+            <div class="text-center mb-4">
+                <h1 id="pageTitle">写日记</h1>
+                <p class="text-muted">记录您的情绪和想法，让心灵得到疗愈</p>
+                <span id="autoSaveStatus" class="auto-save" style="display: none;">
+                    <i class="fas fa-check me-1"></i>自动保存
+                </span>
+            </div>
+
+            <!-- CBT提示 -->
+            <div class="cbt-prompts">
+                <h6><i class="fas fa-lightbulb me-2 text-warning"></i>CBT写作提示</h6>
+                <p class="mb-0 small">试着回答这些问题：</p>
+                <ul class="small mb-0">
+                    <li>现在我感觉如何？</li>
+                    <li>是什么事件或想法引发了这种情绪？</li>
+                    <li>这种情绪的强度是多少？</li>
+                    <li>我能用什么样的想法来替代当前的思维模式？</li>
+                </ul>
+            </div>
+
+            <!-- 情绪选择器 -->
+            <div class="emotion-selector">
+                <h5 class="mb-3"><i class="fas fa-heart me-2"></i>您现在的情绪如何？</h5>
+                <div class="emotion-buttons" id="emotionButtons">
+                    <button type="button" class="emotion-button" data-emotion="开心">😊 开心</button>
+                    <button type="button" class="emotion-button" data-emotion="平静">😌 平静</button>
+                    <button type="button" class="emotion-button" data-emotion="悲伤">😢 悲伤</button>
+                    <button type="button" class="emotion-button" data-emotion="愤怒">😠 愤怒</button>
+                    <button type="button" class="emotion-button" data-emotion="焦虑">😰 焦虑</button>
+                    <button type="button" class="emotion-button" data-emotion="恐惧">😨 恐惧</button>
+                    <button type="button" class="emotion-button" data-emotion="惊讶">😲 惊讶</button>
+                    <button type="button" class="emotion-button" data-emotion="厌恶">😒 厌恶</button>
+                    <button type="button" class="emotion-button" data-emotion="羞耻">😳 羞耻</button>
+                    <button type="button" class="emotion-button" data-emotion="兴奋">🤗 兴奋</button>
+                    <button type="button" class="emotion-button" data-emotion="感激">🙏 感激</button>
+                    <button type="button" class="emotion-button" data-emotion="困惑">🤔 困惑</button>
+                </div>
+
+                <!-- 情绪强度 -->
+                <div class="emotion-intensity">
+                    <label class="mb-0">情绪强度：</label>
+                    <div class="intensity-slider">
+                        <input type="range" class="form-range" id="emotionIntensity" min="1" max="10" value="5">
+                    </div>
+                    <div class="intensity-value" id="intensityValue">5</div>
+                </div>
+            </div>
+
+            <!-- 日记内容 -->
+            <form id="diaryForm">
+                <div class="mb-3">
+                    <label for="diaryContent" class="form-label">记录您的想法和感受</label>
+                    <textarea
+                        class="form-control diary-content"
+                        id="diaryContent"
+                        placeholder="在这里写下您的想法...&#10;&#10;今天发生了什么？&#10;您有什么感受？&#10;是什么想法引发了这些感受？"
+                        rows="12"
+                    ></textarea>
+                    <div class="word-count">
+                        <span id="wordCount">0</span> 个字
+                    </div>
+                </div>
+
+                <!-- 图片上传 -->
+                <div class="mb-3">
+                    <label class="form-label">添加图片</label>
+                    <div class="image-upload-section">
+                        <input type="file" id="imageInput" accept="image/*" style="display: none;" multiple>
+                        <button type="button" class="btn btn-outline-primary" id="uploadImageBtn">
+                            <i class="fas fa-image me-2"></i>选择图片
+                        </button>
+                        <span class="text-muted ms-2">支持 JPG, PNG, GIF, WEBP (最大5MB)</span>
+                    </div>
+
+                    <!-- 图片预览区域 -->
+                    <div id="imagePreviewArea" class="image-preview-area mt-3">
+                        <!-- 预览图片将动态加载到这里 -->
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="/diary" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>返回列表
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-outline-primary me-2" id="saveDraftBtn">
+                            <i class="fas fa-save me-2"></i>保存草稿
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-check me-2"></i>发布日记
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container text-center">
+            <p class="text-muted mb-0">© 2024 心灵守护者 - 用爱与科学疗愈心灵</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20241206"></script>
+
+    <script>
+        // 日记编辑页面脚本
+        let diaryId = null;
+        let autoSaveTimer = null;
+        let selectedEmotions = new Set();
+        let uploadedImages = [];
+
+        // 等待authManager初始化完成
+        function waitForAuthManager() {
+            return new Promise((resolve) => {
+                if (window.authManager && window.apiClient) {
+                    resolve();
+                } else {
+                    const interval = setInterval(() => {
+                        if (window.authManager && window.apiClient) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 等待authManager初始化
+            await waitForAuthManager();
+
+            // 确保用户已登录
+            if (!window.authManager.isAuthenticated()) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // 获取URL参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+
+            if (id) {
+                diaryId = parseInt(id);
+                await loadDiary(diaryId);
+                document.getElementById('pageTitle').textContent = '编辑日记';
+            }
+
+            bindEvents();
+        });
+
+        function bindEvents() {
+            // 情绪按钮点击
+            document.querySelectorAll('.emotion-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const emotion = this.dataset.emotion;
+                    if (selectedEmotions.has(emotion)) {
+                        selectedEmotions.delete(emotion);
+                        this.classList.remove('selected');
+                    } else {
+                        selectedEmotions.add(emotion);
+                        this.classList.add('selected');
+                    }
+                });
+            });
+
+            // 情绪强度滑块
+            const intensitySlider = document.getElementById('emotionIntensity');
+            const intensityValue = document.getElementById('intensityValue');
+            intensitySlider.addEventListener('input', function() {
+                intensityValue.textContent = this.value;
+            });
+
+            // 字数统计
+            const contentArea = document.getElementById('diaryContent');
+            contentArea.addEventListener('input', function() {
+                updateWordCount();
+                triggerAutoSave();
+            });
+
+            // 表单提交
+            document.getElementById('diaryForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveDiary(true);
+            });
+
+            // 保存草稿
+            document.getElementById('saveDraftBtn').addEventListener('click', function() {
+                saveDiary(false);
+            });
+
+            // 图片上传按钮
+            document.getElementById('uploadImageBtn').addEventListener('click', function() {
+                document.getElementById('imageInput').click();
+            });
+
+            // 文件选择
+            document.getElementById('imageInput').addEventListener('change', handleImageSelection);
+        }
+
+        async function loadDiary(id) {
+            try {
+                const response = await window.apiClient.get(`/diary/${id}`);
+                if (response && response.ok) {
+                    const data = response.data;
+                    const diary = data.diary;
+
+                    // 填充表单
+                    document.getElementById('diaryContent').value = diary.content;
+
+                    // 设置情绪标签
+                    diary.emotion_tags.forEach(emotion => {
+                        selectedEmotions.add(emotion);
+                        const button = document.querySelector(`[data-emotion="${emotion}"]`);
+                        if (button) {
+                            button.classList.add('selected');
+                        }
+                    });
+
+                    // 加载情绪强度
+                    if (diary.emotion_score && diary.emotion_score.intensity) {
+                        const intensitySlider = document.getElementById('emotionIntensity');
+                        const intensityValue = document.getElementById('intensityValue');
+                        intensitySlider.value = diary.emotion_score.intensity;
+                        intensityValue.textContent = diary.emotion_score.intensity;
+                    }
+
+                    // 加载图片
+                    if (diary.images && diary.images.length > 0) {
+                        loadImages(diary.images);
+                    }
+
+                    updateWordCount();
+                } else {
+                    throw new Error('Failed to load diary');
+                }
+            } catch (error) {
+                console.error('Failed to load diary:', error);
+                window.showAlert('加载日记失败', 'danger');
+            }
+        }
+
+        async function saveDiary(publish = false) {
+            const content = document.getElementById('diaryContent').value.trim();
+
+            if (!content) {
+                window.showAlert('请输入日记内容', 'warning');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+
+            try {
+                // 禁用按钮
+                submitBtn.disabled = true;
+                saveDraftBtn.disabled = true;
+
+                const diaryData = {
+                    content: content,
+                    emotion_tags: Array.from(selectedEmotions),
+                    emotion_score: {
+                        intensity: parseInt(document.getElementById('emotionIntensity').value)
+                    },
+                    images: uploadedImages
+                };
+
+                let response;
+                if (diaryId) {
+                    // 更新日记
+                    response = await window.apiClient.put(`/diary/${diaryId}`, diaryData);
+                } else {
+                    // 创建新日记
+                    response = await window.apiClient.post('/diary', diaryData);
+                }
+
+                if (response && response.ok) {
+                    const message = publish ? '日记已发布' : '草稿已保存';
+                    window.showAlert(message, 'success');
+
+                    if (publish) {
+                        setTimeout(() => {
+                            window.location.href = '/diary';
+                        }, 1000);
+                    }
+                } else {
+                    throw new Error('Failed to save diary');
+                }
+            } catch (error) {
+                console.error('Failed to save diary:', error);
+                window.showAlert('保存失败，请重试', 'danger');
+            } finally {
+                // 启用按钮
+                submitBtn.disabled = false;
+                saveDraftBtn.disabled = false;
+            }
+        }
+
+        function triggerAutoSave() {
+            // 清除之前的定时器
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+
+            // 设置新的定时器（2秒后自动保存）
+            autoSaveTimer = setTimeout(() => {
+                autoSave();
+            }, 2000);
+        }
+
+        async function autoSave() {
+            const content = document.getElementById('diaryContent').value.trim();
+            if (!content) return;
+
+            try {
+                const diaryData = {
+                    content: content,
+                    emotion_tags: Array.from(selectedEmotions),
+                    emotion_score: {
+                        intensity: parseInt(document.getElementById('emotionIntensity').value)
+                    },
+                    images: uploadedImages
+                };
+
+                let response;
+                if (diaryId) {
+                    response = await window.apiClient.put(`/diary/${diaryId}`, diaryData);
+                } else {
+                    response = await window.apiClient.post('/diary', diaryData);
+                }
+
+                if (response && response.ok) {
+                    const data = response.data;
+                    if (!diaryId) {
+                        diaryId = data.diary.id;
+                    }
+                    showAutoSaveStatus();
+                }
+            } catch (error) {
+                console.error('Auto save failed:', error);
+            }
+        }
+
+        function showAutoSaveStatus() {
+            const status = document.getElementById('autoSaveStatus');
+            status.style.display = 'inline-block';
+
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        function updateWordCount() {
+            const content = document.getElementById('diaryContent').value;
+            const wordCount = content.length;
+            document.getElementById('wordCount').textContent = wordCount;
+        }
+
+        // 图片上传相关函数
+        async function handleImageSelection(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            for (let file of files) {
+                await uploadImage(file);
+            }
+
+            // 清空input以便可以重复选择同一文件
+            event.target.value = '';
+        }
+
+        async function uploadImage(file) {
+            // 验证文件大小 (5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (file.size > maxSize) {
+                window.showAlert('图片过大，最大支持5MB', 'warning');
+                return;
+            }
+
+            // 验证文件类型
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                window.showAlert('不支持的文件类型', 'warning');
+                return;
+            }
+
+            try {
+                // 显示上传中状态
+                const uploadBtn = document.getElementById('uploadImageBtn');
+                const loadingSpinner = document.createElement('span');
+                loadingSpinner.className = 'image-upload-loading';
+                uploadBtn.appendChild(loadingSpinner);
+                uploadBtn.disabled = true;
+
+                // 准备FormData
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // 上传到服务器
+                const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                const response = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('上传失败');
+                }
+
+                const data = response.data;
+
+                // 添加到上传列表
+                uploadedImages.push(data.image_url);
+
+                // 显示预览
+                addImagePreview(data.image_url);
+
+                window.showAlert('图片上传成功', 'success');
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                window.showAlert('图片上传失败，请重试', 'danger');
+            } finally {
+                // 移除加载状态
+                const uploadBtn = document.getElementById('uploadImageBtn');
+                const loadingSpinner = uploadBtn.querySelector('.image-upload-loading');
+                if (loadingSpinner) {
+                    uploadBtn.removeChild(loadingSpinner);
+                }
+                uploadBtn.disabled = false;
+            }
+        }
+
+        function addImagePreview(imageUrl) {
+            const previewArea = document.getElementById('imagePreviewArea');
+
+            const previewItem = document.createElement('div');
+            previewItem.className = 'image-preview-item';
+            previewItem.dataset.url = imageUrl;
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = '预览图片';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'image-remove-btn';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.onclick = () => removeImage(imageUrl);
+
+            previewItem.appendChild(img);
+            previewItem.appendChild(removeBtn);
+            previewArea.appendChild(previewItem);
+        }
+
+        function removeImage(imageUrl) {
+            // 从列表中移除
+            const index = uploadedImages.indexOf(imageUrl);
+            if (index > -1) {
+                uploadedImages.splice(index, 1);
+            }
+
+            // 移除预览
+            const previewItem = document.querySelector(`.image-preview-item[data-url="${imageUrl}"]`);
+            if (previewItem) {
+                previewItem.remove();
+            }
+        }
+
+        function loadImages(images) {
+            if (!images || images.length === 0) return;
+
+            uploadedImages = [...images];
+            const previewArea = document.getElementById('imagePreviewArea');
+            previewArea.innerHTML = '';
+
+            images.forEach(imageUrl => {
+                addImagePreview(imageUrl);
+            });
+        }
+    </script>
+</body>
+</html>

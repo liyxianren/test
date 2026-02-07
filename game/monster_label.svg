@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 标签怪 - Q版可爱风格 - 贴标签思维 -->
+  <!-- 身体阴影 -->
+  <ellipse cx="50" cy="88" rx="28" ry="6" fill="#6B46C1" opacity="0.3"/>
+
+  <!-- 渐变定义 -->
+  <defs>
+    <radialGradient id="labelBodyGrad" cx="40%" cy="40%">
+      <stop offset="0%" style="stop-color:#A78BFA"/>
+      <stop offset="100%" style="stop-color:#7C3AED"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 圆润的紫色身体 -->
+  <ellipse cx="50" cy="55" rx="32" ry="30" fill="url(#labelBodyGrad)">
+    <animate attributeName="rx" values="32;34;32" dur="2.5s" repeatCount="indefinite"/>
+    <animate attributeName="ry" values="30;32;30" dur="2.5s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 可爱的标签贴纸们 - 带波浪边 -->
+  <!-- 黄色标签 -->
+  <g transform="rotate(-15 32 38)">
+    <rect x="22" y="32" width="22" height="12" rx="3" fill="#FDE68A" stroke="#F59E0B" stroke-width="1"/>
+    <line x1="25" y1="36" x2="40" y2="36" stroke="#92400E" stroke-width="1.5"/>
+    <line x1="25" y1="40" x2="35" y2="40" stroke="#92400E" stroke-width="1" opacity="0.6"/>
+  </g>
+
+  <!-- 红色标签 -->
+  <g transform="rotate(12 68 35)">
+    <rect x="55" y="28" width="24" height="12" rx="3" fill="#FCA5A5" stroke="#EF4444" stroke-width="1"/>
+    <line x1="58" y1="32" x2="75" y2="32" stroke="#B91C1C" stroke-width="1.5"/>
+    <line x1="58" y1="36" x2="70" y2="36" stroke="#B91C1C" stroke-width="1" opacity="0.6"/>
+  </g>
+
+  <!-- 青色标签 -->
+  <g transform="rotate(-20 26 62)">
+    <rect x="15" y="55" width="20" height="12" rx="3" fill="#99F6E4" stroke="#14B8A6" stroke-width="1"/>
+    <line x1="18" y1="59" x2="32" y2="59" stroke="#0F766E" stroke-width="1.5"/>
+    <line x1="18" y1="63" x2="28" y2="63" stroke="#0F766E" stroke-width="1" opacity="0.6"/>
+  </g>
+
+  <!-- 橙色标签 -->
+  <g transform="rotate(18 74 58)">
+    <rect x="62" y="50" width="22" height="12" rx="3" fill="#FED7AA" stroke="#F97316" stroke-width="1"/>
+    <line x1="65" y1="54" x2="80" y2="54" stroke="#C2410C" stroke-width="1.5"/>
+    <line x1="65" y1="58" x2="75" y2="58" stroke="#C2410C" stroke-width="1" opacity="0.6"/>
+  </g>
+
+  <!-- 绿色标签 -->
+  <g transform="rotate(-8 45 75)">
+    <rect x="32" y="68" width="26" height="12" rx="3" fill="#BBF7D0" stroke="#22C55E" stroke-width="1"/>
+    <line x1="35" y1="72" x2="54" y2="72" stroke="#15803D" stroke-width="1.5"/>
+    <line x1="35" y1="76" x2="48" y2="76" stroke="#15803D" stroke-width="1" opacity="0.6"/>
+  </g>
+
+  <!-- 超大水汪汪眼睛 -->
+  <ellipse cx="38" cy="50" rx="11" ry="13" fill="white"/>
+  <ellipse cx="62" cy="50" rx="11" ry="13" fill="white"/>
+
+  <!-- 眼珠 -->
+  <circle cx="40" cy="52" r="6" fill="#4C1D95">
+    <animate attributeName="cy" values="52;50;52" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="64" cy="52" r="6" fill="#4C1D95">
+    <animate attributeName="cy" values="52;50;52" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- 眼睛高光 -->
+  <circle cx="42" cy="49" r="2.5" fill="white"/>
+  <circle cx="66" cy="49" r="2.5" fill="white"/>
+  <circle cx="38" cy="54" r="1.5" fill="white" opacity="0.6"/>
+  <circle cx="62" cy="54" r="1.5" fill="white" opacity="0.6"/>
+
+  <!-- 困惑忧愁的眉毛 -->
+  <path d="M28 40 Q38 43 48 40" fill="none" stroke="#4C1D95" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M52 40 Q62 43 72 40" fill="none" stroke="#4C1D95" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 嘟嘴 - 无奈表情 -->
+  <ellipse cx="50" cy="68" rx="8" ry="5" fill="#DDD6FE"/>
+  <path d="M44 68 Q50 64 56 68" fill="none" stroke="#7C3AED" stroke-width="2"/>
+
+  <!-- 小手 - 无奈摊手 -->
+  <ellipse cx="15" cy="58" rx="7" ry="6" fill="#A78BFA">
+    <animateTransform attributeName="transform" type="rotate" values="-5 15 58;5 15 58;-5 15 58" dur="1.5s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="85" cy="58" rx="7" ry="6" fill="#A78BFA">
+    <animateTransform attributeName="transform" type="rotate" values="5 85 58;-5 85 58;5 85 58" dur="1.5s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 飘落的小标签 -->
+  <rect x="8" y="25" width="10" height="6" rx="1" fill="#FDA4AF" opacity="0.6">
+    <animate attributeName="y" values="25;35;25" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;0.3;0.6" dur="3s" repeatCount="indefinite"/>
+  </rect>
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 小橘 - 可爱的橙色小狐狸 -->
+  <!-- 身体 -->
+  <ellipse cx="50" cy="70" rx="25" ry="20" fill="#FF8C42"/>
+  <!-- 头 -->
+  <circle cx="50" cy="40" r="25" fill="#FF8C42"/>
+  <!-- 耳朵 -->
+  <polygon points="30,25 25,5 40,20" fill="#FF8C42"/>
+  <polygon points="70,25 75,5 60,20" fill="#FF8C42"/>
+  <polygon points="32,22 28,10 38,18" fill="#FFB380"/>
+  <polygon points="68,22 72,10 62,18" fill="#FFB380"/>
+  <!-- 脸部白色 -->
+  <ellipse cx="50" cy="48" rx="15" ry="12" fill="#FFF5E6"/>
+  <!-- 眼睛 -->
+  <ellipse cx="42" cy="38" rx="5" ry="6" fill="#2D2D2D"/>
+  <ellipse cx="58" cy="38" rx="5" ry="6" fill="#2D2D2D"/>
+  <circle cx="44" cy="36" r="2" fill="white"/>
+  <circle cx="60" cy="36" r="2" fill="white"/>
+  <!-- 鼻子 -->
+  <ellipse cx="50" cy="48" rx="4" ry="3" fill="#2D2D2D"/>
+  <!-- 嘴巴 -->
+  <path d="M 45 52 Q 50 56 55 52" stroke="#2D2D2D" stroke-width="2" fill="none"/>
+  <!-- 腮红 -->
+  <circle cx="35" cy="45" r="4" fill="#FFB3B3" opacity="0.6"/>
+  <circle cx="65" cy="45" r="4" fill="#FFB3B3" opacity="0.6"/>
+  <!-- 尾巴 -->
+  <path d="M 75 70 Q 95 60 90 80 Q 85 95 70 85" fill="#FF8C42"/>
+  <path d="M 85 75 Q 88 85 78 82" fill="#FFF5E6"/>
+</svg>

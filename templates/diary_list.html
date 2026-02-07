@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的日记 - CBT情绪日记游戏</title>
+    <meta name="description" content="查看和管理您的CBT情绪日记">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- 导航栏 - 游戏风格 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- 未登录状态 -->
+                    <div id="authGuest" class="d-flex gap-2">
+                        <a href="/login" class="btn btn-outline">登录</a>
+                        <a href="/register" class="btn btn-primary">注册</a>
+                    </div>
+
+                    <!-- 已登录状态 -->
+                    <div id="authUser" class="d-flex gap-2 align-items-center d-none">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main>
+        <!-- Hero 区域 - 日记主题 -->
+        <section class="diary-hero-section">
+            <!-- 漂浮的装饰元素 -->
+            <div class="floating-emoji" style="top: 15%; left: 8%; animation-delay: 0s;">📖</div>
+            <div class="floating-emoji" style="top: 25%; right: 12%; animation-delay: 0.8s;">✨</div>
+            <div class="floating-emoji" style="top: 60%; left: 10%; animation-delay: 1.5s;">💭</div>
+            <div class="floating-emoji" style="bottom: 25%; right: 15%; animation-delay: 2s;">🌟</div>
+
+            <!-- 彩色泡泡 -->
+            <div class="bubble" style="left: 5%; top: 30%; animation-delay: 0s;"></div>
+            <div class="bubble" style="left: 85%; top: 15%; animation-delay: 3s;"></div>
+            <div class="bubble" style="left: 70%; top: 70%; animation-delay: 6s;"></div>
+
+            <div class="container">
+                <div class="row align-items-center py-5">
+                    <div class="col-lg-8">
+                        <div class="badge-tag mb-3">
+                            <i class="fas fa-book-open me-2"></i>
+                            我的情绪日记本
+                        </div>
+                        <h1 class="diary-hero-title mb-3">
+                            记录每一刻的<br>
+                            <span class="gradient-text">情绪旅程</span>
+                        </h1>
+                        <p class="diary-hero-subtitle mb-4">
+                            📝 每一篇日记，都是成长的足迹<br>
+                            💖 每一次记录，都让你更了解自己
+                        </p>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <a href="/diary/new" class="btn btn-primary btn-lg pulse-animation">
+                                <i class="fas fa-pen-fancy me-2"></i>
+                                写新日记
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <!-- 小橘 -->
+                        <div class="diary-character">
+                            <div class="character-card main-character">
+                                <div class="character-avatar">
+                                    <div class="avatar-circle diary-avatar">
+                                        🦊
+                                    </div>
+                                    <div class="character-sparkle sparkle-1">✨</div>
+                                    <div class="character-sparkle sparkle-2">⭐</div>
+                                    <div class="character-sparkle sparkle-3">💫</div>
+                                </div>
+                                <h3 class="character-name">小橘</h3>
+                                <p class="character-desc" id="diaryCount">加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alert容器 -->
+        <div class="container">
+            <div id="alertContainer" class="my-3"></div>
+        </div>
+
+        <!-- 搜索筛选区域 -->
+        <section class="container my-4">
+            <div class="search-panel">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="searchKeyword" class="form-label">
+                            <i class="fas fa-search me-2"></i>搜索关键词
+                        </label>
+                        <input type="text" class="form-control" id="searchKeyword" placeholder="搜索日记内容...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="emotionFilter" class="form-label">
+                            <i class="fas fa-heart me-2"></i>情绪标签
+                        </label>
+                        <select class="form-select" id="emotionFilter">
+                            <option value="">全部情绪</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="dateFrom" class="form-label">开始日期</label>
+                        <input type="date" class="form-control" id="dateFrom">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="dateTo" class="form-label">结束日期</label>
+                        <input type="date" class="form-control" id="dateTo">
+                    </div>
+                    <div class="col-md-1 d-flex flex-column align-items-center">
+                        <label class="form-label text-muted" style="font-size: 0.75rem;">清除</label>
+                        <button class="btn btn-outline-secondary w-100" type="button" id="clearFiltersBtn" title="清除所有筛选条件">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 日记列表区域 -->
+        <section class="container my-4">
+            <!-- 加载状态 -->
+            <div id="loadingState" style="display: block;">
+                <div class="diary-card-game loading-card">
+                    <div class="loading-skeleton"></div>
+                    <div class="loading-skeleton" style="width: 80%;"></div>
+                    <div class="loading-skeleton" style="width: 60%;"></div>
+                </div>
+                <div class="diary-card-game loading-card">
+                    <div class="loading-skeleton"></div>
+                    <div class="loading-skeleton" style="width: 85%;"></div>
+                    <div class="loading-skeleton" style="width: 70%;"></div>
+                </div>
+            </div>
+
+            <!-- 日记内容 -->
+            <div id="diaryContent"></div>
+
+            <!-- 空状态 -->
+            <div id="emptyState" class="empty-state-game" style="display: none;">
+                <div class="empty-character">
+                    📝
+                    <div class="character-sparkle sparkle-1">✨</div>
+                    <div class="character-sparkle sparkle-2">⭐</div>
+                    <div class="character-sparkle sparkle-3">💫</div>
+                </div>
+                <h3>还没有日记哦</h3>
+                <p>快来写下你的第一篇情绪日记吧！</p>
+                <a href="/diary/new" class="btn btn-primary btn-lg mt-3 pulse-animation">
+                    <i class="fas fa-pen-fancy me-2"></i>开始写日记
+                </a>
+            </div>
+
+            <!-- 分页 -->
+            <nav id="pagination" class="d-flex justify-content-center mt-4" style="display: none !important;">
+                <ul class="pagination pagination-game">
+                    <!-- 分页按钮将动态生成 -->
+                </ul>
+            </nav>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="game-footer mt-5 py-4">
+        <div class="container text-center">
+            <h5 class="mb-3">
+                <i class="fas fa-heart-pulse me-2"></i>
+                CBT情绪日记游戏
+            </h5>
+            <p class="text-white-50 mb-2">
+                © 2025 CBT情绪日记游戏. 保留所有权利.
+            </p>
+            <div class="footer-links">
+                <a href="/about">关于我们</a>
+                <a href="/privacy">隐私政策</a>
+                <a href="/terms">使用条款</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20241206"></script>
+
+    <script>
+        // 日记列表页面脚本
+        let currentPage = 1;
+        let isLoading = false;
+
+        // 等待authManager初始化完成
+        function waitForAuthManager() {
+            return new Promise((resolve) => {
+                if (window.authManager && window.apiClient) {
+                    resolve();
+                } else {
+                    const interval = setInterval(() => {
+                        if (window.authManager && window.apiClient) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 等待authManager初始化
+            await waitForAuthManager();
+
+            // 确保用户已登录
+            if (!window.authManager.isAuthenticated()) {
+                window.location.href = '/login';
+                return;
+            }
+
+            // 初始化页面
+            await initializePage();
+            bindEvents();
+        });
+
+        async function initializePage() {
+            await loadDiaries();
+            await loadEmotionFilters();
+            updateDiaryCount();
+        }
+
+        function bindEvents() {
+            // 搜索按钮
+            document.getElementById('searchKeyword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            // 清除筛选
+            document.getElementById('clearFiltersBtn').addEventListener('click', clearFilters);
+
+            // 筛选变化
+            document.getElementById('emotionFilter').addEventListener('change', performSearch);
+            document.getElementById('dateFrom').addEventListener('change', performSearch);
+            document.getElementById('dateTo').addEventListener('change', performSearch);
+
+        }
+
+        async function loadDiaries(page = 1, searchParams = {}) {
+            if (isLoading) return;
+
+            isLoading = true;
+            showLoadingState();
+
+            try {
+                // 判断是否有搜索参数
+                const hasSearch = searchParams.keyword || searchParams.emotion_tag ||
+                                 searchParams.date_from || searchParams.date_to;
+
+                let url;
+                if (hasSearch) {
+                    // 使用搜索API（注意：apiClient会自动加/api前缀）
+                    const params = [];
+                    if (searchParams.keyword) {
+                        params.push(`keyword=${encodeURIComponent(searchParams.keyword)}`);
+                    }
+                    if (searchParams.emotion_tag) {
+                        params.push(`emotion_tag=${encodeURIComponent(searchParams.emotion_tag)}`);
+                    }
+                    if (searchParams.date_from) {
+                        params.push(`date_from=${searchParams.date_from}`);
+                    }
+                    if (searchParams.date_to) {
+                        // 日期结束需要包含当天全天
+                        params.push(`date_to=${searchParams.date_to}T23:59:59`);
+                    }
+                    url = '/diary/search?' + params.join('&');
+                } else {
+                    // 使用普通列表API（支持分页）
+                    url = `/diary?page=${page}&limit=10`;
+                }
+
+                const response = await window.apiClient.get(url);
+
+                if (response && response.ok) {
+                    const data = response.data;
+                    displayDiaries(data.diaries);
+                    displayPagination(data.pagination);
+                    currentPage = page;
+                } else {
+                    throw new Error('Failed to load diaries');
+                }
+            } catch (error) {
+                console.error('Failed to load diaries:', error);
+                showErrorState();
+                window.showAlert('加载日记失败，请重试', 'danger');
+            } finally {
+                isLoading = false;
+                hideLoadingState();
+            }
+        }
+
+        function displayDiaries(diaries) {
+            const contentEl = document.getElementById('diaryContent');
+            const emptyStateEl = document.getElementById('emptyState');
+
+            if (diaries.length === 0) {
+                contentEl.innerHTML = '';
+                emptyStateEl.style.display = 'block';
+                return;
+            }
+
+            emptyStateEl.style.display = 'none';
+
+            let html = '';
+            diaries.forEach(diary => {
+                const date = new Date(diary.created_at);
+                const formattedDate = date.toLocaleDateString('zh-CN');
+                const formattedTime = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+                const imagesHtml = (diary.images && diary.images.length > 0)
+                    ? `<div class="diary-images mb-2">
+                        ${diary.images.slice(0, 3).map(img =>
+                            `<img src="${img}" alt="日记图片" class="diary-thumbnail">`
+                        ).join('')}
+                        ${diary.images.length > 3 ? `<span class="more-images">+${diary.images.length - 3}</span>` : ''}
+                    </div>`
+                    : '';
+
+                html += `
+                    <div class="diary-card-game" data-diary-id="${diary.id}">
+                        <div class="diary-card-header">
+                            <div class="diary-date">
+                                <i class="fas fa-calendar me-2"></i>${formattedDate} ${formattedTime}
+                            </div>
+                            <div class="diary-actions">
+                                <a href="/diary/${diary.id}" class="btn-icon" title="查看">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn-icon btn-danger" onclick="deleteDiary(${diary.id})" title="删除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="diary-content-preview">
+                            ${diary.content.length > 200 ? diary.content.substring(0, 200) + '...' : diary.content}
+                        </div>
+                        ${imagesHtml}
+                        <div class="diary-tags">
+                            ${diary.emotion_tags.map(tag =>
+                                `<span class="emotion-tag-game">${tag}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            contentEl.innerHTML = html;
+        }
+
+        function displayPagination(pagination) {
+            const paginationEl = document.getElementById('pagination');
+
+            if (!pagination || pagination.pages <= 1) {
+                paginationEl.style.display = 'none';
+                return;
+            }
+
+            paginationEl.style.display = 'flex';
+
+            let html = '';
+
+            // 上一页
+            if (pagination.has_prev) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDiaries(${pagination.page - 1}); return false;">
+                    <i class="fas fa-chevron-left"></i>
+                </a></li>`;
+            }
+
+            // 页码
+            for (let i = 1; i <= pagination.pages; i++) {
+                if (i === pagination.page) {
+                    html += `<li class="page-item active"><a class="page-link" href="#">${i}</a></li>`;
+                } else {
+                    html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDiaries(${i}); return false;">${i}</a></li>`;
+                }
+            }
+
+            // 下一页
+            if (pagination.has_next) {
+                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadDiaries(${pagination.page + 1}); return false;">
+                    <i class="fas fa-chevron-right"></i>
+                </a></li>`;
+            }
+
+            paginationEl.querySelector('.pagination').innerHTML = html;
+        }
+
+        async function loadEmotionFilters() {
+            try {
+                const response = await window.apiClient.get('/diary/stats');
+                if (response && response.ok) {
+                    const stats = response.data;
+                    const emotionFilterEl = document.getElementById('emotionFilter');
+
+                    let html = '<option value="">全部情绪</option>';
+                    for (const emotion of Object.keys(stats.emotion_stats)) {
+                        html += `<option value="${emotion}">${emotion}</option>`;
+                    }
+
+                    emotionFilterEl.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Failed to load emotion filters:', error);
+            }
+        }
+
+        async function updateDiaryCount() {
+            try {
+                const response = await window.apiClient.get('/diary/stats');
+                if (response && response.ok) {
+                    const stats = response.data;
+                    const countEl = document.getElementById('diaryCount');
+                    if (countEl) {
+                        countEl.textContent = `已记录 ${stats.total_diaries} 篇日记`;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load diary count:', error);
+            }
+        }
+
+        function performSearch() {
+            const keyword = document.getElementById('searchKeyword').value.trim();
+            const emotionTag = document.getElementById('emotionFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            const searchParams = {};
+            if (keyword) searchParams.keyword = keyword;
+            if (emotionTag) searchParams.emotion_tag = emotionTag;
+            if (dateFrom) searchParams.date_from = dateFrom;
+            if (dateTo) searchParams.date_to = dateTo;
+
+            loadDiaries(1, searchParams);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchKeyword').value = '';
+            document.getElementById('emotionFilter').value = '';
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+
+            loadDiaries(1);
+        }
+
+        async function deleteDiary(diaryId) {
+            if (!confirm('确定要删除这篇日记吗？此操作不可撤销。')) {
+                return;
+            }
+
+            try {
+                const response = await window.apiClient.delete(`/diary/${diaryId}`);
+
+                if (response && response.ok) {
+                    window.showAlert('日记已删除', 'success');
+                    await loadDiaries(currentPage);
+                    updateDiaryCount();
+                } else {
+                    throw new Error('Failed to delete diary');
+                }
+            } catch (error) {
+                console.error('Failed to delete diary:', error);
+                window.showAlert('删除失败，请重试', 'danger');
+            }
+        }
+
+        function showLoadingState() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('diaryContent').innerHTML = '';
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        function hideLoadingState() {
+            document.getElementById('loadingState').style.display = 'none';
+        }
+
+        function showErrorState() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('diaryContent').innerHTML = `
+                <div class="error-state-game">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">😕</div>
+                    <h4>加载失败</h4>
+                    <p>请检查网络连接后重试</p>
+                    <button class="btn btn-primary" onclick="loadDiaries()">
+                        <i class="fas fa-sync me-2"></i>重新加载
+                    </button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

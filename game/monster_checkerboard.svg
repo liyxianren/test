@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- 棋盘精 - Q版可爱风格 - 非黑即白思维 -->
+  <!-- 身体阴影 -->
+  <ellipse cx="50" cy="88" rx="25" ry="6" fill="#2D2D2D" opacity="0.3"/>
+
+  <!-- 渐变定义 -->
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF"/>
+      <stop offset="100%" style="stop-color:#E0E0E0"/>
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFE066"/>
+      <stop offset="100%" style="stop-color:#FFB800"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 圆润的身体主体 -->
+  <ellipse cx="50" cy="55" rx="32" ry="28" fill="url(#bodyGrad)" stroke="#CCCCCC" stroke-width="2">
+    <animate attributeName="ry" values="28;30;28" dur="2s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 棋盘格图案 - 在身体上 -->
+  <clipPath id="bodyClip">
+    <ellipse cx="50" cy="55" rx="30" ry="26"/>
+  </clipPath>
+  <g clip-path="url(#bodyClip)">
+    <rect x="20" y="35" width="15" height="15" fill="#3D3D3D"/>
+    <rect x="50" y="35" width="15" height="15" fill="#3D3D3D"/>
+    <rect x="35" y="50" width="15" height="15" fill="#3D3D3D"/>
+    <rect x="65" y="50" width="15" height="15" fill="#3D3D3D"/>
+    <rect x="20" y="65" width="15" height="15" fill="#3D3D3D"/>
+    <rect x="50" y="65" width="15" height="15" fill="#3D3D3D"/>
+  </g>
+
+  <!-- 可爱的王冠 -->
+  <path d="M35 25 L38 18 L42 25 L50 15 L58 25 L62 18 L65 25 L62 28 L38 28 Z" fill="url(#crownGrad)" stroke="#E6A800" stroke-width="1">
+    <animate attributeName="d"
+      values="M35 25 L38 18 L42 25 L50 15 L58 25 L62 18 L65 25 L62 28 L38 28 Z;
+              M35 24 L38 17 L42 24 L50 14 L58 24 L62 17 L65 24 L62 27 L38 27 Z;
+              M35 25 L38 18 L42 25 L50 15 L58 25 L62 18 L65 25 L62 28 L38 28 Z"
+      dur="2s" repeatCount="indefinite"/>
+  </path>
+  <!-- 王冠宝石 -->
+  <circle cx="50" cy="20" r="3" fill="#FF6B6B"/>
+  <circle cx="41" cy="22" r="2" fill="#4ECDC4"/>
+  <circle cx="59" cy="22" r="2" fill="#4ECDC4"/>
+
+  <!-- 超大可爱眼睛 - 一黑一白对比 -->
+  <ellipse cx="38" cy="50" rx="10" ry="12" fill="white" stroke="#333" stroke-width="1"/>
+  <ellipse cx="62" cy="50" rx="10" ry="12" fill="#3D3D3D" stroke="#222" stroke-width="1"/>
+
+  <!-- 左眼（白底黑瞳） -->
+  <circle cx="40" cy="52" r="5" fill="#3D3D3D">
+    <animate attributeName="cy" values="52;50;52" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="42" cy="49" r="2" fill="white"/>
+
+  <!-- 右眼（黑底白瞳） -->
+  <circle cx="64" cy="52" r="5" fill="white">
+    <animate attributeName="cy" values="52;50;52" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="66" cy="49" r="2" fill="#3D3D3D"/>
+
+  <!-- 困惑的眉毛 -->
+  <path d="M28 42 L44 44" stroke="#555" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 42 L56 44" stroke="#555" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 嘟嘟嘴 -->
+  <ellipse cx="50" cy="68" rx="6" ry="4" fill="#FFB6C1"/>
+  <path d="M46 68 Q50 72 54 68" fill="none" stroke="#E57373" stroke-width="1.5"/>
+
+  <!-- 可爱小手 - 摇摆 -->
+  <ellipse cx="18" cy="55" rx="6" ry="5" fill="#E0E0E0" stroke="#CCC" stroke-width="1">
+    <animateTransform attributeName="transform" type="rotate" values="-10 18 55;10 18 55;-10 18 55" dur="1s" repeatCount="indefinite"/>
+  </ellipse>
+  <ellipse cx="82" cy="55" rx="6" ry="5" fill="#3D3D3D" stroke="#333" stroke-width="1">
+    <animateTransform attributeName="transform" type="rotate" values="10 82 55;-10 82 55;10 82 55" dur="1s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- 小脚丫 -->
+  <ellipse cx="38" cy="82" rx="8" ry="5" fill="#3D3D3D"/>
+  <ellipse cx="62" cy="82" rx="8" ry="5" fill="white" stroke="#CCC" stroke-width="1"/>
+
+  <!-- 装饰小星星 -->
+  <polygon points="15,30 16.5,33 20,33 17.5,35.5 18.5,39 15,37 11.5,39 12.5,35.5 10,33 13.5,33" fill="#FFD700" opacity="0.7">
+    <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1.5s" repeatCount="indefinite"/>
+  </polygon>
+</svg>

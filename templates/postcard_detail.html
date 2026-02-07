@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>明信片详情 - CBT日记</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #ff9a56 0%, #ff6b6b 50%, #feca57 100%);
+        }
+
+        .postcard-detail-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            color: #ff6b6b;
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .back-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .postcard-frame {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-top: 60px;
+        }
+
+        .postcard-image-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            overflow: hidden;
+        }
+
+        .postcard-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .postcard-image-container .placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8rem;
+            color: #ddd;
+        }
+
+        .postcard-stamp {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 80px;
+            height: 100px;
+            background: white;
+            border: 3px dashed #ff6b6b;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transform: rotate(5deg);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .postcard-stamp .fox {
+            font-size: 2.5rem;
+        }
+
+        .postcard-stamp .text {
+            font-size: 0.6rem;
+            color: #ff6b6b;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .postcard-body {
+            padding: 2rem;
+            background: #fffef5;
+            background-image:
+                linear-gradient(#e8e8e8 1px, transparent 1px);
+            background-size: 100% 2rem;
+            background-position: 0 1rem;
+        }
+
+        .postcard-location {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #ff6b6b;
+        }
+
+        .postcard-location i {
+            color: #ff6b6b;
+            font-size: 1.5rem;
+        }
+
+        .postcard-location-text {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            font-family: 'STKaiti', 'KaiTi', serif;
+        }
+
+        .postcard-message {
+            font-size: 1.15rem;
+            line-height: 2;
+            color: #444;
+            font-family: 'STKaiti', 'KaiTi', 'SimSun', serif;
+            white-space: pre-wrap;
+            margin-bottom: 2rem;
+        }
+
+        .postcard-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-top: 1.5rem;
+            border-top: 1px dashed #ddd;
+        }
+
+        .postcard-emotions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .emotion-tag {
+            background: linear-gradient(135deg, #ff9a56, #ff6b6b);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .postcard-date {
+            color: #999;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        .postcard-date .date {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .postcard-date .health {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        /* 探险收获展示区域 */
+        .adventure-rewards-section {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border: 2px solid #f59e0b;
+        }
+
+        .adventure-rewards-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 1rem;
+        }
+
+        .adventure-rewards-title i {
+            color: #f59e0b;
+        }
+
+        .stat-changes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .stat-change-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem 0.75rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-change-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-change-icon {
+            font-size: 1.3rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .stat-change-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-change-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .stat-change-value.positive {
+            color: #10b981;
+        }
+
+        .stat-change-value.negative {
+            color: #ef4444;
+        }
+
+        .stat-change-value.neutral {
+            color: #6b7280;
+        }
+
+        .coins-earned-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #fcd34d, #f59e0b);
+            color: #78350f;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .coins-earned-display i {
+            color: #b45309;
+            font-size: 1.2rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-btn {
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .action-btn.primary {
+            background: white;
+            color: #ff6b6b;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .action-btn.secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: white;
+            margin-top: 100px;
+        }
+
+        .loading-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 20px;
+            margin-top: 100px;
+        }
+
+        /* Pending状态样式 */
+        .pending-postcard {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 20px;
+            margin-top: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .pending-fox-large {
+            font-size: 6rem;
+            animation: foxWalkLarge 1.5s ease-in-out infinite;
+            display: inline-block;
+        }
+
+        @keyframes foxWalkLarge {
+            0%, 100% { transform: translateY(0) rotate(-3deg); }
+            25% { transform: translateY(-15px) rotate(3deg); }
+            50% { transform: translateY(0) rotate(-3deg); }
+            75% { transform: translateY(-10px) rotate(3deg); }
+        }
+
+        .pending-title {
+            color: #92400e;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .pending-subtitle {
+            color: #b45309;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .pending-progress {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: #92400e;
+            font-size: 0.9rem;
+        }
+
+        .pending-progress i {
+            animation: spin 1s linear infinite;
+        }
+
+        .pending-location {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px dashed #f59e0b;
+        }
+
+        .pending-location-label {
+            color: #b45309;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pending-location-name {
+            color: #92400e;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .postcard-detail-container {
+                padding: 1rem;
+            }
+
+            .postcard-stamp {
+                width: 60px;
+                height: 75px;
+            }
+
+            .postcard-stamp .fox {
+                font-size: 1.8rem;
+            }
+
+            .postcard-body {
+                padding: 1.5rem;
+            }
+
+            .postcard-message {
+                font-size: 1rem;
+                line-height: 1.8;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/postcards" class="back-btn">
+        <i class="fas fa-arrow-left"></i> 返回列表
+    </a>
+
+    <div class="postcard-detail-container">
+        <div id="postcardContent">
+            <div class="loading-state">
+                <i class="fas fa-spinner"></i>
+                <p>正在加载明信片...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 兼容两种token存储方式
+        const token = localStorage.getItem('token') || localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        const postcardId = {{ postcard_id }};
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        async function loadPostcard() {
+            try {
+                const response = await fetch(`/api/postcard/${postcardId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login';
+                        return;
+                    }
+                    if (response.status === 404) {
+                        showError('明信片不存在');
+                        return;
+                    }
+                    throw new Error('加载失败');
+                }
+
+                const data = await response.json();
+                renderPostcard(data.postcard, data.diary);
+
+                // 标记为已读
+                if (!data.postcard.is_read) {
+                    markAsRead();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('加载失败，请刷新重试');
+            }
+        }
+
+        function renderPostcard(postcard, diary) {
+            const container = document.getElementById('postcardContent');
+
+            // 如果是pending状态，显示等待页面
+            if (postcard.status === 'pending') {
+                renderPendingPostcard(container, postcard, diary);
+                // 开始轮询检查状态
+                startPolling();
+                return;
+            }
+
+            const imageHtml = postcard.image_url ?
+                `<img src="${postcard.image_url}" alt="明信片图片" onerror="this.outerHTML='<div class=\\'placeholder\\'>🦊</div>'">` :
+                `<div class="placeholder">🦊</div>`;
+
+            // 构建数值变化展示
+            const statChangesHtml = buildStatChangesHtml(postcard.stat_changes, postcard.coins_earned);
+
+            container.innerHTML = `
+                <div class="postcard-frame">
+                    <div class="postcard-image-container">
+                        ${imageHtml}
+                        <div class="postcard-stamp">
+                            <span class="fox">🦊</span>
+                            <span class="text">小橘邮戳</span>
+                        </div>
+                    </div>
+                    <div class="postcard-body">
+                        <div class="postcard-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span class="postcard-location-text">${postcard.location_name || '神秘之地'}</span>
+                        </div>
+                        <div class="postcard-message">${postcard.message || '小橘正在写信中...'}</div>
+                        <div class="postcard-footer">
+                            <div class="postcard-emotions">
+                                ${(postcard.emotion_tags || []).map(tag =>
+                                    `<span class="emotion-tag">${tag}</span>`
+                                ).join('')}
+                            </div>
+                            <div class="postcard-date">
+                                <span class="date">${formatDate(postcard.created_at)}</span>
+                                ${postcard.mental_health_score ?
+                                    `<span class="health">心理健康 ${postcard.mental_health_score}</span>` : ''}
+                            </div>
+                        </div>
+                        ${statChangesHtml}
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    ${diary ? `
+                        <a href="/diary/${diary.id}" class="action-btn primary">
+                            <i class="fas fa-book"></i> 查看日记
+                        </a>
+                    ` : ''}
+                    <a href="/postcards" class="action-btn secondary">
+                        <i class="fas fa-images"></i> 更多明信片
+                    </a>
+                </div>
+            `;
+        }
+
+        function renderPendingPostcard(container, postcard, diary) {
+            container.innerHTML = `
+                <div class="pending-postcard">
+                    <div class="pending-fox-large">🦊</div>
+                    <h2 class="pending-title">小橘正在寄出明信片...</h2>
+                    <p class="pending-subtitle">
+                        小橘正在整理这次探险的收获，<br>
+                        精心挑选最美的风景给你～<br>
+                        请稍等片刻，马上就好！
+                    </p>
+                    <div class="pending-progress">
+                        <i class="fas fa-spinner"></i>
+                        <span>正在生成中...</span>
+                    </div>
+                    ${postcard.location_name ? `
+                        <div class="pending-location">
+                            <div class="pending-location-label">小橘的位置</div>
+                            <div class="pending-location-name">
+                                <i class="fas fa-map-marker-alt"></i> ${postcard.location_name}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="action-buttons">
+                    ${diary ? `
+                        <a href="/diary/${diary.id}" class="action-btn primary">
+                            <i class="fas fa-book"></i> 查看日记
+                        </a>
+                    ` : ''}
+                    <a href="/postcards" class="action-btn secondary">
+                        <i class="fas fa-images"></i> 更多明信片
+                    </a>
+                </div>
+            `;
+        }
+
+        let pollingInterval = null;
+
+        function startPolling() {
+            // 每3秒检查一次状态
+            pollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/postcard/${postcardId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.postcard.status !== 'pending') {
+                            // 明信片生成完成，停止轮询并重新渲染
+                            clearInterval(pollingInterval);
+                            renderPostcard(data.postcard, data.diary);
+                            if (!data.postcard.is_read) {
+                                markAsRead();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+            }, 3000);
+        }
+
+        // 页面离开时清理轮询
+        window.addEventListener('beforeunload', () => {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+        });
+
+        function buildStatChangesHtml(statChanges, coinsEarned) {
+            // 如果没有数值变化和金币，不显示这个区域
+            const hasChanges = statChanges && Object.keys(statChanges).length > 0;
+            const hasCoins = coinsEarned && coinsEarned > 0;
+
+            if (!hasChanges && !hasCoins) {
+                return '';
+            }
+
+            const statConfig = {
+                'mental_health': { label: '心理健康', icon: '💚', positiveGood: true },
+                'stress': { label: '压力值', icon: '😰', positiveGood: false },
+                'growth': { label: '成长值', icon: '🌱', positiveGood: true },
+                'energy': { label: '能量', icon: '⚡', positiveGood: true },
+                'happiness': { label: '幸福感', icon: '😊', positiveGood: true }
+            };
+
+            let statItemsHtml = '';
+            if (hasChanges) {
+                for (const [stat, change] of Object.entries(statChanges)) {
+                    if (change === 0) continue;
+
+                    const config = statConfig[stat] || { label: stat, icon: '📊', positiveGood: true };
+                    const isPositive = config.positiveGood ? change > 0 : change < 0;
+                    const valueClass = isPositive ? 'positive' : 'negative';
+                    const displayValue = change > 0 ? `+${change}` : `${change}`;
+
+                    statItemsHtml += `
+                        <div class="stat-change-item">
+                            <div class="stat-change-icon">${config.icon}</div>
+                            <div class="stat-change-label">${config.label}</div>
+                            <div class="stat-change-value ${valueClass}">${displayValue}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            let coinsHtml = '';
+            if (hasCoins) {
+                coinsHtml = `
+                    <div class="coins-earned-display">
+                        <i class="fas fa-coins"></i>
+                        <span>探险获得 ${coinsEarned} 金币</span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="adventure-rewards-section">
+                    <div class="adventure-rewards-title">
+                        <i class="fas fa-trophy"></i>
+                        <span>探险收获</span>
+                    </div>
+                    ${statItemsHtml ? `<div class="stat-changes-grid">${statItemsHtml}</div>` : ''}
+                    ${coinsHtml}
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('postcardContent').innerHTML = `
+                <div class="error-state">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">😿</div>
+                    <h3>${message}</h3>
+                    <a href="/postcards" class="action-btn primary" style="margin-top: 1rem; display: inline-flex;">
+                        返回列表
+                    </a>
+                </div>
+            `;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function markAsRead() {
+            try {
+                await fetch(`/api/postcard/${postcardId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            } catch (e) {
+                // 忽略错误
+            }
+        }
+
+        // 页面加载时获取明信片
+        loadPostcard();
+    </script>
+</body>
+</html>

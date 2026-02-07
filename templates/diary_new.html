@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>写日记 - CBT情绪日记游戏</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <style>
+        /* 页面专属样式优化 */
+        .diary-new-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 主内容区域 - 扩展到更宽 */
+        .main-diary-area {
+            padding-right: 2rem;
+        }
+
+        /* AI助手侧边栏 - 二次元游戏风格 */
+        .ai-sidebar-fixed {
+            position: sticky;
+            top: 100px;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            padding-left: 1rem;
+        }
+
+        /* AI欢迎卡片 - 可爱渐变风格 */
+        .ai-welcome-card {
+            background: linear-gradient(135deg, #FFB6C1 0%, #89F0E7 50%, #D4BBFF 100%);
+            border-radius: 30px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 15px 35px rgba(78, 205, 196, 0.25);
+            position: relative;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* 可爱的星星装饰 */
+        .ai-welcome-card::before {
+            content: '✨';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 2rem;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        .ai-welcome-card::after {
+            content: '💫';
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 1.5rem;
+            animation: twinkle 2s ease-in-out infinite 1s;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+
+        .ai-welcome-card h4 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .ai-welcome-card .ai-avatar-large {
+            font-size: 3.5rem;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 5px 15px rgba(255, 255, 255, 0.5));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        .ai-welcome-card p {
+            opacity: 0.95;
+            margin: 0;
+            font-size: 0.95rem;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+        }
+
+        /* 提示卡片 - 可爱渐变边框 */
+        .ai-tips-card {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.15);
+            border: 3px solid transparent;
+            background-image:
+                linear-gradient(white, white),
+                linear-gradient(135deg, #FFB6C1 0%, #89F0E7 50%, #D4BBFF 100%);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+        }
+
+        .ai-tips-card:hover {
+            box-shadow: 0 15px 35px rgba(78, 205, 196, 0.25);
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        /* 卡片标题渐变效果 */
+        .ai-tips-card h5 {
+            background: linear-gradient(135deg, #FF6B9D 0%, #FFC107 50%, #FF9800 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .ai-tips-card h5 i {
+            background: linear-gradient(135deg, #FF6B9D 0%, #FFC107 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.3rem;
+        }
+
+        /* 提示项 - 可爱气泡风格 */
+        .ai-tip-item {
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(255, 182, 193, 0.1) 0%, rgba(137, 240, 231, 0.1) 100%);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .ai-tip-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .ai-tip-item:hover {
+            background: linear-gradient(135deg, rgba(255, 182, 193, 0.2) 0%, rgba(137, 240, 231, 0.2) 100%);
+            transform: translateX(8px) scale(1.02);
+            border-color: rgba(255, 107, 157, 0.3);
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.15);
+        }
+
+        .ai-tip-icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .ai-tip-text {
+            font-size: 0.95rem;
+            color: #4a5568;
+            line-height: 1.7;
+        }
+
+        .ai-tip-text strong {
+            background: linear-gradient(135deg, #FF6B9D 0%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        /* 进度指示优化 */
+        .stepper-progress {
+            background: white;
+            border-radius: 24px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.15);
+            border: 3px solid transparent;
+            background-image:
+                linear-gradient(white, white),
+                linear-gradient(135deg, #FFB6C1 0%, #89F0E7 50%, #D4BBFF 100%);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+        }
+
+        /* 步骤卡片优化 */
+        .step-card {
+            background: white;
+            border-radius: 30px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(255, 107, 157, 0.15);
+            border: 3px solid #f0f0f0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .step-card.active {
+            border: 3px solid transparent;
+            background-image:
+                linear-gradient(white, white),
+                linear-gradient(135deg, #FFB6C1 0%, #89F0E7 50%, #D4BBFF 100%);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            box-shadow: 0 15px 35px rgba(78, 205, 196, 0.25);
+            transform: scale(1.01);
+        }
+
+        /* 情绪网格优化 */
+        .emotion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .emotion-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* AI分析结果卡片 */
+        .ai-analysis-result {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            animation: slideInRight 0.5s ease-out;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .game-values-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .game-value-item {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid rgba(255, 182, 193, 0.3);
+        }
+
+        .game-value-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #FF6B9D 0%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: block;
+        }
+
+        .game-value-label {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 991px) {
+            .ai-sidebar-fixed {
+                position: static;
+                height: auto;
+                padding-left: 0;
+                margin-top: 2rem;
+            }
+
+            .main-diary-area {
+                padding-right: 0;
+            }
+        }
+
+        /* 滚动条美化 - 渐变色 */
+        .ai-sidebar-fixed::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .ai-sidebar-fixed::-webkit-scrollbar-track {
+            background: rgba(255, 182, 193, 0.1);
+            border-radius: 10px;
+        }
+
+        .ai-sidebar-fixed::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #FFB6C1 0%, #89F0E7 50%, #D4BBFF 100%);
+            border-radius: 10px;
+        }
+
+        .ai-sidebar-fixed::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #FF6B9D 0%, #4ECDC4 50%, #A78BFA 100%);
+        }
+
+        /* 当前步骤提示 - 更可爱的风格 */
+        .current-step-hint {
+            background: linear-gradient(135deg, #FFE082 0%, #FFC107 100%);
+            border-radius: 20px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: gentlePulse 2s ease-in-out infinite;
+            box-shadow: 0 8px 20px rgba(255, 193, 7, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 闪光效果 */
+        .current-step-hint::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        @keyframes gentlePulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 8px 20px rgba(255, 193, 7, 0.3); }
+            50% { transform: scale(1.03); box-shadow: 0 12px 30px rgba(255, 193, 7, 0.4); }
+        }
+
+        .current-step-hint .hint-icon {
+            font-size: 2.2rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+            z-index: 1;
+        }
+
+        .current-step-hint .hint-text {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #2d3748;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+            font-family: 'Fredoka', sans-serif;
+            z-index: 1;
+        }
+
+        /* CBT步骤数字美化 */
+        .ai-tip-item[class*="1️⃣"],
+        .ai-tip-item[class*="2️⃣"],
+        .ai-tip-item[class*="3️⃣"],
+        .ai-tip-item[class*="4️⃣"] {
+            position: relative;
+        }
+
+        .ai-tip-item[class*="1️⃣"]::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #FF6B9D 0%, #FFC107 100%);
+            border-radius: 10px;
+        }
+
+        /* 流式输出光标动画 */
+        .streaming-cursor {
+            display: inline-block;
+            color: #667eea;
+            font-weight: bold;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* 用户消息框样式 */
+        .user-message-box {
+            background: linear-gradient(135deg, rgba(255, 182, 193, 0.05) 0%, rgba(137, 240, 231, 0.05) 100%);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border: 2px solid rgba(255, 182, 193, 0.2);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <div id="authUser" class="d-flex gap-2 align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="container-fluid py-5">
+        <div class="diary-new-container">
+            <div class="row">
+                <!-- 左侧：步骤式日记编写区域 (扩展到 8 列) -->
+                <div class="col-lg-8 main-diary-area">
+                    <!-- 进度指示器 -->
+                    <div class="stepper-progress mb-4">
+                        <div class="step-item active" data-step="1">
+                            <div class="step-circle">1</div>
+                            <div class="step-label">识别情绪</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step-item" data-step="2">
+                            <div class="step-circle">2</div>
+                            <div class="step-label">触发事件</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step-item" data-step="3">
+                            <div class="step-circle">3</div>
+                            <div class="step-label">情绪强度</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step-item" data-step="4">
+                            <div class="step-circle">4</div>
+                            <div class="step-label">写日记</div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤1：情绪选择 -->
+                    <div class="step-card active" id="step1Card">
+                        <div class="step-card-header">
+                            <div class="character-avatar-small">💭</div>
+                            <h2 class="step-title">你现在的情绪是什么？</h2>
+                            <p class="step-subtitle">可以选择多个情绪哦 ✨</p>
+                        </div>
+                        <div class="step-card-body">
+                            <div class="emotion-grid">
+                                <button class="emotion-btn-game" data-emotion="开心" data-emoji="😊">
+                                    <span class="emotion-emoji">😊</span>
+                                    <span class="emotion-label">开心</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="平静" data-emoji="😌">
+                                    <span class="emotion-emoji">😌</span>
+                                    <span class="emotion-label">平静</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="悲伤" data-emoji="😢">
+                                    <span class="emotion-emoji">😢</span>
+                                    <span class="emotion-label">悲伤</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="愤怒" data-emoji="😡">
+                                    <span class="emotion-emoji">😡</span>
+                                    <span class="emotion-label">愤怒</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="焦虑" data-emoji="😰">
+                                    <span class="emotion-emoji">😰</span>
+                                    <span class="emotion-label">焦虑</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="害怕" data-emoji="😨">
+                                    <span class="emotion-emoji">😨</span>
+                                    <span class="emotion-label">害怕</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="厌恶" data-emoji="😖">
+                                    <span class="emotion-emoji">😖</span>
+                                    <span class="emotion-label">厌恶</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="惊讶" data-emoji="😲">
+                                    <span class="emotion-emoji">😲</span>
+                                    <span class="emotion-label">惊讶</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="兴奋" data-emoji="🤩">
+                                    <span class="emotion-emoji">🤩</span>
+                                    <span class="emotion-label">兴奋</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="沮丧" data-emoji="😔">
+                                    <span class="emotion-emoji">😔</span>
+                                    <span class="emotion-label">沮丧</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="孤独" data-emoji="😞">
+                                    <span class="emotion-emoji">😞</span>
+                                    <span class="emotion-label">孤独</span>
+                                </button>
+                                <button class="emotion-btn-game" data-emotion="温暖" data-emoji="🤗">
+                                    <span class="emotion-emoji">🤗</span>
+                                    <span class="emotion-label">温暖</span>
+                                </button>
+                            </div>
+                            <div class="selected-emotions-preview mt-4" id="selectedEmotionsPreview" style="display: none;">
+                                <div class="preview-label">已选择的情绪：</div>
+                                <div class="preview-tags" id="selectedEmotionTags"></div>
+                            </div>
+                        </div>
+                        <div class="step-card-footer">
+                            <button class="btn btn-primary btn-lg" id="nextStep1" disabled>
+                                下一步
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 步骤2：触发事件 -->
+                    <div class="step-card" id="step2Card">
+                        <div class="step-card-header">
+                            <div class="character-avatar-small">🌟</div>
+                            <h2 class="step-title">是什么引发了这种情绪？</h2>
+                            <p class="step-subtitle">描述触发你情绪的事件或想法</p>
+                        </div>
+                        <div class="step-card-body">
+                            <textarea
+                                class="form-control step-textarea"
+                                id="triggerEvent"
+                                rows="6"
+                                placeholder="例如：今天数学考试没考好，我觉得自己很失败..."
+                            ></textarea>
+                            <div class="char-counter mt-2">
+                                <span id="charCount">0</span> 字
+                            </div>
+                            <div class="quick-templates mt-4">
+                                <div class="template-label">💡 快捷选择：</div>
+                                <div class="template-buttons">
+                                    <button class="btn btn-sm btn-template" data-template="学业压力：今天的作业太多了，我感觉完成不了...">📚 学业压力</button>
+                                    <button class="btn btn-sm btn-template" data-template="人际关系：和朋友发生了一些矛盾...">👥 人际关系</button>
+                                    <button class="btn btn-sm btn-template" data-template="家庭问题：父母对我的期望很高，我担心让他们失望...">🏠 家庭问题</button>
+                                    <button class="btn btn-sm btn-template" data-template="自我怀疑：我觉得自己不够好...">🤔 自我怀疑</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-card-footer">
+                            <button class="btn btn-outline btn-lg" id="prevStep2">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                上一步
+                            </button>
+                            <button class="btn btn-primary btn-lg" id="nextStep2">
+                                下一步
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 步骤3：情绪强度 -->
+                    <div class="step-card" id="step3Card">
+                        <div class="step-card-header">
+                            <div class="character-avatar-small">💫</div>
+                            <h2 class="step-title">你的感受有多强烈？</h2>
+                            <p class="step-subtitle">选择最符合你感受的强度</p>
+                        </div>
+                        <div class="step-card-body">
+                            <div class="emoji-intensity-slider">
+                                <div class="intensity-labels mb-3">
+                                    <span class="intensity-min">轻微</span>
+                                    <span class="intensity-current" id="intensityLabel">中等</span>
+                                    <span class="intensity-max">强烈</span>
+                                </div>
+                                <div class="emoji-track" id="emojiTrack">
+                                    <div class="emoji-progress" id="emojiProgress"></div>
+                                    <button class="emoji-selector" data-intensity="1" data-label="非常轻微">🌱</button>
+                                    <button class="emoji-selector" data-intensity="2" data-label="轻微">🍃</button>
+                                    <button class="emoji-selector" data-intensity="3" data-label="有一点">💧</button>
+                                    <button class="emoji-selector" data-intensity="4" data-label="中等偏弱">💦</button>
+                                    <button class="emoji-selector" data-intensity="5" data-label="中等">⚡</button>
+                                    <button class="emoji-selector" data-intensity="6" data-label="中等偏强">🌊</button>
+                                    <button class="emoji-selector" data-intensity="7" data-label="比较强烈">🔥</button>
+                                    <button class="emoji-selector" data-intensity="8" data-label="强烈">💥</button>
+                                    <button class="emoji-selector" data-intensity="9" data-label="非常强烈">🌋</button>
+                                    <button class="emoji-selector" data-intensity="10" data-label="极度强烈">☄️</button>
+                                </div>
+                                <div class="intensity-value-display mt-4">
+                                    <span class="value-number" id="intensityValue">5</span>
+                                    <span class="value-label">/ 10</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-card-footer">
+                            <button class="btn btn-outline btn-lg" id="prevStep3">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                上一步
+                            </button>
+                            <button class="btn btn-primary btn-lg" id="nextStep3">
+                                下一步
+                                <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 步骤4：日记编写 -->
+                    <div class="step-card" id="step4Card">
+                        <div class="step-card-header compact">
+                            <h2 class="step-title">记录你的故事 📖</h2>
+                            <!-- 已选数据摘要 -->
+                            <div class="diary-summary" id="diarySummary">
+                                <div class="summary-item">
+                                    <span class="summary-label">情绪：</span>
+                                    <span class="summary-value" id="summaryEmotions"></span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">强度：</span>
+                                    <span class="summary-value" id="summaryIntensity"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-card-body">
+                            <textarea
+                                class="form-control diary-textarea"
+                                id="diaryContent"
+                                rows="15"
+                                placeholder="在这里写下你的想法、感受和经历...&#10;&#10;可以试着回答这些问题：&#10;- 发生了什么？&#10;- 你当时在想什么？&#10;- 你的身体有什么感觉？&#10;- 你做了什么？&#10;&#10;放心，这里只有你自己能看到 💖"
+                            ></textarea>
+                            <div class="diary-meta mt-3">
+                                <div class="word-counter">
+                                    <i class="fas fa-pen me-2"></i>
+                                    <span id="wordCount">0</span> 字
+                                </div>
+                                <div class="image-upload-btn">
+                                    <button class="btn btn-sm btn-outline" id="uploadImageBtn">
+                                        <i class="fas fa-image me-2"></i>
+                                        添加图片
+                                    </button>
+                                    <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+                                </div>
+                            </div>
+                            <div class="image-preview-grid mt-3" id="imagePreviewGrid" style="display: none;"></div>
+                        </div>
+                        <div class="step-card-footer">
+                            <button class="btn btn-outline btn-lg" id="prevStep4">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                上一步
+                            </button>
+                            <button class="btn btn-primary btn-lg pulse-animation" id="saveDiary">
+                                <i class="fas fa-save me-2"></i>
+                                保存日记
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧：AI助手固定侧边栏 (4 列，始终可见) -->
+                <div class="col-lg-4">
+                    <div class="ai-sidebar-fixed">
+                        <!-- AI欢迎卡片 -->
+                        <div class="ai-welcome-card">
+                            <div class="ai-avatar-large">🤖</div>
+                            <h4>AI情绪分析助手</h4>
+                            <p style="opacity: 0.95; margin: 0; font-size: 0.95rem;">
+                                我会陪伴你完成每一步，并基于CBT认知行为疗法为你提供专业的情绪分析和建议。
+                            </p>
+                        </div>
+
+                        <!-- 当前步骤提示 -->
+                        <div class="current-step-hint" id="currentStepHint">
+                            <span class="hint-icon">💭</span>
+                            <span class="hint-text">选择你当前的情绪</span>
+                        </div>
+
+                        <!-- 使用提示卡片 -->
+                        <div class="ai-tips-card">
+                            <h5><i class="fas fa-lightbulb"></i> 温馨提示</h5>
+                            <div class="ai-tip-item">
+                                <span class="ai-tip-icon">🎯</span>
+                                <div class="ai-tip-text">
+                                    <strong>真实表达：</strong>不要害怕负面情绪，诚实地记录你的感受才能帮助你更好地了解自己。
+                                </div>
+                            </div>
+                            <div class="ai-tip-item">
+                                <span class="ai-tip-icon">📝</span>
+                                <div class="ai-tip-text">
+                                    <strong>详细描述：</strong>尽可能详细地描述事件和感受，这会让AI分析更准确。
+                                </div>
+                            </div>
+                            <div class="ai-tip-item">
+                                <span class="ai-tip-icon">🔒</span>
+                                <div class="ai-tip-text">
+                                    <strong>隐私保护：</strong>你的日记只有你自己能看到，请放心书写。
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CBT四步法介绍 -->
+                        <div class="ai-tips-card">
+                            <h5><i class="fas fa-brain"></i> CBT四步法</h5>
+                            <div class="ai-tip-item">
+                                <span class="ai-tip-icon">1️⃣</span>
+                                <div class="ai-tip-text">
+                                    <strong>识别负面思维：</strong>找出自动化的负面想法
+                                </div>
+                            </div>
+                            <div class="ai-tip-item">
+                                <span class="ai-tip-icon">2️⃣</span>
+                                <div class="ai-tip-text">
+                                    <strong>寻找证据：</strong>收集支持和反对的真实证据
+                                </div>
+                            </div>
+                            <div class="ai-tip-item">
+                                <span class="ai-tip-icon">3️⃣</span>
+                                <div class="ai-tip-text">
+                                    <strong>生成替代思维：</strong>创造更平衡的想法
+                                </div>
+                            </div>
+                            <div class="ai-tip-item">
+                                <span class="ai-tip-icon">4️⃣</span>
+                                <div class="ai-tip-text">
+                                    <strong>评估改变：</strong>观察情绪的变化
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI分析结果区域（初始隐藏） -->
+                        <div id="aiAnalysisContainer" style="display: none;">
+                            <div class="ai-tips-card">
+                                <h5><i class="fas fa-chart-line"></i> AI分析结果</h5>
+                                <div id="aiPanelContent">
+                                    <div class="ai-loading">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">分析中...</span>
+                                        </div>
+                                        <p class="mt-3">AI正在分析你的日记...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 移动端：底部抽屉 -->
+    <div class="ai-drawer-mobile d-lg-none" id="aiDrawerMobile" style="display: none;">
+        <div class="drawer-handle" id="drawerHandle">
+            <div class="handle-bar"></div>
+        </div>
+        <div class="drawer-header">
+            <div class="ai-avatar-small">🤖</div>
+            <h5>AI分析助手</h5>
+            <button class="btn-close-drawer" id="closeDrawer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="drawer-body" id="drawerContent">
+            <div class="ai-loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">分析中...</span>
+                </div>
+                <p class="mt-3">AI正在分析你的日记...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20241206"></script>
+    <script src="{{ url_for('static', filename='js/diary_new.js') }}"></script>
+
+    <script>
+        // 步骤提示文本
+        const stepHints = {
+            1: { icon: '💭', text: '选择你当前的情绪' },
+            2: { icon: '🌟', text: '描述触发情绪的事件' },
+            3: { icon: '💫', text: '标记你的情绪强度' },
+            4: { icon: '📖', text: '详细记录你的感受' }
+        };
+
+        // 监听步骤变化，更新提示
+        function updateStepHint(step) {
+            const hintElement = document.getElementById('currentStepHint');
+            const hint = stepHints[step];
+            if (hint && hintElement) {
+                hintElement.querySelector('.hint-icon').textContent = hint.icon;
+                hintElement.querySelector('.hint-text').textContent = hint.text;
+            }
+        }
+
+        // 监听步骤卡片的显示/隐藏
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    const target = mutation.target;
+                    if (target.classList.contains('active')) {
+                        const stepId = target.id;
+                        const stepNumber = parseInt(stepId.replace('step', '').replace('Card', ''));
+                        updateStepHint(stepNumber);
+                    }
+                }
+            });
+        });
+
+        // 观察所有步骤卡片
+        document.querySelectorAll('.step-card').forEach(card => {
+            observer.observe(card, { attributes: true });
+        });
+    </script>
+</body>
+</html>

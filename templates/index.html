@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT情绪日记游戏 - 用爱与科学疗愈心灵</title>
+    <meta name="description" content="基于认知行为疗法的情绪日记游戏，帮助您管理情绪，培养积极思维习惯">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/diary">情绪日记</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/postcards">🦊 明信片</a>
+                    </li>
+                </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- 未登录状态 -->
+                    <div id="authGuest" class="d-flex gap-2">
+                        <a href="/login" class="btn btn-outline">登录</a>
+                        <a href="/register" class="btn btn-primary">注册</a>
+                    </div>
+
+                    <!-- 已登录状态 -->
+                    <div id="authUser" class="d-flex gap-2 align-items-center d-none">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/profile" style="cursor: pointer;"><i class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><a class="dropdown-item" href="/settings" style="cursor: pointer;"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main>
+        <!-- Hero 区域 - 情绪日记游戏风格 -->
+        <section class="hero-section">
+            <!-- 漂浮的装饰元素 -->
+            <div class="floating-emoji" style="top: 10%; left: 5%; animation-delay: 0s;">😊</div>
+            <div class="floating-emoji" style="top: 20%; right: 10%; animation-delay: 0.5s;">💖</div>
+            <div class="floating-emoji" style="top: 60%; left: 15%; animation-delay: 1s;">✨</div>
+            <div class="floating-emoji" style="bottom: 30%; right: 20%; animation-delay: 1.5s;">🎮</div>
+            <div class="floating-emoji" style="bottom: 15%; left: 25%; animation-delay: 2s;">🌈</div>
+            <div class="floating-emoji" style="top: 40%; right: 8%; animation-delay: 2.5s;">🎨</div>
+
+            <!-- 彩色泡泡背景 -->
+            <div class="bubble" style="left: 10%; top: 20%; animation-delay: 0s;"></div>
+            <div class="bubble" style="left: 80%; top: 10%; animation-delay: 2s;"></div>
+            <div class="bubble" style="left: 50%; top: 50%; animation-delay: 4s;"></div>
+            <div class="bubble" style="left: 20%; top: 70%; animation-delay: 6s;"></div>
+            <div class="bubble" style="left: 70%; top: 60%; animation-delay: 8s;"></div>
+
+            <div class="container">
+                <div class="row align-items-center" style="min-height: 90vh; padding: 4rem 0;">
+                    <div class="col-lg-6 hero-content animate-fade-in-up">
+                        <div class="badge-tag mb-3">
+                            <i class="fas fa-gamepad me-2"></i>
+                            情绪管理 × 游戏冒险
+                        </div>
+                        <h1 class="hero-title mb-4">
+                            开启你的<br>
+                            <span class="gradient-text">情绪冒险之旅</span>
+                        </h1>
+                        <p class="hero-subtitle mb-4">
+                            🎮 在游戏中记录情绪，在冒险中学习CBT<br>
+                            🦊 和小橘一起探险，培养积极思维习惯<br>
+                            ✨ 每一次记录，都是一次成长
+                        </p>
+                        <div class="hero-stats mb-4">
+                            <div class="stat-item">
+                                <div class="stat-number">1000+</div>
+                                <div class="stat-label">用户加入</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">5000+</div>
+                                <div class="stat-label">情绪记录</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-number">98%</div>
+                                <div class="stat-label">好评率</div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <a href="javascript:void(0);" id="startAdventureBtn" class="btn btn-primary btn-lg pulse-animation">
+                                <i class="fas fa-rocket me-2"></i>
+                                开始冒险
+                            </a>
+                            <a href="#features" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-play-circle me-2"></i>
+                                了解更多
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <!-- 情绪角色展示 -->
+                        <div class="character-showcase">
+                            <div class="character-card main-character">
+                                <div class="character-avatar">
+                                    <div class="avatar-circle">
+                                        <span style="font-size: 4rem;">🦊</span>
+                                    </div>
+                                    <div class="character-sparkle sparkle-1">✨</div>
+                                    <div class="character-sparkle sparkle-2">⭐</div>
+                                    <div class="character-sparkle sparkle-3">💫</div>
+                                </div>
+                                <h3 class="character-name">小橘</h3>
+                                <p class="character-desc">你的情绪探险伙伴</p>
+                            </div>
+
+                            <!-- 周围的小角色 -->
+                            <div class="mini-character" style="top: 10%; left: 5%;">
+                                😊
+                                <div class="character-tooltip">开心</div>
+                            </div>
+                            <div class="mini-character" style="top: 15%; right: 10%;">
+                                😢
+                                <div class="character-tooltip">难过</div>
+                            </div>
+                            <div class="mini-character" style="bottom: 20%; left: 10%;">
+                                😡
+                                <div class="character-tooltip">愤怒</div>
+                            </div>
+                            <div class="mini-character" style="bottom: 25%; right: 15%;">
+                                😰
+                                <div class="character-tooltip">焦虑</div>
+                            </div>
+                            <div class="mini-character" style="top: 50%; left: 0;">
+                                🤗
+                                <div class="character-tooltip">平静</div>
+                            </div>
+                            <div class="mini-character" style="top: 50%; right: 0;">
+                                😌
+                                <div class="character-tooltip">放松</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能特色 -->
+        <section id="features" class="py-5">
+            <div class="container">
+                <div class="text-center mb-5">
+                    <h2 class="display-5 fw-bold text-gray-800 mb-3">
+                        为什么选择CBT情绪日记？
+                    </h2>
+                    <p class="lead text-gray-600">
+                        科学的心理疗法 + 有趣的游戏体验 = 持续的情绪改善
+                    </p>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="feature-card animate-fade-in-up">
+                            <div class="feature-icon">
+                                📖
+                            </div>
+                            <h3 class="feature-title">情绪记录</h3>
+                            <p class="feature-description">
+                                轻松记录每日情绪变化，AI智能分析情绪模式，
+                                帮助您了解自己的情感世界
+                            </p>
+                            <ul class="list-unstyled text-start">
+                                <li><i class="fas fa-check text-success me-2"></i>智能情绪识别</li>
+                                <li><i class="fas fa-check text-success me-2"></i>个性化分析报告</li>
+                                <li><i class="fas fa-check text-success me-2"></i>情绪趋势追踪</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="feature-card animate-fade-in-up" style="animation-delay: 0.2s;">
+                            <div class="feature-icon">
+                                🎮
+                            </div>
+                            <h3 class="feature-title">CBT游戏</h3>
+                            <p class="feature-description">
+                                将认知行为疗法转化为有趣的小游戏，
+                                在娱乐中学习思维重构技巧
+                            </p>
+                            <ul class="list-unstyled text-start">
+                                <li><i class="fas fa-check text-success me-2"></i>认知重构挑战</li>
+                                <li><i class="fas fa-check text-success me-2"></i>情绪调节训练</li>
+                                <li><i class="fas fa-check text-success me-2"></i>个性化难度调节</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="feature-card animate-fade-in-up" style="animation-delay: 0.4s;">
+                            <div class="feature-icon">
+                                📊
+                            </div>
+                            <h3 class="feature-title">数据洞察</h3>
+                            <p class="feature-description">
+                                可视化您的情绪数据，发现改善模式，
+                                见证自己的成长与进步
+                            </p>
+                            <ul class="list-unstyled text-start">
+                                <li><i class="fas fa-check text-success me-2"></i>情绪热力图</li>
+                                <li><i class="fas fa-check text-success me-2"></i>进步追踪系统</li>
+                                <li><i class="fas fa-check text-success me-2"></i>专业心理建议</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 如何使用 -->
+        <section class="py-5 bg-light">
+            <div class="container">
+                <div class="text-center mb-5">
+                    <h2 class="display-5 fw-bold text-gray-800 mb-3">
+                        简单三步，开始疗愈之旅
+                    </h2>
+                    <p class="lead text-gray-600">
+                        科学证明，持续21天的情绪记录练习能显著改善心理健康
+                    </p>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4 text-center">
+                        <div class="position-relative">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                                1
+                            </div>
+                        </div>
+                        <h4 class="fw-bold mb-3">注册账号</h4>
+                        <p class="text-gray-600">
+                            创建您的个人账户，开启专属的情绪管理空间
+                        </p>
+                    </div>
+
+                    <div class="col-md-4 text-center">
+                        <div class="position-relative">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                                2
+                            </div>
+                        </div>
+                        <h4 class="fw-bold mb-3">记录情绪</h4>
+                        <p class="text-gray-600">
+                            每日记录情绪变化，玩CBT小游戏，获得AI分析报告
+                        </p>
+                    </div>
+
+                    <div class="col-md-4 text-center">
+                        <div class="position-relative">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                                 style="width: 80px; height: 80px; font-size: 2rem; font-weight: bold;">
+                                3
+                            </div>
+                        </div>
+                        <h4 class="fw-bold mb-3">持续改善</h4>
+                        <p class="text-gray-600">
+                            追踪进步，培养积极思维习惯，重获内心平衡
+                        </p>
+                    </div>
+                </div>
+
+                <div class="text-center mt-5">
+                    <a href="/register" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sparkles"></i>
+                        立即开始体验
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 信任背书 -->
+        <section class="py-5">
+            <div class="container">
+                <div class="text-center mb-5">
+                    <h2 class="display-5 fw-bold text-gray-800 mb-3">
+                        科学背书，值得信赖
+                    </h2>
+                </div>
+
+                <div class="row g-4 align-items-center">
+                    <div class="col-md-6">
+                        <div class="bg-light rounded-3 p-4">
+                            <h4 class="fw-bold mb-3">
+                                <i class="fas fa-graduation-cap text-primary me-2"></i>
+                                基于循证心理学
+                            </h4>
+                            <p class="text-gray-600 mb-3">
+                                认知行为疗法(CBT)是经过大量科学验证的心理治疗方法，
+                                对焦虑、抑郁等情绪问题有显著疗效。
+                            </p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check-circle text-success me-2"></i>50+年临床验证</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>适用于各种情绪问题</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>技能导向，效果持久</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="bg-light rounded-3 p-4">
+                            <h4 class="fw-bold mb-3">
+                                <i class="fas fa-shield-alt text-primary me-2"></i>
+                                隐私安全保护
+                            </h4>
+                            <p class="text-gray-600 mb-3">
+                                您的情绪数据和个人隐私受到严格保护，
+                                采用银行级加密技术确保数据安全。
+                            </p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check-circle text-success me-2"></i>端到端加密</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>数据本地存储</li>
+                                <li><i class="fas fa-check-circle text-success me-2"></i>完全匿名处理</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-3">
+                        <i class="fas fa-heart-pulse me-2"></i>
+                        CBT情绪日记游戏
+                    </h5>
+                    <p class="text-white-50">
+                        用科学与爱，帮助每个人重获内心平衡
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-white-50 mb-2">
+                        © 2025 CBT情绪日记游戏. 保留所有权利.
+                    </p>
+                    <small class="text-white-50">
+                        本工具不能替代专业心理咨询，如有需要请寻求专业帮助
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20241206"></script>
+
+    <script>
+        // 检查登录状态并更新UI
+        function updateAuthUI() {
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
+
+            const authGuest = document.getElementById('authGuest');
+            const authUser = document.getElementById('authUser');
+            const usernameElement = document.getElementById('username');
+
+            if (token && userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    // 已登录状态 - 隐藏未登录按钮，显示用户菜单
+                    authGuest.classList.add('d-none');
+                    authUser.classList.remove('d-none');
+                    if (usernameElement) {
+                        usernameElement.textContent = user.username;
+                    }
+                } catch (error) {
+                    console.error('Failed to parse user data:', error);
+                    // 数据解析失败，显示未登录状态
+                    authGuest.classList.remove('d-none');
+                    authUser.classList.add('d-none');
+                }
+            } else {
+                // 未登录状态 - 显示登录注册按钮，隐藏用户菜单
+                authGuest.classList.remove('d-none');
+                authUser.classList.add('d-none');
+            }
+        }
+
+        // 退出登录功能
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('user');
+
+            // 立即更新UI
+            updateAuthUI();
+
+            // 显示退出成功提示
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                已退出登录
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            // 3秒后移除提示
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+
+        // 清理旧的token数据（兼容性处理）
+        function cleanupOldTokens() {
+            // 如果存在旧的'token'键，将其迁移到'access_token'
+            const oldToken = localStorage.getItem('token');
+            if (oldToken && !localStorage.getItem('access_token')) {
+                localStorage.setItem('access_token', oldToken);
+                localStorage.removeItem('token');
+                console.log('[认证] 已迁移旧token到新格式');
+            }
+        }
+
+        // 页面加载完成后更新认证状态
+        document.addEventListener('DOMContentLoaded', function() {
+            cleanupOldTokens();
+            updateAuthUI();
+
+            // 绑定退出登录按钮
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
+
+            // 绑定"开始冒险"按钮 - 根据登录状态跳转
+            const startAdventureBtn = document.getElementById('startAdventureBtn');
+            if (startAdventureBtn) {
+                startAdventureBtn.addEventListener('click', function() {
+                    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                    if (token) {
+                        // 已登录，跳转到日记页面
+                        window.location.href = '/diary';
+                    } else {
+                        // 未登录，跳转到注册页面
+                        window.location.href = '/register';
+                    }
+                });
+            }
+        });
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.style.boxShadow = 'var(--shadow-md)';
+            } else {
+                navbar.style.boxShadow = 'var(--shadow-sm)';
+            }
+        });
+
+        // 动画触发
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.animate-fade-in-up').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

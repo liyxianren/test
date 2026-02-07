@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录账号 - CBT情绪日记游戏</title>
+    <meta name="description" content="登录您的CBT情绪日记游戏账号，继续情绪管理之旅">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
+            </a>
+            <div class="d-flex gap-2">
+                <span class="text-gray-600 me-2">还没有账号？</span>
+                <a href="/register" class="btn btn-outline">注册</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-5 col-md-7">
+                    <!-- 登录表单 -->
+                    <div class="form-container animate-fade-in-up">
+                        <div class="text-center mb-4">
+                            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                                 style="width: 80px; height: 80px; background: var(--gradient-primary);">
+                                <i class="fas fa-sign-in-alt text-white" style="font-size: 2rem;"></i>
+                            </div>
+                            <h1 class="form-title">欢迎回来</h1>
+                            <p class="text-gray-600">
+                                继续您的情绪管理之旅，重获内心平衡
+                            </p>
+                        </div>
+
+                        <!-- 错误/成功提示 -->
+                        <div id="alertContainer"></div>
+
+                        <form id="loginForm" novalidate>
+                            <!-- 用户名 -->
+                            <div class="form-group">
+                                <label for="username" class="form-label">
+                                    <i class="fas fa-user me-2"></i>用户名/邮箱
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="username"
+                                       name="username"
+                                       placeholder="请输入用户名或邮箱"
+                                       required>
+                                <div class="invalid-feedback">
+                                    请输入用户名或邮箱
+                                </div>
+                            </div>
+
+                            <!-- 密码 -->
+                            <div class="form-group">
+                                <label for="password" class="form-label">
+                                    <i class="fas fa-lock me-2"></i>密码
+                                </label>
+                                <div class="input-group">
+                                    <input type="password"
+                                           class="form-control"
+                                           id="password"
+                                           name="password"
+                                           placeholder="请输入密码"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye" id="passwordIcon"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback">
+                                    请输入密码
+                                </div>
+                            </div>
+
+                            <!-- 记住我 & 忘记密码 -->
+                            <div class="form-group">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                                        <label class="form-check-label" for="rememberMe">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            记住我的登录状态
+                                        </label>
+                                    </div>
+                                    <a href="javascript:void(0);" class="text-primary text-decoration-none small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">
+                                        忘记密码？
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- 登录按钮 -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg" id="loginBtn">
+                                    <i class="fas fa-sign-in-alt me-2"></i>
+                                    <span id="loginBtnText">立即登录</span>
+                                </button>
+                            </div>
+
+                            </form>
+
+                        <!-- 注册链接 -->
+                        <div class="text-center mt-4">
+                            <p class="text-gray-600 mb-0">
+                                还没有账号？
+                                <a href="/register" class="text-primary text-decoration-none fw-semibold">
+                                    立即注册
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 安全提示 -->
+                    <div class="text-center mt-4">
+                        <div class="d-inline-flex gap-3 flex-wrap">
+                            <small class="text-gray-500">
+                                <i class="fas fa-shield-alt text-success me-1"></i>
+                                安全加密连接
+                            </small>
+                            <small class="text-gray-500">
+                                <i class="fas fa-lock text-success me-1"></i>
+                                隐私保护
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 忘记密码模态框 -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-key me-2"></i>
+                        重置密码
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-gray-600 mb-3">
+                        请输入您的注册邮箱，我们将发送重置密码的链接到您的邮箱。
+                    </p>
+                    <form id="forgotPasswordForm">
+                        <div class="form-group">
+                            <label for="resetEmail" class="form-label">邮箱地址</label>
+                            <input type="email"
+                                   class="form-control"
+                                   id="resetEmail"
+                                   name="email"
+                                   placeholder="请输入注册邮箱"
+                                   required>
+                            <div class="invalid-feedback">
+                                请输入有效的邮箱地址
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="sendResetBtn">
+                        <i class="fas fa-paper-plane me-2"></i>
+                        发送重置链接
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v=20241206"></script>
+
+    <script>
+        // 密码显示/隐藏切换
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const passwordIcon = document.getElementById('passwordIcon');
+
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            passwordIcon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        });
+
+        // 表单验证
+        const loginForm = document.getElementById('loginForm');
+
+        function validateLoginForm() {
+            let isValid = true;
+
+            // 用户名/邮箱验证
+            const username = document.getElementById('username');
+            if (!username.value.trim()) {
+                username.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                username.classList.remove('is-invalid');
+            }
+
+            // 密码验证
+            if (!passwordInput.value) {
+                passwordInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                passwordInput.classList.remove('is-invalid');
+            }
+
+            return isValid;
+        }
+
+        // 实时验证
+        ['username', 'password'].forEach(fieldId => {
+            document.getElementById(fieldId).addEventListener('blur', function() {
+                validateLoginForm();
+            });
+        });
+
+        // 登录表单提交
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!validateLoginForm()) {
+                showAlert('请填写用户名和密码', 'danger');
+                return;
+            }
+
+            const loginBtn = document.getElementById('loginBtn');
+            const loginBtnText = document.getElementById('loginBtnText');
+
+            // 显示加载状态
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loading me-2"></span>登录中...';
+
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 记住登录状态
+                    if (document.getElementById('rememberMe').checked) {
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                    } else {
+                        sessionStorage.setItem('access_token', data.access_token);
+                        sessionStorage.setItem('user', JSON.stringify(data.user));
+                    }
+
+                    showAlert('登录成功！正在跳转...', 'success');
+
+                    // 延迟跳转，让用户看到成功消息
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showAlert(data.error || '登录失败，请检查用户名和密码', 'danger');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('网络错误，请检查连接后重试', 'danger');
+            } finally {
+                // 恢复按钮状态
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>立即登录';
+            }
+        });
+
+        // 忘记密码功能
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const sendResetBtn = document.getElementById('sendResetBtn');
+
+        sendResetBtn.addEventListener('click', async function() {
+            const resetEmail = document.getElementById('resetEmail');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailRegex.test(resetEmail.value)) {
+                resetEmail.classList.add('is-invalid');
+                return;
+            }
+
+            resetEmail.classList.remove('is-invalid');
+
+            // 显示加载状态
+            sendResetBtn.disabled = true;
+            sendResetBtn.innerHTML = '<span class="loading me-2"></span>发送中...';
+
+            try {
+                const response = await fetch('/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: resetEmail.value.trim().toLowerCase()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('重置链接已发送到您的邮箱，请查收', 'success');
+
+                    // 关闭模态框
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                    modal.hide();
+
+                    // 重置表单
+                    forgotPasswordForm.reset();
+
+                    // 开发环境：显示重置链接（生产环境应删除）
+                    if (data.reset_token) {
+                        const resetLink = `${window.location.origin}/reset-password/${data.reset_token}`;
+                        console.log('重置链接:', resetLink);
+
+                        // 可以选择性地显示重置链接给开发者
+                        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                            setTimeout(() => {
+                                const developerAlert = document.createElement('div');
+                                developerAlert.className = 'alert alert-info alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                                developerAlert.style.zIndex = '9999';
+                                developerAlert.style.maxWidth = '600px';
+                                developerAlert.innerHTML = `
+                                    <strong>开发者提示：</strong> 重置链接已生成
+                                    <br><small>链接: <a href="${resetLink}" target="_blank">${resetLink}</a></small>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                `;
+                                document.body.appendChild(developerAlert);
+
+                                setTimeout(() => {
+                                    if (developerAlert.parentNode) {
+                                        developerAlert.remove();
+                                    }
+                                }, 10000);
+                            }, 500);
+                        }
+                    }
+                } else {
+                    showAlert(data.error || '发送失败，请重试', 'danger');
+                }
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showAlert('网络错误，请重试', 'danger');
+            } finally {
+                // 恢复按钮状态
+                sendResetBtn.disabled = false;
+                sendResetBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>发送重置链接';
+            }
+        });
+
+        // 显示提示信息
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alertDiv);
+
+            // 自动消失
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // 输入时清除错误状态
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+            });
+        });
+
+        // 检查是否已登录
+        function checkLoginStatus() {
+            const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            if (token) {
+                // 验证token是否有效
+                fetch('/api/auth/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // 已登录，跳转到日记页面
+                        window.location.href = '/diary';
+                    } else {
+                        // token无效，清除存储
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('user');
+                        sessionStorage.removeItem('access_token');
+                        sessionStorage.removeItem('user');
+                    }
+                })
+                .catch(() => {
+                    // 网络错误，清除存储
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('user');
+                    sessionStorage.removeItem('access_token');
+                    sessionStorage.removeItem('user');
+                });
+            }
+        }
+
+        // 页面加载时检查登录状态
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+
+            // 添加页面加载动画
+            document.querySelector('.form-container').classList.add('animate-fade-in-up');
+        });
+
+        // 回车键提交
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !loginBtn.disabled) {
+                loginForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
