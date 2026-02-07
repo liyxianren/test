@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,235 +16,431 @@
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Nunito:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
     <style>
-        .profile-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 3rem 0;
-            margin-bottom: 2rem;
+        /* 个人资料页专属样式 - 覆盖/补充全局样式 */
+        .profile-hero-section {
+            background: var(--gradient-sky);
+            padding: 3rem 0 5rem;
+            position: relative;
+            margin-bottom: -3rem;
+            /* 让卡片重叠 */
+            overflow: hidden;
         }
+
+        .profile-card-container {
+            position: relative;
+            z-index: 10;
+        }
+
+        .profile-main-card {
+            background: white;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-cute);
+            padding: 3rem 2rem;
+            text-align: center;
+            border: 4px solid white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: var(--gradient-candy);
+            opacity: 0.3;
+            border-radius: var(--radius-xl) var(--radius-xl) 50% 50%;
+        }
+
+        .profile-avatar-wrapper {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 1.5rem;
+        }
+
         .profile-avatar {
-            width: 120px;
-            height: 120px;
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
+            background: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
-            margin: 0 auto 1rem;
-            border: 4px solid rgba(255, 255, 255, 0.3);
+            font-size: 4rem;
+            border: 5px solid white;
+            box-shadow: var(--shadow-game);
+            position: relative;
+            z-index: 2;
         }
-        .stat-card {
-            background: white;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-            border-left: 4px solid #667eea;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .stat-number {
+
+        .avatar-decoration {
+            position: absolute;
+            top: -10px;
+            right: -10px;
             font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
+            animation: bounce 2s infinite;
+            z-index: 3;
         }
-        .activity-item {
-            border-left: 3px solid #667eea;
-            padding-left: 1rem;
-            margin-bottom: 1rem;
+
+        .profile-username {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-sunset);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .activity-time {
+
+        .profile-join-date {
+            color: var(--text-light);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        /* 游戏化统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .game-stat-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            border: 2px solid transparent;
+            /* 预留给 hover */
+            transition: all 0.3s var(--bounce);
+        }
+
+        .game-stat-item:hover {
+            transform: translateY(-5px);
+            background: white;
+            border-color: var(--primary-pink);
+            box-shadow: var(--shadow-clean);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--primary-blue);
+            line-height: 1.2;
+        }
+
+        .stat-label {
             font-size: 0.9rem;
-            color: #6b7280;
+            color: var(--text-secondary);
+            font-weight: 700;
         }
-        .emotion-tag {
-            display: inline-block;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            color: #92400e;
-            padding: 0.25rem 0.75rem;
-            border-radius: 1rem;
-            font-size: 0.875rem;
+
+        /* 情绪标签墙 */
+        .emotion-wall {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-game);
+            margin-bottom: 2rem;
+            border: 3px solid #f0f0f0;
+        }
+
+        .emotion-wall-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .emotion-tag-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #FFF5F8 0%, #F0F9FF 100%);
+            border: 2px solid rgba(255, 107, 157, 0.2);
+            color: var(--text-secondary);
+            font-weight: 700;
             margin: 0.25rem;
+            transition: all 0.3s var(--bounce);
+        }
+
+        .emotion-tag-pill:hover {
+            transform: scale(1.1) rotate(2deg);
+            border-color: var(--primary-pink);
+            background: white;
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.2);
+        }
+
+        .emotion-count {
+            background: var(--primary-pink);
+            color: white;
+            border-radius: 10px;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        /* 最近活动列表 */
+        .activity-list {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-game);
+            border: 3px solid #f0f0f0;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 2px dashed #f0f0f0;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary-purple);
+            flex-shrink: 0;
+        }
+
+        .activity-content {
+            flex-grow: 1;
+        }
+
+        .activity-title {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-time {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* 成就徽章 */
+        .achievement-badge {
+            text-align: center;
+            padding: 1rem;
+            transition: transform 0.3s var(--bounce);
+        }
+
+        .achievement-badge:hover {
+            transform: scale(1.1);
+        }
+
+        .achievement-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .achievement-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
         }
     </style>
 </head>
+
 <body>
     <!-- 导航栏 -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-heart me-2"></i>心灵守护者
+                <span class="navbar-logo-emoji">💖</span>
+                CBT情绪日记游戏
             </a>
-
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i>首页</a>
+                        <a class="nav-link" href="/">首页</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/diary"><i class="fas fa-book me-1"></i>日记</a>
+                        <a class="nav-link" href="/diary">情绪日记</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/postcards">🦊 明信片</a>
                     </li>
                 </ul>
-
-                <div class="navbar-nav">
-                    <!-- 未登录状态 -->
-                    <div id="auth-guest" class="d-flex">
-                        <a class="nav-link login-link" href="/login">登录</a>
-                        <a class="nav-link register-link" href="/register">注册</a>
-                    </div>
-
-                    <!-- 已登录状态 -->
-                    <div id="auth-user" class="dropdown d-none">
-                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i>
-                            <span id="username">用户</span>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/profile" style="cursor: pointer;"><i class="fas fa-user me-2"></i>个人资料</a></li>
-                            <li><a class="dropdown-item" href="/settings" style="cursor: pointer;"><i class="fas fa-cog me-2"></i>设置</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
-                        </ul>
+                <div class="d-flex gap-2 align-items-center">
+                    <div id="authUser" class="d-flex gap-2 align-items-center">
+                        <div class="dropdown">
+                            <button class="btn btn-outline dropdown-toggle" type="button" id="userDropdown"
+                                data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle me-1"></i>
+                                <span id="username">用户</span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item active" href="/profile"><i
+                                            class="fas fa-user me-2"></i>个人资料</a></li>
+                                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog me-2"></i>设置</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="javascript:void(0);" id="logoutBtn"><i
+                                            class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- 个人资料头部 -->
-    <header class="profile-header">
-        <div class="container text-center">
-            <div class="profile-avatar">
-                <i class="fas fa-user"></i>
+    <!-- Hero 区域背景 -->
+    <section class="profile-hero-section">
+        <!-- 漂浮装饰 -->
+        <div class="floating-emoji" style="top: 10%; left: 5%; animation-delay: 0s;">🌟</div>
+        <div class="floating-emoji" style="top: 20%; right: 10%; animation-delay: 1s;">💖</div>
+        <div class="floating-emoji" style="bottom: 30%; left: 15%; animation-delay: 2s;">🎈</div>
+
+        <div class="container text-center text-white position-relative" style="z-index: 1;">
+            <h1 class="display-4 fw-bold mb-3" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">我的冒险档案</h1>
+            <p class="lead fw-bold opacity-75">记录成长，见证每一次蜕变</p>
+        </div>
+    </section>
+
+    <!-- 主要内容区域 -->
+    <div class="container profile-card-container mb-5">
+        <div class="row">
+            <!-- 左侧：个人信息卡片 -->
+            <div class="col-lg-4 mb-4">
+                <div class="profile-main-card animate-fade-in-up">
+                    <div class="profile-avatar-wrapper">
+                        <div class="profile-avatar">
+                            🧒
+                        </div>
+                        <div class="avatar-decoration">✨</div>
+                    </div>
+                    <h2 class="profile-username" id="profileUsername">加载中...</h2>
+                    <div class="profile-join-date">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        加入于 <span id="memberSince">-</span>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="game-stat-item">
+                            <div class="stat-value" id="streakDays">0</div>
+                            <div class="stat-label">连续记录(天)</div>
+                        </div>
+                        <div class="game-stat-item">
+                            <div class="stat-value" id="gameProgress">Lv.1</div>
+                            <div class="stat-label">冒险等级</div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="game-stat-item">
+                            <div class="stat-value" id="totalDiaries">0</div>
+                            <div class="stat-label">日记总数</div>
+                        </div>
+                        <div class="game-stat-item">
+                            <div class="stat-value" id="recentDiaries">0</div>
+                            <div class="stat-label">本周记录</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="/settings" class="btn btn-outline btn-lg">
+                            <i class="fas fa-cog me-2"></i>编辑资料
+                        </a>
+                    </div>
+                </div>
             </div>
-            <h1 id="profileUsername">用户名</h1>
-            <p class="lead">记录情绪，疗愈心灵</p>
-            <div class="mt-3">
-                <span class="badge bg-white text-primary me-2">
-                    <i class="fas fa-calendar me-1"></i>
-                    <span id="memberSince">加入时间</span>
-                </span>
-                <span class="badge bg-white text-primary">
-                    <i class="fas fa-fire me-1"></i>
-                    连续记录 <span id="streakDays">0</span> 天
-                </span>
+
+            <!-- 右侧：详细数据 -->
+            <div class="col-lg-8">
+                <!-- 成就展示 -->
+                <div class="activity-list mb-4 animate-fade-in-up" style="animation-delay: 0.1s;">
+                    <div class="emotion-wall-title">
+                        <i class="fas fa-trophy text-warning"></i>
+                        我的成就
+                    </div>
+                    <div class="row" id="achievementList">
+                        <div class="col-4 col-md-3 achievement-badge">
+                            <div class="achievement-icon">🌱</div>
+                            <div class="achievement-name">初学者</div>
+                        </div>
+                        <div class="col-4 col-md-3 achievement-badge">
+                            <div class="achievement-icon" style="opacity: 0.3; filter: grayscale(1);">🔥</div>
+                            <div class="achievement-name text-muted">坚持者</div>
+                        </div>
+                        <div class="col-4 col-md-3 achievement-badge">
+                            <div class="achievement-icon" style="opacity: 0.3; filter: grayscale(1);">👑</div>
+                            <div class="achievement-name text-muted">情绪大师</div>
+                        </div>
+                        <div class="col-4 col-md-3 achievement-badge">
+                            <div class="achievement-icon" style="opacity: 0.3; filter: grayscale(1);">🦊</div>
+                            <div class="achievement-name text-muted">探险家</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 情绪分布 -->
+                <div class="emotion-wall animate-fade-in-up" style="animation-delay: 0.2s;">
+                    <div class="emotion-wall-title">
+                        <i class="fas fa-heart text-danger"></i>
+                        收集的情绪碎片
+                    </div>
+                    <div id="emotionStats" class="d-flex flex-wrap">
+                        <span class="text-muted">正在加载情绪数据...</span>
+                    </div>
+                </div>
+
+                <!-- 最近活动 -->
+                <div class="activity-list animate-fade-in-up" style="animation-delay: 0.3s;">
+                    <div class="emotion-wall-title">
+                        <i class="fas fa-history text-primary"></i>
+                        冒险足迹
+                    </div>
+                    <div id="recentActivities">
+                        <p class="text-muted">加载中...</p>
+                    </div>
+                </div>
             </div>
         </div>
-    </header>
-
-    <!-- 主要内容 -->
-    <main class="container">
-        <!-- 统计数据 -->
-        <section class="row mb-5">
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="stat-card text-center">
-                    <div class="stat-number" id="totalDiaries">0</div>
-                    <div class="text-muted">总日记数</div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="stat-card text-center">
-                    <div class="stat-number" id="recentDiaries">0</div>
-                    <div class="text-muted">本周日记</div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="stat-card text-center">
-                    <div class="stat-number" id="avgPerWeek">0</div>
-                    <div class="text-muted">周平均</div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="stat-card text-center">
-                    <div class="stat-number" id="gameProgress">Lv.1</div>
-                    <div class="text-muted">游戏等级</div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 情绪分布 -->
-        <section class="row mb-5">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-chart-pie me-2 text-primary"></i>情绪分布
-                        </h5>
-                        <div id="emotionStats" class="mt-3">
-                            <!-- 情绪标签将动态加载 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 最近活动 -->
-        <section class="row">
-            <div class="col-md-8">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-clock me-2 text-primary"></i>最近活动
-                        </h5>
-                        <div id="recentActivities">
-                            <!-- 最近活动将动态加载 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <i class="fas fa-trophy me-2 text-warning"></i>成就
-                        </h5>
-                        <div class="achievement-list">
-                            <div class="d-flex align-items-center mb-3">
-                                <i class="fas fa-medal fa-2x text-warning me-3"></i>
-                                <div>
-                                    <div class="fw-bold">初学者</div>
-                                    <small class="text-muted">写下第一篇日记</small>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center mb-3">
-                                <i class="fas fa-star fa-2x text-info me-3"></i>
-                                <div>
-                                    <div class="fw-bold">坚持者</div>
-                                    <small class="text-muted">连续记录7天</small>
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-crown fa-2x text-success me-3"></i>
-                                <div>
-                                    <div class="fw-bold">情绪大师</div>
-                                    <small class="text-muted">记录50种情绪</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
+    </div>
 
     <!-- 页脚 -->
-    <footer class="bg-light mt-5 py-4">
+    <footer class="mt-5 py-4" style="background: white !important; color: #6c757d !important;">
         <div class="container text-center">
-            <p class="text-muted mb-0">© 2024 心灵守护者 - 用爱与科学疗愈心灵</p>
+            <h5 class="mb-3" style="color: var(--primary-pink) !important;">
+                <i class="fas fa-heart-pulse me-2"></i>
+                CBT情绪日记游戏
+            </h5>
+            <p class="mb-2" style="color: #6c757d !important;">
+                © 2024 心灵守护者 - 用爱与科学疗愈心灵
+            </p>
         </div>
     </footer>
 
@@ -253,38 +450,39 @@
     <script src="{{ url_for('static', filename='js/main.js') }}?v=20241206"></script>
 
     <script>
-        // 个人资料页面特定脚本
-        document.addEventListener('DOMContentLoaded', async function() {
-            // 确保用户已登录
-            if (!window.authManager.isAuthenticated()) {
+        document.addEventListener('DOMContentLoaded', async function () {
+            // 等待authManager初始化 (来自main.js)
+            if (window.authManager && !window.authManager.isAuthenticated()) {
                 window.location.href = '/login';
                 return;
             }
 
-            // 加载用户数据
-            await loadUserProfile();
-            await loadDiaryStats();
-            await loadRecentActivities();
+            // 更新导航栏用户信息
+            if (window.updateAuthUI) {
+                window.updateAuthUI();
+            }
+
+            // 加载数据
+            await Promise.all([
+                loadUserProfile(),
+                loadDiaryStats(),
+                loadRecentActivities()
+            ]);
         });
 
         async function loadUserProfile() {
             try {
                 const response = await window.apiClient.get('/auth/profile');
                 if (response && response.ok) {
-                    const data = response.data;
-                    const user = data.user;
-
-                    // 更新页面显示
+                    const user = response.data.user;
                     document.getElementById('profileUsername').textContent = user.username;
-                    document.getElementById('username').textContent = user.username;
+                    // document.getElementById('username').textContent = user.username; // main.js已处理
 
-                    // 格式化加入时间
                     const joinDate = new Date(user.created_at);
                     document.getElementById('memberSince').textContent = joinDate.toLocaleDateString('zh-CN');
                 }
             } catch (error) {
-                console.error('Failed to load user profile:', error);
-                window.showAlert('加载用户资料失败', 'danger');
+                console.error('Profile load error:', error);
             }
         }
 
@@ -293,31 +491,29 @@
                 const response = await window.apiClient.get('/diary/stats');
                 if (response && response.ok) {
                     const stats = response.data;
-
-                    // 更新统计数据
                     document.getElementById('totalDiaries').textContent = stats.total_diaries;
                     document.getElementById('recentDiaries').textContent = stats.recent_diaries;
-                    document.getElementById('avgPerWeek').textContent = stats.avg_diaries_per_week;
+                    // document.getElementById('streakDays').textContent = stats.streak || 0; // 假设API有这个字段，没有则保持默认
 
-                    // 显示情绪分布
-                    const emotionStatsEl = document.getElementById('emotionStats');
+                    // 渲染情绪标签
+                    const emotionContainer = document.getElementById('emotionStats');
                     if (Object.keys(stats.emotion_stats).length > 0) {
-                        let html = '<div class="row">';
+                        let html = '';
                         for (const [emotion, count] of Object.entries(stats.emotion_stats)) {
                             html += `
-                                <div class="col-auto mb-2">
-                                    <span class="emotion-tag">${emotion} (${count})</span>
+                                <div class="emotion-tag-pill">
+                                    ${emotion}
+                                    <span class="emotion-count">${count}</span>
                                 </div>
                             `;
                         }
-                        html += '</div>';
-                        emotionStatsEl.innerHTML = html;
+                        emotionContainer.innerHTML = html;
                     } else {
-                        emotionStatsEl.innerHTML = '<p class="text-muted">暂无情绪数据</p>';
+                        emotionContainer.innerHTML = '<p class="text-muted">还没有收集到情绪碎片哦，快去写日记吧！</p>';
                     }
                 }
             } catch (error) {
-                console.error('Failed to load diary stats:', error);
+                console.error('Stats load error:', error);
             }
         }
 
@@ -325,63 +521,48 @@
             try {
                 const response = await window.apiClient.get('/diary?limit=5');
                 if (response && response.ok) {
-                    const data = response.data;
-                    const diaries = data.diaries;
+                    const diaries = response.data.diaries;
+                    const container = document.getElementById('recentActivities');
 
-                    const activitiesEl = document.getElementById('recentActivities');
                     if (diaries.length > 0) {
                         let html = '';
                         diaries.forEach(diary => {
                             const date = new Date(diary.created_at);
-                            const relativeTime = getRelativeTime(date);
+                            const timeStr = getRelativeTime(date);
 
                             html += `
                                 <div class="activity-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <div class="fw-bold">写了一篇日记</div>
-                                            <div class="text-muted small">${diary.content.substring(0, 100)}${diary.content.length > 100 ? '...' : ''}</div>
-                                            ${diary.emotion_tags.length > 0 ? `
-                                                <div class="mt-1">
-                                                    ${diary.emotion_tags.map(tag => `<span class="emotion-tag">${tag}</span>`).join('')}
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                        <div class="activity-time">${relativeTime}</div>
+                                    <div class="activity-icon">
+                                        <i class="fas fa-pen"></i>
                                     </div>
+                                    <div class="activity-content">
+                                        <div class="activity-title">完成了一篇情绪日记</div>
+                                        <div class="text-muted small text-truncate" style="max-width: 250px;">${diary.content}</div>
+                                    </div>
+                                    <div class="activity-time">${timeStr}</div>
                                 </div>
                             `;
                         });
-                        activitiesEl.innerHTML = html;
+                        container.innerHTML = html;
                     } else {
-                        activitiesEl.innerHTML = '<p class="text-muted">还没有活动记录</p>';
+                        container.innerHTML = '<p class="text-muted">暂无冒险记录</p>';
                     }
                 }
             } catch (error) {
-                console.error('Failed to load recent activities:', error);
-                document.getElementById('recentActivities').innerHTML = '<p class="text-danger">加载失败</p>';
+                console.error('Activities load error:', error);
             }
         }
 
         function getRelativeTime(date) {
             const now = new Date();
-            const diffInSeconds = Math.floor((now - date) / 1000);
-
-            if (diffInSeconds < 60) {
-                return '刚刚';
-            } else if (diffInSeconds < 3600) {
-                const minutes = Math.floor(diffInSeconds / 60);
-                return `${minutes}分钟前`;
-            } else if (diffInSeconds < 86400) {
-                const hours = Math.floor(diffInSeconds / 3600);
-                return `${hours}小时前`;
-            } else if (diffInSeconds < 604800) {
-                const days = Math.floor(diffInSeconds / 86400);
-                return `${days}天前`;
-            } else {
-                return date.toLocaleDateString('zh-CN');
-            }
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return '刚刚';
+            if (diff < 3600) return Math.floor(diff / 60) + '分钟前';
+            if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
+            if (diff < 604800) return Math.floor(diff / 86400) + '天前';
+            return date.toLocaleDateString('zh-CN');
         }
     </script>
 </body>
+
 </html>
